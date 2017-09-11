@@ -2,6 +2,8 @@ package com.sm.finance.charge.cluster.discovery;
 
 import com.sm.finance.charge.cluster.discovery.gossip.NodeStatusService;
 import com.sm.finance.charge.cluster.discovery.gossip.messages.AliveMessage;
+import com.sm.finance.charge.cluster.discovery.handler.PushPullRequestHandler;
+import com.sm.finance.charge.cluster.discovery.pushpull.PushPullService;
 import com.sm.finance.charge.common.AbstractService;
 import com.sm.finance.charge.common.Address;
 import com.sm.finance.charge.common.AddressUtil;
@@ -26,6 +28,7 @@ public class DefaultDiscoveryService extends AbstractService implements Discover
     private final DiscoveryNodes nodes;
     private volatile boolean joined = false;
     private NodeStatusService nodeStatusService;
+    private PushPullService pushPullService;
 
     public DefaultDiscoveryService(DiscoveryConfig config) {
         this.config = config;
@@ -53,9 +56,17 @@ public class DefaultDiscoveryService extends AbstractService implements Discover
 
         String members = config.getMembers();
         List<Address> addresses = AddressUtil.parseList(members);
+        int success = 0;
+        for (Address address : addresses) {
+            try {
+                pushPullService.pushPull(address);
+                success++;
+            } catch (Exception e) {
+                logger.error("push and pull message from node[{}] failed,cased by ", address, e);
+            }
+        }
 
-
-        return false;
+        return success > 0;
     }
 
     @Override
@@ -71,7 +82,7 @@ public class DefaultDiscoveryService extends AbstractService implements Discover
         }
 
         ConnectionManager manager = transportServer.getConnectionManager();
-//        manager.registerMessageHandler(new PushPullMessageHandler(membershipController));
+        manager.registerMessageHandler(new PushPullRequestHandler(pushPullService));
 //        manager.registerMessageHandler(new PingMessageHandler(membershipController));
 //        manager.registerMessageHandler(new GossipMessagesHandler(membershipController));
 //        manager.registerMessageHandler(new RedirectPingHandler(membershipController));
