@@ -1,0 +1,35 @@
+package com.sm.finance.charge.transport.netty;
+
+import com.sm.finance.charge.transport.api.Transport;
+import com.sm.finance.charge.transport.api.TransportClient;
+import com.sm.finance.charge.transport.api.TransportServer;
+
+import io.netty.channel.nio.NioEventLoopGroup;
+
+/**
+ * @author shifeng.luo
+ * @version created on 2017/9/11 下午6:30
+ */
+public class NettyTransport implements Transport {
+    private NioEventLoopGroup workerGroup;
+    private int defaultTimeout;
+
+    public NettyTransport(int workerCount, int defaultTimeout) {
+        if (workerCount == 0) {
+            workerGroup = new NioEventLoopGroup();
+        } else {
+            workerGroup = new NioEventLoopGroup(workerCount);
+        }
+
+        this.defaultTimeout = defaultTimeout;
+    }
+
+
+    public TransportClient client() {
+        return new NettyClient(workerGroup, defaultTimeout);
+    }
+
+    public TransportServer server() {
+        return new NettyServer(workerGroup, defaultTimeout);
+    }
+}
