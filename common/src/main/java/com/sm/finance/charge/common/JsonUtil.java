@@ -1,7 +1,5 @@
 package com.sm.finance.charge.common;
 
-import com.google.common.base.Strings;
-
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JavaType;
@@ -9,6 +7,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.util.JSONPObject;
 
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,7 +51,7 @@ public class JsonUtil {
      * 如需反序列化复杂Collection如List<MyBean>, 请使用fromJson(String,JavaType)
      */
     public static <T> T fromJson(String jsonString, Class<T> clazz) {
-        if (Strings.isNullOrEmpty(jsonString)) {
+        if (StringUtils.isBlank(jsonString)) {
             return null;
         }
 
@@ -71,7 +70,7 @@ public class JsonUtil {
      */
     @SuppressWarnings("unchecked")
     public static <T> T fromJson(String jsonString, JavaType javaType) {
-        if (Strings.isNullOrEmpty(jsonString)) {
+        if (StringUtils.isBlank(jsonString)) {
             return null;
         }
 

@@ -90,8 +90,7 @@ public abstract class AbstractConnection extends AbstractService implements Conn
 
     @Override
     public <T> T syncRequest(Object message) throws Exception {
-        CompletableFuture<T> future = request(message);
-        return future.get();
+        return syncRequest(message,defaultTimeout);
     }
 
     @Override
