@@ -1,6 +1,6 @@
 package com.sm.finance.charge.cluster.discovery;
 
-import com.sm.finance.charge.cluster.discovery.gossip.NodeStatusService;
+import com.sm.finance.charge.cluster.discovery.gossip.GossipMessageService;
 import com.sm.finance.charge.cluster.discovery.gossip.messages.AliveMessage;
 import com.sm.finance.charge.cluster.discovery.handler.PushPullRequestHandler;
 import com.sm.finance.charge.cluster.discovery.pushpull.PushPullService;
@@ -27,7 +27,7 @@ public class DefaultDiscoveryService extends AbstractService implements Discover
     private final DiscoveryConfig config;
     private final DiscoveryNodes nodes;
     private volatile boolean joined = false;
-    private NodeStatusService nodeStatusService;
+    private GossipMessageService nodeStatusService;
     private PushPullService pushPullService;
 
     public DefaultDiscoveryService(DiscoveryConfig config) {
@@ -88,7 +88,7 @@ public class DefaultDiscoveryService extends AbstractService implements Discover
 //        manager.registerMessageHandler(new RedirectPingHandler(membershipController));
 
         DiscoveryNodeState state = localNode.getState();
-        AliveMessage message = new AliveMessage(localNode.getNodeId(), localNode.getAddress(), state.nextIncarnation());
+        AliveMessage message = new AliveMessage(localNode.getNodeId(), localNode.getAddress(), state.nextIncarnation(), localNode.getType());
         nodeStatusService.aliveNode(message, true);
     }
 

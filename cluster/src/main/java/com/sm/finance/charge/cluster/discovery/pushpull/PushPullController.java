@@ -1,7 +1,7 @@
 package com.sm.finance.charge.cluster.discovery.pushpull;
 
 import com.sm.finance.charge.cluster.discovery.DiscoveryNodes;
-import com.sm.finance.charge.cluster.discovery.gossip.NodeStatusService;
+import com.sm.finance.charge.cluster.discovery.gossip.GossipMessageService;
 import com.sm.finance.charge.cluster.discovery.gossip.messages.AliveMessage;
 import com.sm.finance.charge.cluster.discovery.gossip.messages.SuspectMessage;
 import com.sm.finance.charge.common.Address;
@@ -22,7 +22,7 @@ public class PushPullController extends LogSupport implements PushPullService {
 
     private DiscoveryNodes nodes;
     private TransportClient transportClient;
-    private NodeStatusService nodeStatusService;
+    private GossipMessageService nodeStatusService;
     private ConcurrentMap<Address, Connection> connectionMap = new ConcurrentHashMap<>();
 
     public PushPullController(DiscoveryNodes nodes, TransportClient transportClient) {
@@ -79,6 +79,13 @@ public class PushPullController extends LogSupport implements PushPullService {
 
     @Override
     public PushPullResponse handle(PushPullRequest request) {
-        return null;
+        List<PushNodeState> states = nodes.buildPushNodeStates();
+        mergeRemoteState(request.getStates());
+        return new PushPullResponse(states);
+    }
+
+    @Override
+    public void handle(PushPullResponse response) {
+        mergeRemoteState(response.getStates());
     }
 }

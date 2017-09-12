@@ -28,6 +28,12 @@ public class DiscoveryNodeState {
      */
     private volatile Date statusChangeTime;
 
+    public DiscoveryNodeState(String nodeId, DiscoveryNode.Status status, Date statusChangeTime) {
+        this.nodeId = nodeId;
+        this.status = status;
+        this.statusChangeTime = statusChangeTime;
+    }
+
     public DiscoveryNodeState(String nodeId, long incarnation, DiscoveryNode.Status status, Date statusChangeTime) {
         this.nodeId = nodeId;
         this.incarnation = incarnation;

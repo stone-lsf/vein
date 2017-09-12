@@ -23,4 +23,11 @@ public interface PushPullService {
      * @return push-pull结果
      */
     PushPullResponse handle(PushPullRequest request);
+
+    /**
+     * 处理push-pull结果
+     *
+     * @param response push-pull结果
+     */
+    void handle(PushPullResponse response);
 }

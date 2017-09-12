@@ -1,10 +1,13 @@
 package com.sm.finance.charge.cluster.discovery;
 
+import com.sm.finance.charge.cluster.discovery.gossip.messages.AliveMessage;
 import com.sm.finance.charge.cluster.discovery.pushpull.PushNodeState;
 import com.sm.finance.charge.common.Address;
 import com.sm.finance.charge.transport.api.Connection;
 import com.sm.finance.charge.transport.api.TransportClient;
 import com.sm.finance.charge.transport.api.TransportServer;
+
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * @author shifeng.luo
@@ -47,6 +50,15 @@ public class DiscoveryNode {
      */
     private TransportServer transportServer;
 
+    private ReentrantLock lock = new ReentrantLock();
+
+    public DiscoveryNode(AliveMessage message, DiscoveryNodeState state) {
+        this.nodeId = message.getNodeId();
+        this.address = message.getAddress();
+        this.type = message.getNodeType();
+        this.state = state;
+    }
+
     public DiscoveryNode(String nodeId, Address address, DiscoveryNodeState state, Type type) {
         this.nodeId = nodeId;
         this.address = address;
@@ -64,6 +76,14 @@ public class DiscoveryNode {
         state.setNodeType(this.type);
 
         return state;
+    }
+
+    public void lock() {
+        lock.lock();
+    }
+
+    public void unlock() {
+        lock.unlock();
     }
 
     public String getNodeId() {
