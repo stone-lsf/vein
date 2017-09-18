@@ -2,11 +2,14 @@ package com.sm.finance.charge.cluster.discovery;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 
 import com.sm.finance.charge.cluster.discovery.pushpull.PushNodeState;
+import com.sm.finance.charge.common.RandomUtil;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -18,7 +21,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 public class DiscoveryNodes {
 
     private Map<String, DiscoveryNode> nodeMap = Maps.newHashMap();
-
     private Map<String, DiscoveryNode> aliveNodes = Maps.newHashMap();
     private Map<String, DiscoveryNode> suspectNodes = Maps.newHashMap();
 
@@ -88,6 +90,36 @@ public class DiscoveryNodes {
             suspectNodes.remove(nodeId);
         } finally {
             writeLock.unlock();
+        }
+    }
+
+    public List<DiscoveryNode> randomNodes(int expect, NodeFilter filter) {
+        readLock.lock();
+        try {
+            List<DiscoveryNode> result = Lists.newArrayListWithCapacity(expect);
+            Set<String> set = Sets.newHashSetWithExpectedSize(expect);
+
+            List<DiscoveryNode> nodes = Lists.newArrayList(nodeMap.values());
+            int size = nodes.size();
+
+            for (int i = 0; i < expect && i < 3 * size; i++) {
+                int index = RandomUtil.random(size);
+                DiscoveryNode node = nodes.get(index);
+                if (set.contains(node.getNodeId())) {
+                    continue;
+                }
+
+                if (filter != null && filter.apply(node)) {
+                    continue;
+                }
+
+                result.add(node);
+                set.add(node.getNodeId());
+            }
+
+            return result;
+        } finally {
+            readLock.unlock();
         }
     }
 

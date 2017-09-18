@@ -17,6 +17,10 @@ public class TimeoutException extends RuntimeException {
         this.timeout = timeout;
     }
 
+    public int getTimeout() {
+        return timeout;
+    }
+
     @Override
     public String toString() {
         return "TimeoutException{" +
