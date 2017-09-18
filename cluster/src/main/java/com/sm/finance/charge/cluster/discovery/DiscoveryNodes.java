@@ -20,6 +20,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  */
 public class DiscoveryNodes {
 
+    private List<String> nodeIds = Lists.newArrayList();
     private Map<String, DiscoveryNode> nodeMap = Maps.newHashMap();
     private Map<String, DiscoveryNode> aliveNodes = Maps.newHashMap();
     private Map<String, DiscoveryNode> suspectNodes = Maps.newHashMap();
@@ -60,7 +61,6 @@ public class DiscoveryNodes {
         writeLock.lock();
         try {
             String nodeId = node.getNodeId();
-            nodeMap.put(nodeId, node);
             aliveNodes.put(nodeId, node);
 
             suspectNodes.remove(nodeId);
@@ -86,6 +86,7 @@ public class DiscoveryNodes {
         try {
             String nodeId = node.getNodeId();
             nodeMap.remove(nodeId);
+            nodeIds.remove(nodeId);
             aliveNodes.remove(nodeId);
             suspectNodes.remove(nodeId);
         } finally {
@@ -132,6 +133,19 @@ public class DiscoveryNodes {
         }
     }
 
+    public DiscoveryNode get(int index) {
+        readLock.lock();
+        try {
+            if (index >= nodeIds.size()) {
+                return null;
+            }
+            String nodeId = nodeIds.get(index);
+            return nodeMap.get(nodeId);
+        } finally {
+            readLock.unlock();
+        }
+    }
+
     public DiscoveryNode addIfAbsent(DiscoveryNode node) {
         writeLock.lock();
         try {
@@ -142,9 +156,20 @@ public class DiscoveryNodes {
             }
 
             nodeMap.put(nodeId, node);
+            nodeIds.add(nodeId);
             return null;
         } finally {
             writeLock.unlock();
+        }
+    }
+
+
+    public int size() {
+        readLock.lock();
+        try {
+            return nodeMap.size();
+        } finally {
+            readLock.unlock();
         }
     }
 }

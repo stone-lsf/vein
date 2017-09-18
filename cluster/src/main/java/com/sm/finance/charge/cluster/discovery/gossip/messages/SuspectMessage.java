@@ -25,6 +25,13 @@ public class SuspectMessage extends DeclareMessage{
     public SuspectMessage() {
     }
 
+    public SuspectMessage(String nodeId, Address address, long incarnation, String from) {
+        this.nodeId = nodeId;
+        this.address = address;
+        this.incarnation = incarnation;
+        this.from = from;
+    }
+
     public SuspectMessage(PushNodeState state, String from) {
         this.nodeId = state.getNodeId();
         this.address = state.getAddress();
