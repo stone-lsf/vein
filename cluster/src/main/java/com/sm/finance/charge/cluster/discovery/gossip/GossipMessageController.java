@@ -6,14 +6,20 @@ import com.sm.finance.charge.cluster.discovery.DiscoveryNodeState;
 import com.sm.finance.charge.cluster.discovery.DiscoveryNodes;
 import com.sm.finance.charge.cluster.discovery.gossip.messages.AliveMessage;
 import com.sm.finance.charge.cluster.discovery.gossip.messages.DeadMessage;
-import com.sm.finance.charge.cluster.discovery.gossip.messages.DeclareMessage;
 import com.sm.finance.charge.cluster.discovery.gossip.messages.SuspectMessage;
 import com.sm.finance.charge.common.Address;
 import com.sm.finance.charge.common.LogSupport;
 import com.sm.finance.charge.transport.api.Connection;
+import com.sm.finance.charge.transport.api.TransportClient;
+import com.sm.finance.charge.transport.api.exceptions.ConnectException;
 
 import java.util.Date;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 import static com.sm.finance.charge.cluster.discovery.DiscoveryNode.Status.ALIVE;
 import static com.sm.finance.charge.cluster.discovery.DiscoveryNode.Status.DEAD;
@@ -24,12 +30,22 @@ import static com.sm.finance.charge.cluster.discovery.DiscoveryNode.Status.SUSPE
  * @version created on 2017/9/11 下午11:23
  */
 public class GossipMessageController extends LogSupport implements GossipMessageService {
-
     private final CopyOnWriteArrayList<DiscoveryNodeListener> listeners = new CopyOnWriteArrayList<>();
-    private final DiscoveryNodes nodes;
+    private final ConcurrentMap<String, SuspectTask> suspectTaskMap = new ConcurrentHashMap<>();
 
-    public GossipMessageController(DiscoveryNodes nodes) {
+    private final DiscoveryNodes nodes;
+    private final TransportClient client;
+    private final MessageQueue messageQueue;
+    private final int suspectTimeout;
+
+    private final ScheduledExecutorService executorService;
+
+    public GossipMessageController(DiscoveryNodes nodes, TransportClient client, MessageQueue messageQueue, int suspectTimeout, ScheduledExecutorService executorService) {
         this.nodes = nodes;
+        this.client = client;
+        this.messageQueue = messageQueue;
+        this.suspectTimeout = suspectTimeout;
+        this.executorService = executorService;
     }
 
     @Override
@@ -66,7 +82,7 @@ public class GossipMessageController extends LogSupport implements GossipMessage
                 return;
             }
 
-            deleteSuspectTimer(toAliveNode);
+            deleteSuspectTask(toAliveNode);
 
             if (!bootstrap && isLocalNode) {
                 if (aliveIncarnation == existIncarnation) {
@@ -88,7 +104,7 @@ public class GossipMessageController extends LogSupport implements GossipMessage
             }
 
             nodes.aliveNode(existNode);
-            gossip(message);
+            messageQueue.enqueue(message);
 
             for (DiscoveryNodeListener listener : listeners) {
                 if (oldStatus == DEAD) {
@@ -102,21 +118,31 @@ public class GossipMessageController extends LogSupport implements GossipMessage
         }
     }
 
-    private void deleteSuspectTimer(String nodeId) {
-
+    private void deleteSuspectTask(String nodeId) {
+        SuspectTask task = suspectTaskMap.remove(nodeId);
+        if (task != null) {
+            task.cancel();
+        }
     }
 
     private void refute(long incarnation) {
+        DiscoveryNode localNode = nodes.getLocalNode();
+        DiscoveryNodeState state = localNode.getState();
 
+        long newIncarnation = incarnation + 1;
+        state.setIncarnation(newIncarnation);
+
+        AliveMessage message = new AliveMessage(localNode.getNodeId(), localNode.getAddress(), newIncarnation, localNode.getType());
+        messageQueue.enqueue(message);
     }
 
     private Connection createConnection(Address address) {
-
-        return null;
-    }
-
-    private void gossip(DeclareMessage message) {
-
+        try {
+            return client.connect(address);
+        } catch (ConnectException e) {
+            logger.error("create connection to address:{} failure, caught exception:{}", address, e);
+            return null;
+        }
     }
 
     @Override
@@ -151,22 +177,26 @@ public class GossipMessageController extends LogSupport implements GossipMessage
                 return;
             }
 
-            gossip(message);
+            messageQueue.enqueue(message);
 
             state.setIncarnation(suspectIncarnation);
             state.setStatus(SUSPECT);
-            state.setStatusChangeTime(new Date());
+            Date now = new Date();
+            state.setStatusChangeTime(now);
 
             nodes.suspectNode(node);
-            createSuspectTimer(toSuspectNode);
+            createSuspectTask(toSuspectNode, now);
         } finally {
             node.unlock();
         }
     }
 
 
-    private void createSuspectTimer(String nodeId) {
-
+    private void createSuspectTask(String nodeId, Date suspectTime) {
+        SuspectTask task = new SuspectTask(nodeId, nodes, this, suspectTime);
+        suspectTaskMap.put(nodeId, task);
+        ScheduledFuture<?> future = executorService.schedule(task, suspectTimeout, TimeUnit.MILLISECONDS);
+        task.setFuture(future);
     }
 
     @Override
@@ -201,7 +231,7 @@ public class GossipMessageController extends LogSupport implements GossipMessage
                 return;
             }
 
-            gossip(message);
+            messageQueue.enqueue(message);
             state.setStatus(DEAD);
             state.setIncarnation(deadIncarnation);
             state.setStatusChangeTime(new Date());

@@ -29,7 +29,7 @@ public class NettyConnection extends AbstractConnection {
     }
 
     @Override
-    public void send(Object message) {
+    public void send(Object message) throws Exception{
         if (message instanceof Response) {
             channel.writeAndFlush(message);
         } else {

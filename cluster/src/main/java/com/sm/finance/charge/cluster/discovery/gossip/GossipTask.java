@@ -3,7 +3,13 @@ package com.sm.finance.charge.cluster.discovery.gossip;
 import com.sm.finance.charge.cluster.discovery.DiscoveryNode;
 import com.sm.finance.charge.cluster.discovery.DiscoveryNodes;
 import com.sm.finance.charge.cluster.discovery.NodeFilter;
+import com.sm.finance.charge.cluster.discovery.gossip.messages.GossipMessage;
 import com.sm.finance.charge.common.LogSupport;
+import com.sm.finance.charge.transport.api.Connection;
+
+import org.apache.commons.collections.CollectionUtils;
+
+import java.util.List;
 
 /**
  * @author shifeng.luo
@@ -12,19 +18,43 @@ import com.sm.finance.charge.common.LogSupport;
 public class GossipTask extends LogSupport implements Runnable {
 
     private final DiscoveryNodes nodes;
-    private final GossipMessageService messageService;
+    private final MessageQueue messageQueue;
     private final NodeFilter filter = new GossipTask.Filter();
+    private final int gossipNodes;
+    private final int maxGossipSize;
 
 
-    public GossipTask(DiscoveryNodes nodes, GossipMessageService messageService) {
+    public GossipTask(DiscoveryNodes nodes, MessageQueue messageQueue, int gossipNodes, int maxGossipSize) {
         this.nodes = nodes;
-        this.messageService = messageService;
+        this.messageQueue = messageQueue;
+        this.gossipNodes = gossipNodes;
+        this.maxGossipSize = maxGossipSize;
     }
 
 
     @Override
     public void run() {
+        List<DiscoveryNode> randomNodes = nodes.randomNodes(gossipNodes, filter);
+        if (CollectionUtils.isEmpty(randomNodes)) {
+            return;
+        }
 
+        List<GossipMessage> messages = messageQueue.dequeue(maxGossipSize);
+
+        for (DiscoveryNode node : randomNodes) {
+            Connection connection = node.getConnection();
+            if (connection == null) {
+                logger.error("node:{} don't have connection", node.getNodeId());
+                throw new IllegalStateException("node:" + node.getNodeId() + " don't have connection");
+            }
+
+            try {
+                GossipRequest request = new GossipRequest(messages);
+                connection.send(request);
+            } catch (Exception e) {
+                logger.error("gossip message to node:{} caught exception:{}", node.getNodeId(), e);
+            }
+        }
     }
 
     private class Filter implements NodeFilter {

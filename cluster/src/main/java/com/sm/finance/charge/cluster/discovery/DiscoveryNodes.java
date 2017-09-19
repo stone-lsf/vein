@@ -42,6 +42,10 @@ public class DiscoveryNodes {
         return localNodeId;
     }
 
+    public DiscoveryNode getLocalNode() {
+        return nodeMap.get(localNodeId);
+    }
+
     public boolean isLocalNode(String nodeId) {
         return localNodeId.equals(nodeId);
     }

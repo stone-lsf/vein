@@ -35,7 +35,7 @@ public interface Connection extends Startable, Closable {
      *
      * @param message 消息
      */
-    void send(Object message);
+    void send(Object message) throws Exception;
 
 
     /**
