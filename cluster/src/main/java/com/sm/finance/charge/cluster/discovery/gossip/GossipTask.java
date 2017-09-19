@@ -1,5 +1,6 @@
 package com.sm.finance.charge.cluster.discovery.gossip;
 
+import com.sm.finance.charge.cluster.discovery.DiscoveryConfig;
 import com.sm.finance.charge.cluster.discovery.DiscoveryNode;
 import com.sm.finance.charge.cluster.discovery.DiscoveryNodes;
 import com.sm.finance.charge.cluster.discovery.NodeFilter;
@@ -21,14 +22,14 @@ public class GossipTask extends LogSupport implements Runnable {
     private final MessageQueue messageQueue;
     private final NodeFilter filter = new GossipTask.Filter();
     private final int gossipNodes;
-    private final int maxGossipSize;
+    private final int maxGossipCount;
 
 
-    public GossipTask(DiscoveryNodes nodes, MessageQueue messageQueue, int gossipNodes, int maxGossipSize) {
+    public GossipTask(DiscoveryNodes nodes, MessageQueue messageQueue, DiscoveryConfig config){
         this.nodes = nodes;
         this.messageQueue = messageQueue;
-        this.gossipNodes = gossipNodes;
-        this.maxGossipSize = maxGossipSize;
+        this.gossipNodes = config.getNodesPerGossip();
+        this.maxGossipCount = config.getMaxGossipMessageCount();
     }
 
 
@@ -39,7 +40,7 @@ public class GossipTask extends LogSupport implements Runnable {
             return;
         }
 
-        List<GossipMessage> messages = messageQueue.dequeue(maxGossipSize);
+        List<GossipMessage> messages = messageQueue.dequeue(maxGossipCount);
 
         for (DiscoveryNode node : randomNodes) {
             Connection connection = node.getConnection();

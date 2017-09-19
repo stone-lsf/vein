@@ -25,4 +25,9 @@ public interface ProbeService {
      * @return 是否间接ping通
      */
     boolean redirectPing(DiscoveryNode node, int timeout);
+
+    Ack handle(Ping ping);
+
+
+    Ack handle(RedirectPing ping);
 }

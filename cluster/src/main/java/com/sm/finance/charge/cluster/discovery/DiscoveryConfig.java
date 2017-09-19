@@ -50,6 +50,41 @@ public class DiscoveryConfig {
      */
     private byte type;
 
+    /**
+     * ping超时时间(ms)
+     */
+    private int pingTimeout;
+
+    /**
+     * 间接ping超时时间(ms)
+     */
+    private int redirectPingTimeout;
+
+    /**
+     * 猜疑超时时间
+     */
+    private int suspectTimeout;
+
+    /**
+     * gossip消息队列大小
+     */
+    private int gossipQueueSize;
+
+    /**
+     * 每次gossip的节点数
+     */
+    private int nodesPerGossip;
+
+    /**
+     * 每次gossip的最大消息数
+     */
+    private int maxGossipMessageCount;
+
+    /**
+     * 间接探测节点数
+     */
+    private int indirectNodeNum;
+
     public String getNodeId() {
         return nodeId;
     }
@@ -120,5 +155,61 @@ public class DiscoveryConfig {
 
     public void setType(byte type) {
         this.type = type;
+    }
+
+    public int getPingTimeout() {
+        return pingTimeout;
+    }
+
+    public void setPingTimeout(int pingTimeout) {
+        this.pingTimeout = pingTimeout;
+    }
+
+    public int getRedirectPingTimeout() {
+        return redirectPingTimeout;
+    }
+
+    public void setRedirectPingTimeout(int redirectPingTimeout) {
+        this.redirectPingTimeout = redirectPingTimeout;
+    }
+
+    public int getGossipQueueSize() {
+        return gossipQueueSize;
+    }
+
+    public void setGossipQueueSize(int gossipQueueSize) {
+        this.gossipQueueSize = gossipQueueSize;
+    }
+
+    public int getNodesPerGossip() {
+        return nodesPerGossip;
+    }
+
+    public void setNodesPerGossip(int nodesPerGossip) {
+        this.nodesPerGossip = nodesPerGossip;
+    }
+
+    public int getMaxGossipMessageCount() {
+        return maxGossipMessageCount;
+    }
+
+    public void setMaxGossipMessageCount(int maxGossipMessageCount) {
+        this.maxGossipMessageCount = maxGossipMessageCount;
+    }
+
+    public int getSuspectTimeout() {
+        return suspectTimeout;
+    }
+
+    public void setSuspectTimeout(int suspectTimeout) {
+        this.suspectTimeout = suspectTimeout;
+    }
+
+    public int getIndirectNodeNum() {
+        return indirectNodeNum;
+    }
+
+    public void setIndirectNodeNum(int indirectNodeNum) {
+        this.indirectNodeNum = indirectNodeNum;
     }
 }

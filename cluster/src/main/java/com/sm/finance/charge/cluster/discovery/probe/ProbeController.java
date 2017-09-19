@@ -18,9 +18,13 @@ import java.util.List;
  * @version created on 2017/9/18 下午2:50
  */
 public class ProbeController extends LogSupport implements ProbeService {
-    private DiscoveryNodes nodes;
-    private NodeFilter nodeFilter;
-    private int indirectNodeNum;
+    private final DiscoveryNodes nodes;
+    private final int indirectNodeNum;
+
+    public ProbeController(DiscoveryNodes nodes, int indirectNodeNum) {
+        this.nodes = nodes;
+        this.indirectNodeNum = indirectNodeNum;
+    }
 
     @Override
     public Ack ping(DiscoveryNode node, int timeout) {
@@ -31,7 +35,7 @@ public class ProbeController extends LogSupport implements ProbeService {
             throw new IllegalStateException("node:" + target + " hasn't connection");
         }
 
-        Ping ping = new Ping(nodes.getLocalNodeId());
+        Ping ping = new Ping(nodes.getLocalNodeId(), target);
         try {
             return connection.syncRequest(ping, timeout);
         } catch (Exception e) {
@@ -42,7 +46,7 @@ public class ProbeController extends LogSupport implements ProbeService {
 
     @Override
     public boolean redirectPing(DiscoveryNode node, int timeout) {
-        List<DiscoveryNode> randomNodes = nodes.randomNodes(indirectNodeNum, nodeFilter);
+        List<DiscoveryNode> randomNodes = nodes.randomNodes(indirectNodeNum, new Filter(node));
         String target = node.getNodeId();
         RedirectPing ping = new RedirectPing(nodes.getLocalNodeId(), target);
 
@@ -80,6 +84,60 @@ public class ProbeController extends LogSupport implements ProbeService {
         } catch (Exception e) {
             logger.error("redirect ping to node:{} caught exception:{}", target, e);
             return false;
+        }
+    }
+
+    @Override
+    public Ack handle(Ping ping) {
+        String nodeId = ping.getNodeId();
+        if (!nodeId.equals(nodes.getLocalNodeId())) {
+            logger.error("receive ping message from:{},but target is node:{}", ping.getFrom(), nodeId);
+            //FIXME 此时应该返回错误信息
+            return null;
+        }
+        return new Ack(nodes.getLocalNodeId());
+    }
+
+    @Override
+    public Ack handle(RedirectPing redirectPing) {
+        String target = redirectPing.getTarget();
+        DiscoveryNode node = nodes.get(target);
+        if (node == null) {
+            logger.warn("receive redirect ping to node:{}, but current cluster state don't contain node", target);
+            //FIXME 此时应该返回错误信息
+            return null;
+        }
+
+        Connection connection = node.getConnection();
+        if (connection == null) {
+            logger.error("node:{} don't have connection", target);
+            throw new IllegalStateException("node:" + target + " don't have connection");
+        }
+
+        Ping ping = new Ping(nodes.getLocalNodeId(), target);
+        try {
+            return connection.syncRequest(ping);
+        } catch (Exception e) {
+            logger.error("send ping to node[{}] for redirect ping caught exception:{}", target, e);
+            //FIXME 此时应该返回错误信息
+            return null;
+        }
+    }
+
+
+    private class Filter implements NodeFilter {
+
+        private final DiscoveryNode target;
+
+        private Filter(DiscoveryNode target) {
+            this.target = target;
+        }
+
+        @Override
+        public boolean apply(DiscoveryNode node) {
+            String nodeId = node.getNodeId();
+            return nodes.isLocalNode(nodeId) || target.getNodeId().equals(nodeId);
+
         }
     }
 }

@@ -11,11 +11,14 @@ public class Ping {
      */
     private String from;
 
+    private String nodeId;
+
     public Ping() {
     }
 
-    public Ping(String from) {
+    public Ping(String from, String nodeId) {
         this.from = from;
+        this.nodeId = nodeId;
     }
 
     public String getFrom() {
@@ -26,10 +29,19 @@ public class Ping {
         this.from = from;
     }
 
+    public String getNodeId() {
+        return nodeId;
+    }
+
+    public void setNodeId(String nodeId) {
+        this.nodeId = nodeId;
+    }
+
     @Override
     public String toString() {
         return "Ping{" +
             "from='" + from + '\'' +
+            ", nodeId='" + nodeId + '\'' +
             '}';
     }
 }

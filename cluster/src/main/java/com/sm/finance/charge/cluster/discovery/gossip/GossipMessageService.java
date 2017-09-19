@@ -39,4 +39,14 @@ public interface GossipMessageService {
      * @param listener 监听器{@link DiscoveryNodeListener}
      */
     void addListener(DiscoveryNodeListener listener);
+
+    /**
+     * 设置gossip消息通知器
+     *
+     * @param messageNotifier 消息通知器
+     */
+    void setMessageNotifier(GossipMessageNotifier messageNotifier);
+
+
+    void handle(GossipRequest request);
 }

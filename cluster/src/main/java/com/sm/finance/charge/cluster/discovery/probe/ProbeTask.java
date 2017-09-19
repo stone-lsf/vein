@@ -1,5 +1,6 @@
 package com.sm.finance.charge.cluster.discovery.probe;
 
+import com.sm.finance.charge.cluster.discovery.DiscoveryConfig;
 import com.sm.finance.charge.cluster.discovery.DiscoveryNode;
 import com.sm.finance.charge.cluster.discovery.DiscoveryNodes;
 import com.sm.finance.charge.cluster.discovery.gossip.GossipMessageService;
@@ -18,11 +19,11 @@ public class ProbeTask extends LogSupport implements Runnable {
     private final int redirectPingTimeout;
     private final GossipMessageService messageService;
 
-    public ProbeTask(DiscoveryNodes nodes, ProbeService probeService, int pingTimeout, int redirectPingTimeout, GossipMessageService messageService) {
+    public ProbeTask(DiscoveryNodes nodes, ProbeService probeService, DiscoveryConfig config, GossipMessageService messageService) {
         this.nodes = nodes;
         this.probeService = probeService;
-        this.pingTimeout = pingTimeout;
-        this.redirectPingTimeout = redirectPingTimeout;
+        this.pingTimeout = config.getPingTimeout();
+        this.redirectPingTimeout = config.getRedirectPingTimeout();
         this.messageService = messageService;
     }
 

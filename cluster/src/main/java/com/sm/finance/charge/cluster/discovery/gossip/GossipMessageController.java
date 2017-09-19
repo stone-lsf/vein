@@ -6,6 +6,7 @@ import com.sm.finance.charge.cluster.discovery.DiscoveryNodeState;
 import com.sm.finance.charge.cluster.discovery.DiscoveryNodes;
 import com.sm.finance.charge.cluster.discovery.gossip.messages.AliveMessage;
 import com.sm.finance.charge.cluster.discovery.gossip.messages.DeadMessage;
+import com.sm.finance.charge.cluster.discovery.gossip.messages.GossipMessage;
 import com.sm.finance.charge.cluster.discovery.gossip.messages.SuspectMessage;
 import com.sm.finance.charge.common.Address;
 import com.sm.finance.charge.common.LogSupport;
@@ -14,6 +15,7 @@ import com.sm.finance.charge.transport.api.TransportClient;
 import com.sm.finance.charge.transport.api.exceptions.ConnectException;
 
 import java.util.Date;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -24,6 +26,7 @@ import java.util.concurrent.TimeUnit;
 import static com.sm.finance.charge.cluster.discovery.DiscoveryNode.Status.ALIVE;
 import static com.sm.finance.charge.cluster.discovery.DiscoveryNode.Status.DEAD;
 import static com.sm.finance.charge.cluster.discovery.DiscoveryNode.Status.SUSPECT;
+import static com.sm.finance.charge.cluster.discovery.gossip.messages.GossipMessage.USER;
 
 /**
  * @author shifeng.luo
@@ -39,6 +42,8 @@ public class GossipMessageController extends LogSupport implements GossipMessage
     private final int suspectTimeout;
 
     private final ScheduledExecutorService executorService;
+
+    private GossipMessageNotifier messageNotifier;
 
     public GossipMessageController(DiscoveryNodes nodes, TransportClient client, MessageQueue messageQueue, int suspectTimeout, ScheduledExecutorService executorService) {
         this.nodes = nodes;
@@ -248,5 +253,34 @@ public class GossipMessageController extends LogSupport implements GossipMessage
     @Override
     public void addListener(DiscoveryNodeListener listener) {
         listeners.add(listener);
+    }
+
+    @Override
+    public void setMessageNotifier(GossipMessageNotifier messageNotifier) {
+        this.messageNotifier = messageNotifier;
+    }
+
+    @Override
+    public void handle(GossipRequest request) {
+        List<GossipMessage> messages = request.getMessages();
+        for (GossipMessage message : messages) {
+            switch (message.getType()) {
+                case GossipMessage.ALIVE:
+                    aliveNode((AliveMessage) message, false);
+                    break;
+                case GossipMessage.SUSPECT:
+                    suspectNode((SuspectMessage) message);
+                    break;
+                case GossipMessage.DEAD:
+                    deadNode((DeadMessage) message);
+                    break;
+                case USER:
+                    messageNotifier.notify(message);
+                    break;
+                default:
+                    logger.error("unknown gossip message type:{}", message.getType());
+                    throw new RuntimeException("unknown gossip message type:" + message.getType());
+            }
+        }
     }
 }
