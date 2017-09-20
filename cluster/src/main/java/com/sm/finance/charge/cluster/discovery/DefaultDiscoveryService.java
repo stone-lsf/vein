@@ -96,6 +96,11 @@ public class DefaultDiscoveryService extends AbstractService implements Discover
     }
 
     @Override
+    public DiscoveryNodes getNodes() {
+        return nodes;
+    }
+
+    @Override
     protected void doStart() throws Exception {
         int port = config.getPort();
         TransportServer transportServer;
