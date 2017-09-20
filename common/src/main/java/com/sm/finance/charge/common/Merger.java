@@ -1,8 +1,6 @@
 package com.sm.finance.charge.common;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 
 /**
  * @author shifeng.luo
@@ -21,34 +19,13 @@ public class Merger extends LogSupport {
     }
 
 
-    public boolean anyOf() throws Exception {
-        CompletableFuture<Boolean> future = innerGt(0);
-
-        try {
-            return future.get();
-        } catch (InterruptedException | ExecutionException e) {
-            logger.error("merge  failure,caught exception", e);
-            throw new Exception(e);
-        }
+    public CompletableFuture<Boolean> anyOf() {
+        return innerGt(0);
     }
 
-    public boolean ge(int num) throws Exception {
-        CompletableFuture<Boolean> future = innerGe(num);
-
-        try {
-            return future.get();
-        } catch (InterruptedException | ExecutionException e) {
-            logger.error("merge  failure,caught exception", e);
-            throw new Exception(e);
-        }
+    public CompletableFuture<Boolean> ge(int num) {
+        return innerGe(num);
     }
-
-    public boolean ge(int num, int timeout) throws Exception {
-        CompletableFuture<Boolean> future = innerGe(num);
-
-        return future.get(timeout, TimeUnit.MILLISECONDS);
-    }
-
 
     private CompletableFuture<Boolean> innerGe(int num) {
         CompletableFuture<Boolean> future = new CompletableFuture<>();

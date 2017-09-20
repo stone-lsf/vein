@@ -8,6 +8,7 @@ import com.sm.finance.charge.common.AbstractService;
  */
 public class DefaultReplicateService extends AbstractService implements ReplicateService {
 
+
     @Override
     protected void doStart() throws Exception {
 

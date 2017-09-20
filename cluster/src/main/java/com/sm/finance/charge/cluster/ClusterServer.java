@@ -16,4 +16,6 @@ public interface ClusterServer extends Startable, Closable {
      */
     boolean join();
 
+    void send(Object message);
+
 }

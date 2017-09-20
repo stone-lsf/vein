@@ -6,7 +6,7 @@ package com.sm.finance.charge.cluster.replicate;
  * @author shifeng.luo
  * @version created on 2017/9/20 下午1:51
  */
-public interface ReplicateArbitrator extends Runnable {
+public interface ReplicateArbitrator {
 
     /**
      * 标记复制给某个节点失败
@@ -24,4 +24,7 @@ public interface ReplicateArbitrator extends Runnable {
      * @param listener 监听器
      */
     void add(ArbitrateListener listener);
+
+    void start();
+
 }

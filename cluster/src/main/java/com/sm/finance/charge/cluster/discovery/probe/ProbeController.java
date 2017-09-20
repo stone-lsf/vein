@@ -80,7 +80,7 @@ public class ProbeController extends LogSupport implements ProbeService {
         }
 
         try {
-            return merge.anyOf();
+            return merge.anyOf().get();
         } catch (Exception e) {
             logger.error("redirect ping to node:{} caught exception:{}", target, e);
             return false;

@@ -95,4 +95,15 @@ public class ReplicateData implements GossipMessage {
     public void setNotifier(GossipFinishNotifier finishNotifier) {
         this.finishNotifier = finishNotifier;
     }
+
+    @Override
+    public String toString() {
+        return "ReplicateData{" +
+            "id='" + id + '\'' +
+            ", from='" + from + '\'' +
+            ", clusterVersion=" + clusterVersion +
+            ", dataIndex=" + dataIndex +
+            ", payload=" + payload +
+            '}';
+    }
 }

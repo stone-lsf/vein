@@ -9,17 +9,17 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * @author shifeng.luo
  * @version created on 2017/9/20 下午2:00
  */
-public class MinReplicateArbitrator extends LogSupport implements ReplicateArbitrator {
+public class MajorReplicateArbitrator extends LogSupport implements ReplicateArbitrator {
 
     private CopyOnWriteArrayList<ArbitrateListener> listeners = new CopyOnWriteArrayList<>();
     private final int minSuccessNum;
     private final Merger merger;
-    private final int timeout;
+    private final ReplicateData replicateData;
 
-    public MinReplicateArbitrator(int minSuccessNum, int replicateCount, int timeout) {
-        this.minSuccessNum = minSuccessNum;
+    public MajorReplicateArbitrator(int replicateCount, ReplicateData replicateData) {
+        this.minSuccessNum = (replicateCount + 1) / 2;
         this.merger = new Merger(replicateCount);
-        this.timeout = timeout;
+        this.replicateData = replicateData;
     }
 
     @Override
@@ -38,21 +38,18 @@ public class MinReplicateArbitrator extends LogSupport implements ReplicateArbit
     }
 
     @Override
-    public void run() {
-        boolean success;
-        try {
-            success = merger.ge(minSuccessNum, timeout);
-        } catch (Exception e) {
-            logger.error("waiting replicate arbitrator caught exception", e);
-            doFailListen();
-            return;
-        }
+    public void start() {
+        merger.ge(minSuccessNum).exceptionally((e) -> {
+            logger.error("replicate data:{} caught exception:{}", replicateData, e);
+            return false;
+        }).thenAccept((success)->{
+            if (success){
+                doSuccessListen();
+                return;
+            }
 
-        if (success) {
-            doSuccessListen();
-            return;
-        }
-        doFailListen();
+            doFailListen();
+        });
     }
 
     private void doSuccessListen() {
