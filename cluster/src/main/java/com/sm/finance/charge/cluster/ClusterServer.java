@@ -1,7 +1,11 @@
 package com.sm.finance.charge.cluster;
 
+import com.sm.finance.charge.cluster.client.Command;
+import com.sm.finance.charge.cluster.replicate.ReplicateResponse;
 import com.sm.finance.charge.common.Closable;
 import com.sm.finance.charge.common.Startable;
+
+import java.util.concurrent.CompletableFuture;
 
 /**
  * @author shifeng.luo
@@ -14,8 +18,13 @@ public interface ClusterServer extends Startable, Closable {
      *
      * @return 成功则返回true，否则返回false
      */
-    boolean join();
+    CompletableFuture<Boolean> join();
 
     void send(Object message);
+
+
+    CompletableFuture<Object> handle(Command command);
+
+    CompletableFuture<ReplicateResponse> replicate(ClusterMember member);
 
 }

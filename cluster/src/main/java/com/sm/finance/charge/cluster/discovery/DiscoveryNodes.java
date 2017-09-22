@@ -61,6 +61,17 @@ public class DiscoveryNodes {
         }
     }
 
+    public List<DiscoveryNode> getAll() {
+        readLock.lock();
+        try {
+            List<DiscoveryNode> result = Lists.newArrayListWithCapacity(nodeMap.size());
+            result.addAll(nodeMap.values());
+            return result;
+        } finally {
+            readLock.unlock();
+        }
+    }
+
     public void aliveNode(DiscoveryNode node) {
         writeLock.lock();
         try {

@@ -14,9 +14,9 @@ public class MajorReplicateArbitrator extends LogSupport implements ReplicateArb
     private CopyOnWriteArrayList<ArbitrateListener> listeners = new CopyOnWriteArrayList<>();
     private final int minSuccessNum;
     private final Merger merger;
-    private final ReplicateData replicateData;
+    private final ReplicateRequest replicateData;
 
-    public MajorReplicateArbitrator(int replicateCount, ReplicateData replicateData) {
+    public MajorReplicateArbitrator(int replicateCount, ReplicateRequest replicateData) {
         this.minSuccessNum = (replicateCount + 1) / 2;
         this.merger = new Merger(replicateCount);
         this.replicateData = replicateData;
