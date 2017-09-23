@@ -2,6 +2,8 @@ package com.sm.finance.charge.cluster.discovery.probe;
 
 import com.sm.finance.charge.cluster.discovery.DiscoveryNode;
 
+import java.util.concurrent.CompletableFuture;
+
 /**
  * @author shifeng.luo
  * @version created on 2017/9/18 下午2:44
@@ -26,8 +28,8 @@ public interface ProbeService {
      */
     boolean redirectPing(DiscoveryNode node, int timeout);
 
-    Ack handle(Ping ping);
+    CompletableFuture<Ack>  handle(Ping ping);
 
 
-    Ack handle(RedirectPing ping);
+    CompletableFuture<Ack> handle(RedirectPing ping);
 }

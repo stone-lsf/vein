@@ -2,6 +2,8 @@ package com.sm.finance.charge.cluster.discovery.pushpull;
 
 import com.sm.finance.charge.common.Address;
 
+import java.util.concurrent.CompletableFuture;
+
 /**
  * @author shifeng.luo
  * @version created on 2017/9/11 下午10:28
@@ -22,7 +24,7 @@ public interface PushPullService {
      * @param request push-pull请求
      * @return push-pull结果
      */
-    PushPullResponse handle(PushPullRequest request);
+    CompletableFuture<PushPullResponse> handle(PushPullRequest request);
 
     /**
      * 处理push-pull结果

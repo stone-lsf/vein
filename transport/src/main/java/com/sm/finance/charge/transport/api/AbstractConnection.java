@@ -7,20 +7,20 @@ import com.sm.finance.charge.common.IntegerIdGenerator;
 import com.sm.finance.charge.common.ReflectUtil;
 import com.sm.finance.charge.transport.api.exceptions.RemoteException;
 import com.sm.finance.charge.transport.api.exceptions.TimeoutException;
-import com.sm.finance.charge.transport.api.handler.AbstractExceptionResponseHandler;
 import com.sm.finance.charge.transport.api.handler.RequestHandler;
 import com.sm.finance.charge.transport.api.handler.ResponseHandler;
 import com.sm.finance.charge.transport.api.support.HandleListener;
 import com.sm.finance.charge.transport.api.support.RequestContext;
 import com.sm.finance.charge.transport.api.support.ResponseContext;
+import com.sm.finance.charge.transport.api.support.TimeoutScheduler;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.ExecutionException;
 
 /**
  * @author shifeng.luo
@@ -30,17 +30,19 @@ public abstract class AbstractConnection extends AbstractService implements Conn
     protected final Address remoteAddress;
     protected final Address localAddress;
     protected final int defaultTimeout;
+    protected final TimeoutScheduler timeoutScheduler;
 
     protected final IntegerIdGenerator idGenerator = new IntegerIdGenerator();
     protected final CopyOnWriteArrayList<CloseListener> listeners = new CopyOnWriteArrayList<>();
 
     protected final ConcurrentMap<Class, RequestHandler> requestHandlers = new ConcurrentHashMap<>();
-    protected final ConcurrentMap<Integer, ResponseHandler> responseHandlers = new ConcurrentHashMap<>();
+    protected final ConcurrentMap<Integer, CompletableFuture> responseFutures = new ConcurrentHashMap<>();
 
     public AbstractConnection(Address remoteAddress, Address localAddress, int defaultTimeout) {
         this.remoteAddress = remoteAddress;
         this.localAddress = localAddress;
         this.defaultTimeout = defaultTimeout;
+        this.timeoutScheduler = new TimeoutScheduler(this);
     }
 
     @Override
@@ -53,13 +55,35 @@ public abstract class AbstractConnection extends AbstractService implements Conn
 
 
     @Override
+    public void send(Object message) throws IOException {
+        try {
+            if (message instanceof Response) {
+                sendResponse((Response) message);
+            } else {
+                int id = idGenerator.nextId();
+                Request request = new Request(id, message);
+                sendRequest(request);
+            }
+        } catch (Exception e) {
+            throw new IOException(e);
+        }
+    }
+
+    @Override
     public <T> void send(Object message, ResponseHandler<T> handler) {
         send(message, defaultTimeout, handler);
     }
 
     @Override
     public <T> void send(Object message, int timeout, ResponseHandler<T> handler) {
-        sendMessage(message, timeout, handler);
+        this.<T>request(message, timeout).whenComplete((response, error) -> {
+            if (error != null) {
+                ResponseContext context = new ResponseContext(this, error, remoteAddress);
+                handler.onException(error, context);
+            } else {
+                handler.handle(response, this);
+            }
+        });
     }
 
     @Override
@@ -70,25 +94,22 @@ public abstract class AbstractConnection extends AbstractService implements Conn
     @Override
     public <T> CompletableFuture<T> request(Object message, int timeout) {
         CompletableFuture<T> result = new CompletableFuture<>();
-        sendMessage(message, timeout, new AbstractExceptionResponseHandler<T>() {
-            @Override
-            protected void onRemoteException(RemoteException e, ResponseContext context) {
-                result.completeExceptionally(e);
-            }
-
-            @Override
-            protected void onTimeoutException(TimeoutException e, ResponseContext context) {
-                result.completeExceptionally(e);
-            }
-
-            @Override
-            public void handle(T response, Connection connection) {
-                result.complete(response);
-            }
-        });
-
+        int id = idGenerator.nextId();
+        Request request = new Request(id, message);
+        responseFutures.put(id, result);
+        try {
+            sendRequest(request, timeout);
+        } catch (Exception e) {
+            result.completeExceptionally(e);
+        }
         return result;
     }
+
+    protected abstract void sendRequest(Request request, int timeout) throws Exception;
+
+    protected abstract void sendRequest(Request request) throws Exception;
+
+    protected abstract void sendResponse(Response response) throws Exception;
 
     @Override
     public <T> T syncRequest(Object message) throws IOException {
@@ -99,15 +120,21 @@ public abstract class AbstractConnection extends AbstractService implements Conn
     public <T> T syncRequest(Object message, int timeout) throws IOException {
         CompletableFuture<T> future = request(message, timeout);
         try {
-            return future.get();
-        } catch (InterruptedException e) {
-            throw new IOException(e);
-        } catch (ExecutionException e) {
-            throw new IOException(e);
+            return future.join();
+        } catch (CompletionException e) {
+            Throwable cause = e.getCause();
+            if (cause instanceof RemoteException) {
+                throw (RemoteException) cause;
+            }
+
+            if (cause instanceof TimeoutException) {
+                throw (TimeoutException) cause;
+            }
+
+            throw new IOException(cause);
         }
     }
 
-    protected abstract <T> void sendMessage(Object message, int timeout, ResponseHandler<T> handler);
 
     @Override
     public void onMessage(Object message) {
@@ -132,62 +159,73 @@ public abstract class AbstractConnection extends AbstractService implements Conn
             return;
         }
 
-        int id = request.getId();
+        int requestId = request.getId();
         try {
-            RequestContext context = new RequestContext(id, this, remoteAddress);
-            Object responseMessage = handler.handle(requestMessage, context);
-            if (responseMessage == null) {
-                return;
-            }
-            Response response = responseMessage == Response.EMPTY_MESSAGE ? new Response(id) : new Response(id, responseMessage);
-            List<HandleListener> listeners = handler.getAllListeners();
-            if (listeners == null) {
-                sendResponse(response);
+            RequestContext context = new RequestContext(requestId, this, remoteAddress);
+            CompletableFuture<Object> responseFuture = handler.handle(requestMessage, context);
+            if (responseFuture == null) {
                 return;
             }
 
-            for (HandleListener listener : listeners) {
-                listener.onSuccess();
-            }
 
-            sendResponse(response);
-        } catch (Exception e) {
-            List<HandleListener> listeners = handler.getAllListeners();
-            if (listeners != null) {
-                for (HandleListener listener : listeners) {
-                    listener.onFail(e);
+            responseFuture.whenComplete((response, error) -> {
+                if (error != null) {
+                    handleRequestFailure(requestId, error, handler.getAllListeners());
+                } else {
+                    handleRequestSuccess(requestId, response, handler.getAllListeners());
                 }
-            }
-
-            RemoteException exception = new RemoteException(e);
-            Response response = new Response(id, exception);
-            sendResponse(response);
+            });
+        } catch (Throwable e) {
+            handleRequestFailure(requestId, e, handler.getAllListeners());
         }
     }
 
-    private void sendResponse(Response response) {
+    private void handleRequestSuccess(int requestId, Object responseMessage, List<HandleListener> listeners) {
+        Response response = responseMessage == Response.EMPTY_MESSAGE ? new Response(requestId) : new Response(requestId, responseMessage);
+
         try {
-            send(response);
+            sendResponse(response);
         } catch (Exception e) {
-            logger.error("send response:{} failure ", response);
+            handleRequestFailure(requestId, e, listeners);
+            return;
+        }
+
+        for (HandleListener listener : listeners) {
+            listener.onSuccess();
+        }
+    }
+
+    private void handleRequestFailure(int requestId, Throwable error, List<HandleListener> listeners) {
+        if (listeners != null) {
+            for (HandleListener listener : listeners) {
+                listener.onFail(error);
+            }
+        }
+
+        RemoteException exception = new RemoteException(error);
+        Response response = new Response(requestId, exception);
+        try {
+            sendResponse(response);
+        } catch (Exception e) {
+            logger.error("send response failed, cased by exception", e);
         }
     }
 
     @SuppressWarnings("unchecked")
     private void handResponse(Response response) {
         logger.info("receive response:{}", response);
-        ResponseHandler handler = responseHandlers.remove(response.getId());
-        if (handler == null) {
+
+        CompletableFuture future = responseFutures.remove(response.getId());
+        if (future == null) {
             logger.info("received timeout response:[{}],connection:{}", response, getConnectionId());
             return;
         }
 
-
+        timeoutScheduler.cancel(response.getId());
         if (!response.hasException()) {
-            handler.handle(response.getMessage(), this);
+            future.complete(response.getMessage());
         } else {
-            ResponseContext context = new ResponseContext(this, response.getException(), remoteAddress);
-            handler.onException(response.getException(), context);
+            future.completeExceptionally(response.getException());
         }
     }
 
@@ -198,7 +236,7 @@ public abstract class AbstractConnection extends AbstractService implements Conn
 
     @Override
     protected void doClose() {
-        responseHandlers.clear();
+        responseFutures.clear();
         for (CloseListener listener : listeners) {
             listener.onClose();
         }

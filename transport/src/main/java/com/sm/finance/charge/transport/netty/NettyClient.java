@@ -89,6 +89,8 @@ public class NettyClient extends AbstractService implements TransportClient {
                             result.completeExceptionally(e);
                         }
                     });
+                } else {
+                    result.complete(null);
                 }
             } else {
                 result.complete(connection);

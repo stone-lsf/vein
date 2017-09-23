@@ -12,6 +12,7 @@ import com.sm.finance.charge.transport.api.handler.AbstractExceptionResponseHand
 import com.sm.finance.charge.transport.api.support.ResponseContext;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * @author shifeng.luo
@@ -88,40 +89,43 @@ public class ProbeController extends LogSupport implements ProbeService {
     }
 
     @Override
-    public Ack handle(Ping ping) {
+    public CompletableFuture<Ack> handle(Ping ping) {
         String nodeId = ping.getNodeId();
         if (!nodeId.equals(nodes.getLocalNodeId())) {
             logger.error("receive ping message from:{},but target is node:{}", ping.getFrom(), nodeId);
             //FIXME 此时应该返回错误信息
-            return null;
+
+            return CompletableFuture.completedFuture(null);
         }
-        return new Ack(nodes.getLocalNodeId());
+        return CompletableFuture.completedFuture(new Ack(nodes.getLocalNodeId()));
     }
 
     @Override
-    public Ack handle(RedirectPing redirectPing) {
-        String target = redirectPing.getTarget();
-        DiscoveryNode node = nodes.get(target);
-        if (node == null) {
-            logger.warn("receive redirect ping to node:{}, but current cluster state don't contain node", target);
-            //FIXME 此时应该返回错误信息
-            return null;
-        }
+    public CompletableFuture<Ack> handle(RedirectPing redirectPing) {
+        return CompletableFuture.supplyAsync(() -> {
+            String target = redirectPing.getTarget();
+            DiscoveryNode node = nodes.get(target);
+            if (node == null) {
+                logger.warn("receive redirect ping to node:{}, but current cluster state don't contain node", target);
+                //FIXME 此时应该返回错误信息
+                return null;
+            }
 
-        Connection connection = node.getConnection();
-        if (connection == null) {
-            logger.error("node:{} don't have connection", target);
-            throw new IllegalStateException("node:" + target + " don't have connection");
-        }
+            Connection connection = node.getConnection();
+            if (connection == null) {
+                logger.error("node:{} don't have connection", target);
+                throw new IllegalStateException("node:" + target + " don't have connection");
+            }
 
-        Ping ping = new Ping(nodes.getLocalNodeId(), target);
-        try {
-            return connection.syncRequest(ping);
-        } catch (Exception e) {
-            logger.error("send ping to node[{}] for redirect ping caught exception:{}", target, e);
-            //FIXME 此时应该返回错误信息
-            return null;
-        }
+            Ping ping = new Ping(nodes.getLocalNodeId(), target);
+            try {
+                return connection.syncRequest(ping);
+            } catch (Exception e) {
+                logger.error("send ping to node[{}] for redirect ping caught exception:{}", target, e);
+                //FIXME 此时应该返回错误信息
+                return null;
+            }
+        });
     }
 
 

@@ -114,7 +114,7 @@ public class DefaultDiscoveryService extends AbstractService implements Discover
 
         TransportClient client = localNode.getTransportClient();
         gossipMessageService = new GossipMessageController(nodes, client, messageQueue, config.getSuspectTimeout(), executorService);
-        pushPullService = new PushPullController(nodes, client);
+        pushPullService = new PushPullController(nodes, client, gossipMessageService);
         probeService = new ProbeController(nodes, config.getIndirectNodeNum());
 
         ConnectionManager manager = transportServer.getConnectionManager();

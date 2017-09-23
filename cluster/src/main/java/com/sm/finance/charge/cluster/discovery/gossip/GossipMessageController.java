@@ -12,7 +12,6 @@ import com.sm.finance.charge.common.Address;
 import com.sm.finance.charge.common.LogSupport;
 import com.sm.finance.charge.transport.api.Connection;
 import com.sm.finance.charge.transport.api.TransportClient;
-import com.sm.finance.charge.transport.api.exceptions.ConnectException;
 
 import java.util.Date;
 import java.util.List;
@@ -142,12 +141,13 @@ public class GossipMessageController extends LogSupport implements GossipMessage
     }
 
     private Connection createConnection(Address address) {
-        try {
-            return client.connect(address);
-        } catch (ConnectException e) {
-            logger.error("create connection to address:{} failure, caught exception:{}", address, e);
-            return null;
-        }
+        return client.connect(address).handle(((connection, throwable) -> {
+            if (throwable != null) {
+                logger.error("create connection to address:{} failure, caught exception:{}", address, throwable);
+                return null;
+            }
+            return connection;
+        })).join();
     }
 
     @Override

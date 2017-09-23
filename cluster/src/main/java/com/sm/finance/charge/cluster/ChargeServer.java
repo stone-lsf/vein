@@ -4,9 +4,7 @@ import com.sm.finance.charge.cluster.client.Command;
 import com.sm.finance.charge.cluster.discovery.DefaultDiscoveryService;
 import com.sm.finance.charge.cluster.discovery.DiscoveryConfig;
 import com.sm.finance.charge.cluster.discovery.DiscoveryService;
-import com.sm.finance.charge.cluster.replicate.MajorReplicateArbitrator;
 import com.sm.finance.charge.cluster.replicate.ReplicateRequest;
-import com.sm.finance.charge.cluster.replicate.ReplicateResponse;
 import com.sm.finance.charge.cluster.storage.Log;
 import com.sm.finance.charge.cluster.storage.entry.Entry;
 import com.sm.finance.charge.common.AbstractService;
@@ -45,13 +43,6 @@ public class ChargeServer extends AbstractService implements ClusterServer {
     @Override
     public void send(Object message) {
         ReplicateRequest data = new ReplicateRequest();
-//        data.setPayload(message);
-
-        MajorReplicateArbitrator arbitrator = new MajorReplicateArbitrator(clusterConfig.getCandidateCount(), data);
-//        data.setNotifier(arbitrator::start);
-
-        //TODO 设置arbitrator监听器
-
     }
 
     @Override

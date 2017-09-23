@@ -11,6 +11,7 @@ import com.sm.finance.charge.transport.api.TransportClient;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -20,14 +21,15 @@ import java.util.concurrent.ConcurrentMap;
  */
 public class PushPullController extends LogSupport implements PushPullService {
 
-    private DiscoveryNodes nodes;
-    private TransportClient transportClient;
-    private GossipMessageService nodeStatusService;
+    private final DiscoveryNodes nodes;
+    private final TransportClient transportClient;
+    private final GossipMessageService gossipMessageService;
     private ConcurrentMap<Address, Connection> connectionMap = new ConcurrentHashMap<>();
 
-    public PushPullController(DiscoveryNodes nodes, TransportClient transportClient) {
+    public PushPullController(DiscoveryNodes nodes, TransportClient transportClient, GossipMessageService gossipMessageService) {
         this.nodes = nodes;
         this.transportClient = transportClient;
+        this.gossipMessageService = gossipMessageService;
     }
 
     @Override
@@ -42,7 +44,13 @@ public class PushPullController extends LogSupport implements PushPullService {
         PushPullRequest request = new PushPullRequest(nodes.getLocalNodeId(), states);
         Connection connection = connectionMap.get(nodeAddress);
         if (connection == null) {
-            connection = transportClient.connect(nodeAddress, 3);
+            connection = transportClient.connect(nodeAddress, 3).handle((conn,error)->{
+                if (error != null){
+                    return null;
+                }
+                return conn;
+            }).join();
+
             if (connection == null) {
                 return Collections.emptyList();
             }
@@ -66,22 +74,24 @@ public class PushPullController extends LogSupport implements PushPullService {
             switch (state.getNodeStatus()) {
                 case ALIVE:
                     AliveMessage aliveMessage = new AliveMessage(state);
-                    nodeStatusService.aliveNode(aliveMessage, false);
+                    gossipMessageService.aliveNode(aliveMessage, false);
                     break;
                 case SUSPECT:
                 case DEAD:
                     SuspectMessage suspectMessage = new SuspectMessage(state, nodes.getLocalNodeId());
-                    nodeStatusService.suspectNode(suspectMessage);
+                    gossipMessageService.suspectNode(suspectMessage);
                     break;
             }
         }
     }
 
     @Override
-    public PushPullResponse handle(PushPullRequest request) {
-        List<PushNodeState> states = nodes.buildPushNodeStates();
-        mergeRemoteState(request.getStates());
-        return new PushPullResponse(states);
+    public CompletableFuture<PushPullResponse> handle(PushPullRequest request) {
+        return CompletableFuture.supplyAsync(()->{
+            List<PushNodeState> states = nodes.buildPushNodeStates();
+            mergeRemoteState(request.getStates());
+            return new PushPullResponse(states);
+        });
     }
 
     @Override

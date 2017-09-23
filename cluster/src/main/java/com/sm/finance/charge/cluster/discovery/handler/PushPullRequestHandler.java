@@ -5,6 +5,8 @@ import com.sm.finance.charge.cluster.discovery.pushpull.PushPullService;
 import com.sm.finance.charge.transport.api.handler.AbstractRequestHandler;
 import com.sm.finance.charge.transport.api.support.RequestContext;
 
+import java.util.concurrent.CompletableFuture;
+
 /**
  * @author shifeng.luo
  * @version created on 2017/9/12 上午12:11
@@ -18,7 +20,7 @@ public class PushPullRequestHandler extends AbstractRequestHandler<PushPullReque
     }
 
     @Override
-    public Object handle(PushPullRequest message, RequestContext context) throws Exception {
+    public CompletableFuture<?> handle(PushPullRequest message, RequestContext context) throws Exception {
         return pushPullService.handle(message);
     }
 }

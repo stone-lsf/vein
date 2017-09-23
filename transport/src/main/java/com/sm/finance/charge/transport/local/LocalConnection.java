@@ -3,7 +3,7 @@ package com.sm.finance.charge.transport.local;
 import com.sm.finance.charge.common.Address;
 import com.sm.finance.charge.transport.api.Request;
 import com.sm.finance.charge.transport.api.Response;
-import com.sm.finance.charge.transport.api.support.AbstractFutureConnection;
+import com.sm.finance.charge.transport.api.AbstractConnection;
 import com.sm.finance.charge.transport.netty.ChannelHelper;
 
 import io.netty.channel.Channel;
@@ -12,7 +12,7 @@ import io.netty.channel.Channel;
  * @author shifeng.luo
  * @version created on 2017/9/23 下午3:45
  */
-public class LocalConnection extends AbstractFutureConnection {
+public class LocalConnection extends AbstractConnection {
 
     private final Channel channel;
     private final String connectionId;
@@ -40,7 +40,12 @@ public class LocalConnection extends AbstractFutureConnection {
     }
 
     @Override
-    protected void sendResponse(Response response) {
+    protected void sendRequest(Request request) throws Exception {
+        channel.writeAndFlush(request);
+    }
 
+    @Override
+    protected void sendResponse(Response response) {
+        channel.writeAndFlush(response);
     }
 }
