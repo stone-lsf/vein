@@ -30,9 +30,11 @@ public class DefaultReplicateService extends AbstractService implements Replicat
     private ServerContext context;
     private final int maxBatchSize;
     private ExecutorService executorService;
+    private final int replicateTimeout;
 
-    public DefaultReplicateService(int maxBatchSize) {
+    public DefaultReplicateService(int maxBatchSize, int replicateTimeout) {
         this.maxBatchSize = maxBatchSize;
+        this.replicateTimeout = replicateTimeout;
     }
 
     @Override
@@ -172,7 +174,23 @@ public class DefaultReplicateService extends AbstractService implements Replicat
     }
 
     private CompletableFuture<ReplicateResponse> replicate(ClusterMember member, ReplicateRequest request) {
-        return null;
+        CompletableFuture<ReplicateResponse> result = new CompletableFuture<>();
+
+        member.getConnection().whenComplete((connection, error) -> {
+            if (error == null) {
+                connection.<ReplicateResponse>request(request, replicateTimeout).whenComplete((response, e) -> {
+                    if (e != null) {
+                        result.completeExceptionally(e);
+                    } else {
+                        result.complete(response);
+                    }
+                });
+            } else {
+                result.completeExceptionally(error);
+            }
+        });
+
+        return result;
     }
 
 

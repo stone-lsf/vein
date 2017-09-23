@@ -1,7 +1,8 @@
 package com.sm.finance.charge.transport.api;
 
 import com.sm.finance.charge.common.Address;
-import com.sm.finance.charge.transport.api.exceptions.ConnectException;
+
+import java.util.concurrent.CompletableFuture;
 
 /**
  * @author shifeng.luo
@@ -14,9 +15,8 @@ public interface TransportClient extends EndPoint {
      *
      * @param address 服务的地址
      * @return Connection
-     * @throws ConnectException 异常
      */
-    Connection connect(Address address) throws ConnectException;
+    CompletableFuture<Connection> connect(Address address);
 
     /**
      * 带重试次数的建立连接
@@ -25,7 +25,7 @@ public interface TransportClient extends EndPoint {
      * @param retryTimes 重试次数
      * @return Connection
      */
-    Connection connect(Address address, int retryTimes);
+    CompletableFuture<Connection> connect(Address address, int retryTimes);
 
 
     /**

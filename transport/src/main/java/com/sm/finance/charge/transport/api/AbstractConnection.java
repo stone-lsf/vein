@@ -19,7 +19,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.function.Function;
 
 /**
  * @author shifeng.luo
@@ -91,7 +90,7 @@ public abstract class AbstractConnection extends AbstractService implements Conn
 
     @Override
     public <T> T syncRequest(Object message) throws Exception {
-        return syncRequest(message,defaultTimeout);
+        return syncRequest(message, defaultTimeout);
     }
 
     @Override
@@ -133,15 +132,17 @@ public abstract class AbstractConnection extends AbstractService implements Conn
                 return;
             }
             Response response = responseMessage == Response.EMPTY_MESSAGE ? new Response(id) : new Response(id, responseMessage);
-            send(response);
-
             List<HandleListener> listeners = handler.getAllListeners();
             if (listeners == null) {
+                sendResponse(response);
                 return;
             }
+
             for (HandleListener listener : listeners) {
                 listener.onSuccess();
             }
+
+            sendResponse(response);
         } catch (Exception e) {
             List<HandleListener> listeners = handler.getAllListeners();
             if (listeners != null) {
@@ -152,7 +153,15 @@ public abstract class AbstractConnection extends AbstractService implements Conn
 
             RemoteException exception = new RemoteException(e);
             Response response = new Response(id, exception);
+            sendResponse(response);
+        }
+    }
+
+    private void sendResponse(Response response) {
+        try {
             send(response);
+        } catch (Exception e) {
+            logger.error("send response:{} failure ", response);
         }
     }
 

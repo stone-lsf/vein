@@ -24,20 +24,20 @@ import io.netty.channel.ChannelPromise;
 public class NettyHandler extends ChannelHandlerAdapter {
     private static final Logger LOGGER = LoggerFactory.getLogger(NettyHandler.class);
     private final ConnectionManager connectionManager;
-    private ConnectionListener listener;
+    private final ConnectionListener listener;
     private int defaultTimeout;
 
-    /**
-     * NettyHandler 构造函数，创建Client时调用
-     *
-     * @param connectionManager 连接管理器
-     */
-    public NettyHandler(ConnectionManager connectionManager) {
-        this.connectionManager = connectionManager;
-    }
+//    /**
+//     * NettyHandler 构造函数，创建Client时调用
+//     *
+//     * @param connectionManager 连接管理器
+//     */
+//    public NettyHandler(ConnectionManager connectionManager) {
+//        this.connectionManager = connectionManager;
+//    }
 
     /**
-     * NettyHandler 构造函数，创建Server时调用
+     * NettyHandler 构造函数，
      *
      * @param connectionManager 连接管理器
      * @param listener          连接监听器
@@ -53,9 +53,7 @@ public class NettyHandler extends ChannelHandlerAdapter {
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
         Channel channel = ctx.channel();
         LOGGER.info("receive channel:{}", channel);
-        if (listener != null) {
-            receiveChannel(channel);
-        }
+        receiveChannel(channel);
         super.channelActive(ctx);
     }
 

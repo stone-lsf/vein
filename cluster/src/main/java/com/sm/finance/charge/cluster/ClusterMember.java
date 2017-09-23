@@ -2,12 +2,16 @@ package com.sm.finance.charge.cluster;
 
 import com.sm.finance.charge.common.Address;
 import com.sm.finance.charge.transport.api.Connection;
+import com.sm.finance.charge.transport.api.TransportClient;
+
+import java.util.concurrent.CompletableFuture;
 
 /**
  * @author shifeng.luo
  * @version created on 2017/9/22 上午10:50
  */
 public class ClusterMember {
+    private final TransportClient client;
 
     private final long id;
 
@@ -18,7 +22,8 @@ public class ClusterMember {
     private volatile Connection connection;
 
 
-    public ClusterMember(long id, Address address) {
+    public ClusterMember(TransportClient client, long id, Address address) {
+        this.client = client;
         this.id = id;
         this.address = address;
         this.state = new MemberState(this);
@@ -36,9 +41,13 @@ public class ClusterMember {
         return state;
     }
 
-    public Connection getConnection() {
-        return connection;
+    public CompletableFuture<Connection> getConnection() {
+        if (connection == null) {
+            return client.connect(address);
+        }
+        return CompletableFuture.completedFuture(connection);
     }
+
 
     public void setConnection(Connection connection) {
         this.connection = connection;

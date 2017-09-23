@@ -4,15 +4,16 @@ import com.sm.finance.charge.common.AbstractService;
 import com.sm.finance.charge.common.Address;
 import com.sm.finance.charge.serializer.protostuff.ProtoStuffSerializer;
 import com.sm.finance.charge.transport.api.Connection;
+import com.sm.finance.charge.transport.api.ConnectionListener;
 import com.sm.finance.charge.transport.api.ConnectionManager;
 import com.sm.finance.charge.transport.api.TransportClient;
 import com.sm.finance.charge.transport.api.exceptions.ConnectException;
 import com.sm.finance.charge.transport.api.support.DefaultConnectionManager;
 
 import java.net.InetSocketAddress;
+import java.util.concurrent.CompletableFuture;
 
 import io.netty.bootstrap.Bootstrap;
-import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
@@ -31,11 +32,9 @@ public class NettyClient extends AbstractService implements TransportClient {
     private final ConnectionManager connectionManager = new DefaultConnectionManager();
     private final Bootstrap bootstrap;
     private final NettyHandler handler;
-    private final int defaultTimeout;
 
-    public NettyClient(EventLoopGroup workerGroup, int defaultTimeout) {
-        this.defaultTimeout = defaultTimeout;
-        this.handler = new NettyHandler(connectionManager);
+    NettyClient(EventLoopGroup workerGroup, int defaultTimeout) {
+        this.handler = new NettyHandler(connectionManager, new ClientConnectionListener(), defaultTimeout);
 
         bootstrap = new Bootstrap();
         bootstrap.group(workerGroup)
@@ -55,38 +54,48 @@ public class NettyClient extends AbstractService implements TransportClient {
     }
 
     @Override
-    public Connection connect(Address address) throws ConnectException {
-        ChannelFuture future;
-        try {
-            InetSocketAddress socketAddress = new InetSocketAddress(address.getIp(), address.getPort());
-            future = bootstrap.connect(socketAddress).sync();
-            Channel channel = future.channel();
+    public CompletableFuture<Connection> connect(Address address) {
+        CompletableFuture<Connection> result = new CompletableFuture<>();
+        InetSocketAddress socketAddress = new InetSocketAddress(address.getIp(), address.getPort());
+        bootstrap.connect(socketAddress).addListener(future -> {
+            ChannelFuture channelFuture = (ChannelFuture) future;
+            if (channelFuture.isSuccess()) {
+                logger.info("connect to:{}", address);
+                String channelId = ChannelHelper.getChannelId(channelFuture.channel());
+                Connection connection = connectionManager.getConnection(channelId);
+                result.complete(connection);
+            } else {
+                Throwable cause = channelFuture.cause();
+                logger.error("connect to address:[{}] failed,cased by exception:{}", address, cause);
+                result.completeExceptionally(new ConnectException(cause));
+            }
+        });
 
-            InetSocketAddress local = (InetSocketAddress) channel.localAddress();
-            Address localAddress = new Address(local);
-
-            NettyConnection connection = new NettyConnection(address, localAddress, defaultTimeout, channel);
-            connectionManager.addConnection(connection);
-            return connection;
-        } catch (Throwable e) {
-            logger.error("connect to address:[{}] failed,cased by exception:{}", address, e);
-            throw new ConnectException("connect to " + address + " failed", e);
-        }
+        return result;
     }
 
     @Override
-    public Connection connect(Address address, int retryTimes) {
-        Connection connection = null;
+    public CompletableFuture<Connection> connect(Address address, int retryTimes) {
+        CompletableFuture<Connection> result = new CompletableFuture<>();
 
-        while (connection == null && retryTimes > 0) {
-            try {
-                connection = connect(address);
-            } catch (ConnectException e) {
-                logger.warn("connect to address[{}] failed,remain retry times:{},cased by exception:{}", address, retryTimes, e);
-                retryTimes--;
+        connect(address).whenComplete((connection, error) -> {
+            if (error != null) {
+                logger.warn("connect to address:[{}] caught exception:{}", address, error);
+                if (retryTimes > 0) {
+                    connect(address, retryTimes - 1).whenComplete((conn, e) -> {
+                        if (e == null) {
+                            result.complete(conn);
+                        } else {
+                            result.completeExceptionally(e);
+                        }
+                    });
+                }
+            } else {
+                result.complete(connection);
             }
-        }
-        return connection;
+        });
+
+        return result;
     }
 
     @Override
@@ -117,5 +126,12 @@ public class NettyClient extends AbstractService implements TransportClient {
     @Override
     public Address getLocalAddress() {
         return null;
+    }
+
+    private class ClientConnectionListener implements ConnectionListener {
+
+        @Override
+        public void onConnect(Connection connection) {
+        }
     }
 }
