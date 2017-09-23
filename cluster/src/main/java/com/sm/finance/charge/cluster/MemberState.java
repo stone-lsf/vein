@@ -28,9 +28,19 @@ public class MemberState {
     private volatile long committedIndex = -1;
 
     /**
+     * 匹配上的index
+     */
+    private volatile long matchedIndex;
+
+    /**
      * 成员的snapshot的index
      */
     private volatile long snapshotIndex;
+
+    /**
+     * 复制数据失败次数
+     */
+    private volatile long replicateFailureCount;
 
     private final ConcurrentMap<Long, CompletableFuture<Object>> commitFutures = new ConcurrentHashMap<>();
 
@@ -66,6 +76,14 @@ public class MemberState {
         this.committedIndex = committedIndex;
     }
 
+    public long getMatchedIndex() {
+        return matchedIndex;
+    }
+
+    public void setMatchedIndex(long matchedIndex) {
+        this.matchedIndex = matchedIndex;
+    }
+
     public void addCommitFuture(long logIndex, CompletableFuture<Object> future) {
         commitFutures.put(logIndex, future);
     }
@@ -76,5 +94,17 @@ public class MemberState {
 
     public void setSnapshotIndex(long snapshotIndex) {
         this.snapshotIndex = snapshotIndex;
+    }
+
+    public long getReplicateFailureCount() {
+        return replicateFailureCount;
+    }
+
+    public long incrementReplicateFailureCount() {
+        return ++replicateFailureCount;
+    }
+
+    public void resetReplicateFailureCount() {
+        replicateFailureCount = 0;
     }
 }

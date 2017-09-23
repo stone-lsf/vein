@@ -16,7 +16,7 @@ public interface ReplicateService extends Startable, Closable {
 
     CompletableFuture<ReplicateResponse> handleReplicate(ReplicateRequest request);
 
-    void handleReplicateResponse(ReplicateResponse response);
+    void handleReplicateResponse(ReplicateResponse response,ClusterMember member);
 
     void handleReplicateResponseFailure(ClusterMember member, ReplicateRequest request, Throwable error);
 

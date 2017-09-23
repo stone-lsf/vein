@@ -12,7 +12,7 @@ import com.sm.finance.charge.transport.api.support.ResponseContext;
 public abstract class AbstractExceptionResponseHandler<T> extends LogSupport implements ResponseHandler<T> {
 
     @Override
-    public void onException(Exception e, ResponseContext context) {
+    public void onException(Throwable e, ResponseContext context) {
         if (e instanceof RemoteException) {
             onRemoteException((RemoteException) e, context);
         } else if (e instanceof TimeoutException) {

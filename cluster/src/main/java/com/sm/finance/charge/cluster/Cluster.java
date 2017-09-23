@@ -15,6 +15,8 @@ public interface Cluster {
 
     ClusterMember local();
 
+    int getQuorum();
+
     long version();
 
     List<ClusterMember> members();

@@ -7,6 +7,7 @@ import com.sm.finance.charge.common.Startable;
 import com.sm.finance.charge.transport.api.handler.RequestHandler;
 import com.sm.finance.charge.transport.api.handler.ResponseHandler;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
@@ -35,7 +36,7 @@ public interface Connection extends Startable, Closable {
      *
      * @param message 消息
      */
-    void send(Object message) throws Exception;
+    void send(Object message) throws IOException;
 
 
     /**
@@ -78,7 +79,7 @@ public interface Connection extends Startable, Closable {
      * @param message 请求消息
      * @return 结果
      */
-    <T> T syncRequest(Object message) throws Exception;
+    <T> T syncRequest(Object message) throws IOException;
 
     /**
      * 同步发送请求，并指定超时时间，会阻塞一直等待返回结果或超时
@@ -86,7 +87,7 @@ public interface Connection extends Startable, Closable {
      * @param message 请求消息
      * @return 结果
      */
-    <T> T syncRequest(Object message, int timeout) throws Exception;
+    <T> T syncRequest(Object message, int timeout) throws IOException;
 
     /**
      * 处理收到的消息

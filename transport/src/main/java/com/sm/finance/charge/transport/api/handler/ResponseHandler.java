@@ -23,5 +23,5 @@ public interface ResponseHandler<T> {
      * @param e       异常
      * @param context 响应上下文
      */
-    void onException(Exception e, ResponseContext context);
+    void onException(Throwable e, ResponseContext context);
 }

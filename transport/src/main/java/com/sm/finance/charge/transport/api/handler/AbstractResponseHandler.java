@@ -1,6 +1,7 @@
 package com.sm.finance.charge.transport.api.handler;
 
 import com.sm.finance.charge.common.LogSupport;
+import com.sm.finance.charge.transport.api.Connection;
 import com.sm.finance.charge.transport.api.support.ResponseContext;
 
 /**
@@ -10,7 +11,12 @@ import com.sm.finance.charge.transport.api.support.ResponseContext;
 public abstract class AbstractResponseHandler<T> extends LogSupport implements ResponseHandler<T> {
 
     @Override
-    public void onException(Exception e, ResponseContext context) {
+    public void handle(T response, Connection connection) {
+
+    }
+
+    @Override
+    public void onException(Throwable e, ResponseContext context) {
     }
 
 }

@@ -11,7 +11,7 @@ public class ResponseContext {
 
     private Connection connection;
 
-    private Exception exception;
+    private Throwable exception;
 
     private Address remote;
 
@@ -20,7 +20,7 @@ public class ResponseContext {
         this.remote = remote;
     }
 
-    public ResponseContext(Connection connection, Exception exception, Address remote) {
+    public ResponseContext(Connection connection, Throwable exception, Address remote) {
         this.connection = connection;
         this.exception = exception;
         this.remote = remote;
@@ -34,11 +34,11 @@ public class ResponseContext {
         this.connection = connection;
     }
 
-    public Exception getException() {
+    public Throwable getException() {
         return exception;
     }
 
-    public void setException(Exception exception) {
+    public void setException(Throwable exception) {
         this.exception = exception;
     }
 

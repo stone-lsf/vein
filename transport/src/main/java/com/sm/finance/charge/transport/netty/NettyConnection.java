@@ -7,6 +7,8 @@ import com.sm.finance.charge.transport.api.Response;
 import com.sm.finance.charge.transport.api.handler.ResponseHandler;
 import com.sm.finance.charge.transport.api.handler.TimeoutResponseHandler;
 
+import java.io.IOException;
+
 import io.netty.channel.Channel;
 
 /**
@@ -29,7 +31,7 @@ public class NettyConnection extends AbstractConnection {
     }
 
     @Override
-    public void send(Object message) throws Exception{
+    public void send(Object message) throws IOException {
         if (message instanceof Response) {
             channel.writeAndFlush(message);
         } else {

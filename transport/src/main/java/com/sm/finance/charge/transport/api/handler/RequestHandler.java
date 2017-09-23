@@ -4,6 +4,7 @@ import com.sm.finance.charge.transport.api.support.HandleListener;
 import com.sm.finance.charge.transport.api.support.RequestContext;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * @author shifeng.luo
@@ -19,7 +20,7 @@ public interface RequestHandler<T> {
      * @return 返回结果，可以为null
      * @throws Exception 异常
      */
-    Object handle(final T message, RequestContext context) throws Exception;
+    CompletableFuture<?> handle(final T message, RequestContext context) throws Exception;
 
     /**
      * 新增处理监听器

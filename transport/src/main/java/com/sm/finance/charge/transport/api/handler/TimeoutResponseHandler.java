@@ -47,7 +47,7 @@ public class TimeoutResponseHandler<T> extends LogSupport implements ResponseHan
     }
 
     @Override
-    public void onException(Exception e, ResponseContext context) {
+    public void onException(Throwable e, ResponseContext context) {
         schedule.cancel(false);
         handler.onException(e, context);
     }

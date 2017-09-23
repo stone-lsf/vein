@@ -16,4 +16,13 @@ public interface Log {
     long lastIndex();
 
     Entry get(long index);
+
+    Entry lastEntry();
+
+    /**
+     * truncate所有大于index的日志
+     *
+     * @param index 指定日志的索引
+     */
+    Log truncate(long index);
 }

@@ -16,6 +16,7 @@ import com.sm.finance.charge.transport.api.handler.AbstractResponseHandler;
 import com.sm.finance.charge.transport.api.support.ResponseContext;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -31,10 +32,13 @@ public class DefaultReplicateService extends AbstractService implements Replicat
     private final int maxBatchSize;
     private ExecutorService executorService;
     private final int replicateTimeout;
+    private final ClusterMember self;
 
-    public DefaultReplicateService(int maxBatchSize, int replicateTimeout) {
+
+    public DefaultReplicateService(int maxBatchSize, int replicateTimeout, ClusterMember self) {
         this.maxBatchSize = maxBatchSize;
         this.replicateTimeout = replicateTimeout;
+        this.self = self;
     }
 
     @Override
@@ -66,7 +70,7 @@ public class DefaultReplicateService extends AbstractService implements Replicat
             connection.send(data, new AbstractResponseHandler<ReplicateResponse>() {
 
                 @Override
-                public void onException(Exception e, ResponseContext context) {
+                public void onException(Throwable e, ResponseContext context) {
                     logger.error("replicate data to node:{} caught exception:{}", node.getNodeId(), e);
                     arbitrator.flagOneFail();
                 }
@@ -100,7 +104,7 @@ public class DefaultReplicateService extends AbstractService implements Replicat
 
         this.replicate(member, request).whenComplete((response, error) -> {
             if (error == null) {
-                this.handleReplicateResponse(response);
+                this.handleReplicateResponse(response, member);
             } else {
                 this.handleReplicateResponseFailure(member, request, error);
             }
@@ -140,13 +144,15 @@ public class DefaultReplicateService extends AbstractService implements Replicat
         int size = 0;
         for (; startIndex <= lastIndex; startIndex++) {
             Entry entry = log.get(startIndex);
-            if (entry != null) {
-                if (!entries.isEmpty() && size + entry.getSize() > maxBatchSize) {
-                    break;
-                }
-                size += entry.getSize();
-                entries.add(entry);
+            if (entry == null) {
+                continue;
             }
+
+            if (!entries.isEmpty() && size + entry.getSize() > maxBatchSize) {
+                break;
+            }
+            size += entry.getSize();
+            entries.add(entry);
         }
         request.setEntries(entries);
 
@@ -196,17 +202,107 @@ public class DefaultReplicateService extends AbstractService implements Replicat
 
     @Override
     public CompletableFuture<ReplicateResponse> handleReplicate(ReplicateRequest request) {
-        return null;
+        long requestVersion = request.getCurrentVersion();
+        MemberState selfState = self.getState();
+        long version = selfState.getVersion();
+
+        ReplicateResponse response = new ReplicateResponse();
+        response.setSuccess(false);
+        if (requestVersion < version) {
+            response.setVersion(version);
+            return CompletableFuture.completedFuture(response);
+        }
+
+        long prevIndex = request.getPrevIndex();
+        if (prevIndex > 0) {
+            Entry prevEntry = log.get(prevIndex);
+            if (prevEntry == null) {
+                logger.warn("received replicate data from[{}], but prev log index don't match", request.getSource(), prevIndex);
+                Entry lastEntry = log.lastEntry();
+                response.setNextIndex(lastEntry == null ? 1 : lastEntry.getIndex() + 1);
+                return CompletableFuture.completedFuture(response);
+            }
+
+            long localPrevVersion = prevEntry.getVersion();
+            if (prevEntry.getVersion() != request.getPrevVersion()) {
+                logger.warn("received replicate data from[{}], but local prev version:{} don't match request prev index:{}", request.getSource(), localPrevVersion, request.getPrevVersion());
+                response.setNextIndex(prevIndex);
+                return CompletableFuture.completedFuture(response);
+            }
+        }
+
+        log.truncate(prevIndex);
+        for (Entry entry : request.getEntries()) {
+            log.append(entry);
+        }
+
+        commitTo(request.getCommitIndex());
+
+        response.setSuccess(true);
+        response.setNextIndex(log.lastIndex() + 1);
+        return CompletableFuture.completedFuture(response);
+    }
+
+    private void commitTo(long index) {
+        //TODO commit 日志
     }
 
     @Override
-    public void handleReplicateResponse(ReplicateResponse response) {
+    public void handleReplicateResponse(ReplicateResponse response, ClusterMember member) {
+        if (response.isSuccess()) {
+            member.getState().setMatchedIndex(response.getNextIndex() - 1);
+            commitEntries();
+            if (!closed.get()) {
+                executorService.execute(() -> replicate(member));
+            }
+            return;
+        }
 
+        if (response.getVersion() > self.getState().getVersion()) {
+            try {
+                this.close();
+            } catch (Exception e) {
+                logger.error("close replicate service caught exception", e);
+            }
+
+            //TODO 重新跟master获取联系
+
+            return;
+        }
+
+        MemberState state = member.getState();
+        state.setNextLogIndex(response.getNextIndex());
+        if (!closed.get()) {
+            executorService.execute(() -> replicate(member));
+        }
+    }
+
+    private void commitEntries() {
+        List<ClusterMember> members = context.getCluster().members();
+        members.sort(Comparator.comparingLong(member -> member.getState().getMatchedIndex()));
+        int quorum = context.getCluster().getQuorum();
+        if (members.size() < quorum) {
+            return;
+        }
+        ClusterMember member = members.get(quorum - 1);
+        long commitIndex = member.getState().getMatchedIndex();
+
+        MemberState selfState = self.getState();
+        long prevCommittedIndex = selfState.getCommittedIndex();
+        if (commitIndex > prevCommittedIndex) {
+            selfState.setCommittedIndex(commitIndex);
+            commitTo(commitIndex);
+        }
     }
 
     @Override
     public void handleReplicateResponseFailure(ClusterMember member, ReplicateRequest request, Throwable error) {
-
+        MemberState state = member.getState();
+        state.incrementReplicateFailureCount();
+        logger.error("replicate data to:{} failed:{}", member.getAddress(), error);
+        if (!closed.get()) {
+            executorService.execute(() -> replicate(member));
+        }
     }
 
     private CompletableFuture<InstallSnapshotResponse> replicateSnapshot(ClusterMember member, InstallSnapshotRequest request) {

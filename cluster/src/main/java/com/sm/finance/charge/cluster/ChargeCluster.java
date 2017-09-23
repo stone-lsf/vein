@@ -25,6 +25,11 @@ public class ChargeCluster implements Cluster {
     }
 
     @Override
+    public int getQuorum() {
+        return 0;
+    }
+
+    @Override
     public long version() {
         return 0;
     }
