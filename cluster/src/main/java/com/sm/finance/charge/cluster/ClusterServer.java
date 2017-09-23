@@ -25,6 +25,5 @@ public interface ClusterServer extends Startable, Closable {
 
     CompletableFuture<Object> handle(Command command);
 
-    CompletableFuture<ReplicateResponse> replicate(ClusterMember member);
 
 }

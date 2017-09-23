@@ -1,19 +1,14 @@
 package com.sm.finance.charge.cluster.replicate;
 
-import com.google.common.collect.Lists;
-
 import com.sm.finance.charge.cluster.ClusterMember;
 import com.sm.finance.charge.cluster.MemberState;
 import com.sm.finance.charge.cluster.ServerContext;
-import com.sm.finance.charge.cluster.discovery.DiscoveryNode;
+import com.sm.finance.charge.cluster.StateMachine;
 import com.sm.finance.charge.cluster.storage.Log;
 import com.sm.finance.charge.cluster.storage.entry.Entry;
 import com.sm.finance.charge.cluster.storage.snapshot.Snapshot;
 import com.sm.finance.charge.cluster.storage.snapshot.SnapshotManager;
 import com.sm.finance.charge.common.AbstractService;
-import com.sm.finance.charge.transport.api.Connection;
-import com.sm.finance.charge.transport.api.handler.AbstractResponseHandler;
-import com.sm.finance.charge.transport.api.support.ResponseContext;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -33,12 +28,14 @@ public class DefaultReplicateService extends AbstractService implements Replicat
     private ExecutorService executorService;
     private final int replicateTimeout;
     private final ClusterMember self;
+    private final StateMachine stateMachine;
 
 
-    public DefaultReplicateService(int maxBatchSize, int replicateTimeout, ClusterMember self) {
+    public DefaultReplicateService(int maxBatchSize, int replicateTimeout, ClusterMember self, StateMachine stateMachine) {
         this.maxBatchSize = maxBatchSize;
         this.replicateTimeout = replicateTimeout;
         this.self = self;
+        this.stateMachine = stateMachine;
     }
 
     @Override
@@ -52,35 +49,6 @@ public class DefaultReplicateService extends AbstractService implements Replicat
     @Override
     protected void doClose() {
 
-    }
-
-    public void replicate(ReplicateRequest data) {
-        List<DiscoveryNode> candidates = Lists.newArrayList();
-
-        MajorReplicateArbitrator arbitrator = new MajorReplicateArbitrator(candidates.size(), data);
-
-        for (DiscoveryNode node : candidates) {
-            Connection connection = node.getConnection();
-            if (connection == null) {
-                logger.error("replicate data to node:{} , but node don't have connection", node.getNodeId());
-                arbitrator.flagOneFail();
-                continue;
-            }
-
-            connection.send(data, new AbstractResponseHandler<ReplicateResponse>() {
-
-                @Override
-                public void onException(Throwable e, ResponseContext context) {
-                    logger.error("replicate data to node:{} caught exception:{}", node.getNodeId(), e);
-                    arbitrator.flagOneFail();
-                }
-
-                @Override
-                public void handle(ReplicateResponse response, Connection connection) {
-
-                }
-            });
-        }
     }
 
     @Override
@@ -236,16 +204,39 @@ public class DefaultReplicateService extends AbstractService implements Replicat
             log.append(entry);
         }
 
-        commitTo(request.getCommitIndex());
+        apply(request.getCommitIndex());
+        selfState.setCommittedIndex(request.getCommitIndex());
 
         response.setSuccess(true);
         response.setNextIndex(log.lastIndex() + 1);
         return CompletableFuture.completedFuture(response);
     }
 
-    private void commitTo(long index) {
-        //TODO commit 日志
+    private void apply(long index) {
+        MemberState state = self.getState();
+
+        long lastApplied = state.getLastApplied();
+        if (index < lastApplied + 1) {
+            return;
+        }
+
+        for (long i = lastApplied + 1; i <= index; i++) {
+            Entry entry = log.get(i);
+            if (entry != null) {
+                stateMachine.apply(entry).whenComplete((result, error) -> {
+                    CompletableFuture<Object> future = self.romoveCommitFuture(entry.getIndex());
+                    if (future != null) {
+                        if (error == null) {
+                            future.complete(result);
+                        } else {
+                            future.completeExceptionally(error);
+                        }
+                    }
+                });
+            }
+        }
     }
+
 
     @Override
     public void handleReplicateResponse(ReplicateResponse response, ClusterMember member) {
@@ -290,8 +281,8 @@ public class DefaultReplicateService extends AbstractService implements Replicat
         MemberState selfState = self.getState();
         long prevCommittedIndex = selfState.getCommittedIndex();
         if (commitIndex > prevCommittedIndex) {
+            apply(commitIndex);
             selfState.setCommittedIndex(commitIndex);
-            commitTo(commitIndex);
         }
     }
 

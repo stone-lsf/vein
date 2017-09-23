@@ -1,6 +1,8 @@
 package com.sm.finance.charge.cluster;
 
-import com.sm.finance.charge.cluster.client.Command;
+import com.sm.finance.charge.cluster.storage.entry.Entry;
+
+import java.util.concurrent.CompletableFuture;
 
 /**
  * @author shifeng.luo
@@ -8,5 +10,5 @@ import com.sm.finance.charge.cluster.client.Command;
  */
 public interface StateMachine {
 
-    Object apply(Command command);
+    <T> CompletableFuture<T> apply(Entry entry);
 }

@@ -74,19 +74,6 @@ public class ChargeServer extends AbstractService implements ClusterServer {
     }
 
     @Override
-    public CompletableFuture<ReplicateResponse> replicate(ClusterMember member) {
-        MemberState state = member.getState();
-        long nextLogIndex = state.getNextLogIndex();
-        long version = cluster.version();
-
-        long committedIndex = cluster.master().getState().getCommittedIndex();
-//        log.
-
-        return null;
-    }
-
-
-    @Override
     protected void doStart() throws Exception {
 
     }

@@ -5,6 +5,8 @@ import com.sm.finance.charge.transport.api.Connection;
 import com.sm.finance.charge.transport.api.TransportClient;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * @author shifeng.luo
@@ -21,6 +23,7 @@ public class ClusterMember {
 
     private volatile Connection connection;
 
+    private final ConcurrentMap<Long, CompletableFuture<Object>> commitFutures = new ConcurrentHashMap<>();
 
     public ClusterMember(TransportClient client, long id, Address address) {
         this.client = client;
@@ -51,5 +54,14 @@ public class ClusterMember {
 
     public void setConnection(Connection connection) {
         this.connection = connection;
+    }
+
+    public void addCommitFuture(long logIndex, CompletableFuture<Object> future) {
+        commitFutures.put(logIndex, future);
+    }
+
+
+    public CompletableFuture<Object> romoveCommitFuture(long logIndex) {
+        return commitFutures.remove(logIndex);
     }
 }

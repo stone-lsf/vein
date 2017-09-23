@@ -1,9 +1,5 @@
 package com.sm.finance.charge.cluster;
 
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-
 /**
  * @author shifeng.luo
  * @version created on 2017/9/22 上午11:11
@@ -38,11 +34,15 @@ public class MemberState {
     private volatile long snapshotIndex;
 
     /**
+     * 最后被应用到状态机的日志条目索引值（初始化为 0，持续递增）
+     */
+    private long lastApplied;
+
+    /**
      * 复制数据失败次数
      */
     private volatile long replicateFailureCount;
 
-    private final ConcurrentMap<Long, CompletableFuture<Object>> commitFutures = new ConcurrentHashMap<>();
 
     public MemberState(ClusterMember member) {
         this.member = member;
@@ -84,10 +84,6 @@ public class MemberState {
         this.matchedIndex = matchedIndex;
     }
 
-    public void addCommitFuture(long logIndex, CompletableFuture<Object> future) {
-        commitFutures.put(logIndex, future);
-    }
-
     public long getSnapshotIndex() {
         return snapshotIndex;
     }
@@ -106,5 +102,13 @@ public class MemberState {
 
     public void resetReplicateFailureCount() {
         replicateFailureCount = 0;
+    }
+
+    public long getLastApplied() {
+        return lastApplied;
+    }
+
+    public void setLastApplied(long lastApplied) {
+        this.lastApplied = lastApplied;
     }
 }
