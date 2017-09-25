@@ -9,7 +9,10 @@ import com.sm.finance.charge.cluster.storage.entry.Entry;
 import com.sm.finance.charge.cluster.storage.snapshot.Snapshot;
 import com.sm.finance.charge.cluster.storage.snapshot.SnapshotManager;
 import com.sm.finance.charge.cluster.storage.snapshot.SnapshotReader;
+import com.sm.finance.charge.cluster.storage.snapshot.SnapshotWriter;
 import com.sm.finance.charge.common.AbstractService;
+import com.sm.finance.charge.common.IoUtil;
+import com.sm.finance.charge.common.NamedThreadFactory;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -17,6 +20,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * @author shifeng.luo
@@ -32,6 +36,8 @@ public class DefaultReplicateService extends AbstractService implements Replicat
     private final int snapshotTimeout;
     private final ClusterMember self;
     private final StateMachine stateMachine;
+    private volatile Snapshot pendingSnapshot;
+    private volatile long nextSnapshotOffset;
 
 
     public DefaultReplicateService(int maxBatchSize, int replicateTimeout, int snapshotTimeout, ClusterMember self, StateMachine stateMachine) {
@@ -40,6 +46,7 @@ public class DefaultReplicateService extends AbstractService implements Replicat
         this.snapshotTimeout = snapshotTimeout;
         this.self = self;
         this.stateMachine = stateMachine;
+        this.executorService = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors() + 1, new NamedThreadFactory("ReplicatePool"));
     }
 
     @Override
@@ -282,7 +289,7 @@ public class DefaultReplicateService extends AbstractService implements Replicat
         InstallSnapshotRequest finalRequest = request;
         this.<InstallSnapshotResponse>request(member, request, snapshotTimeout).whenComplete((response, error) -> {
             if (error == null) {
-                this.handleInstallSnapshotResponse(response);
+                this.handleInstallSnapshotResponse(member, response, finalRequest);
             } else {
                 this.handleInstallSnapshotResponseFailure(member, finalRequest, error);
             }
@@ -337,16 +344,93 @@ public class DefaultReplicateService extends AbstractService implements Replicat
 
     @Override
     public CompletableFuture<InstallSnapshotResponse> handleSnapshot(InstallSnapshotRequest request) {
-        return null;
+        CompletableFuture<InstallSnapshotResponse> future = new CompletableFuture<>();
+
+        CompletableFuture.supplyAsync(() -> {
+            InstallSnapshotResponse response = new InstallSnapshotResponse();
+            MemberState selfState = self.getState();
+            response.setVersion(selfState.getVersion());
+
+            if (request.getVersion() < selfState.getVersion()) {
+                response.setSuccess(false);
+                future.complete(response);
+                return null;
+            }
+
+            if (pendingSnapshot != null && request.getIndex() != pendingSnapshot.index()) {
+                pendingSnapshot.close();
+                pendingSnapshot.delete();
+                pendingSnapshot = null;
+                nextSnapshotOffset = 0;
+            }
+
+            if (pendingSnapshot == null) {
+                if (request.getOffset() > 0) {
+                    response.setSuccess(false);
+                    response.setNextOffset(0);
+                    future.complete(response);
+                    return null;
+                }
+            }
+
+            if (response.getNextOffset() > nextSnapshotOffset) {
+                response.setSuccess(false);
+                response.setNextOffset(nextSnapshotOffset);
+                future.complete(response);
+                return null;
+            }
+
+            SnapshotWriter writer = null;
+            try {
+                writer = pendingSnapshot.writer();
+                writer.write(request.getData());
+            } finally {
+                IoUtil.close(writer);
+            }
+
+            if (request.isComplete()) {
+                pendingSnapshot.complete();
+                pendingSnapshot = null;
+                nextSnapshotOffset = 0;
+            } else {
+                nextSnapshotOffset += request.getData().length;
+            }
+
+            response.setSuccess(true);
+            future.complete(response);
+            return null;
+        });
+
+        return future;
     }
 
     @Override
-    public void handleInstallSnapshotResponse(InstallSnapshotResponse request) {
+    public void handleInstallSnapshotResponse(ClusterMember member, InstallSnapshotResponse response, InstallSnapshotRequest request) {
+        if (response.getVersion() > self.getState().getVersion()) {
+            //TODO 重新跟master获取联系
+            return;
+        }
 
+        if (response.isSuccess()) {
+            MemberState state = member.getState();
+            if (request.isComplete()) {
+                state.setSnapshotIndex(request.getIndex());
+                state.setNextSnapshotIndex(0);
+                state.setNextSnapshotOffset(0);
+            } else {
+                state.setNextSnapshotOffset(request.getOffset() + request.getData().length);
+            }
+        } else {
+            MemberState state = member.getState();
+            state.setNextSnapshotOffset(response.getNextOffset());
+        }
+
+        executorService.execute(() -> replicate(member));
     }
 
     @Override
     public void handleInstallSnapshotResponseFailure(ClusterMember member, InstallSnapshotRequest request, Throwable error) {
-
+        logger.error("send snapshot to member:{} caught failure:{}", member.getId(), error);
+        executorService.execute(() -> replicate(member));
     }
 }

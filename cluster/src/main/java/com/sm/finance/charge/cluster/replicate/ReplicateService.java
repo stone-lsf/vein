@@ -24,7 +24,7 @@ public interface ReplicateService extends Startable, Closable {
 
     CompletableFuture<InstallSnapshotResponse> handleSnapshot(InstallSnapshotRequest request);
 
-    void handleInstallSnapshotResponse(InstallSnapshotResponse request);
+    void handleInstallSnapshotResponse(ClusterMember member, InstallSnapshotResponse response, InstallSnapshotRequest request);
 
     void handleInstallSnapshotResponseFailure(ClusterMember member, InstallSnapshotRequest request, Throwable error);
 

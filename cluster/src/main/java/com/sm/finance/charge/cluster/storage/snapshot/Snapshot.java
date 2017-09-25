@@ -10,7 +10,13 @@ public interface Snapshot {
 
     long timestamp();
 
+    Snapshot complete();
+
+    void close();
+
     void delete();
 
     SnapshotReader reader();
+
+    SnapshotWriter writer();
 }
