@@ -28,22 +28,24 @@ import java.util.concurrent.Executors;
  */
 public class DefaultReplicateService extends AbstractService implements ReplicateService {
 
-    private Log log;
-    private ServerContext context;
+    private final Log log;
+    private final ServerContext context;
     private final int maxBatchSize;
-    private ExecutorService executorService;
     private final int replicateTimeout;
     private final int snapshotTimeout;
     private final ClusterMember self;
     private final StateMachine stateMachine;
+    private final ExecutorService executorService;
     private volatile Snapshot pendingSnapshot;
     private volatile long nextSnapshotOffset;
 
 
-    public DefaultReplicateService(int maxBatchSize, int replicateTimeout, int snapshotTimeout, ClusterMember self, StateMachine stateMachine) {
-        this.maxBatchSize = maxBatchSize;
-        this.replicateTimeout = replicateTimeout;
-        this.snapshotTimeout = snapshotTimeout;
+    public DefaultReplicateService(ServerContext context, ReplicateConfig replicateConfig, ClusterMember self, StateMachine stateMachine) {
+        this.log = context.getLog();
+        this.context = context;
+        this.maxBatchSize = replicateConfig.getMaxBatchSize();
+        this.replicateTimeout = replicateConfig.getReplicateTimeout();
+        this.snapshotTimeout = replicateConfig.getSnapshotTimeout();
         this.self = self;
         this.stateMachine = stateMachine;
         this.executorService = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors() + 1, new NamedThreadFactory("ReplicatePool"));

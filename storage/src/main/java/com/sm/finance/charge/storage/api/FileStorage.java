@@ -1,12 +1,12 @@
-package com.sm.finance.charge.cluster.storage;
+package com.sm.finance.charge.storage.api;
 
 import java.io.File;
 
 /**
  * @author shifeng.luo
- * @version created on 2017/9/21 下午11:29
+ * @version created on 2017/9/25 下午11:19
  */
-public interface Storage {
+public interface FileStorage {
 
     /**
      * 返回存储目录
@@ -27,7 +27,7 @@ public interface Storage {
      *
      * @return appender
      */
-    RollingAppender appender();
+    RollingWriter appender();
 
     /**
      * rolling reader
