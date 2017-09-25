@@ -11,4 +11,6 @@ public interface Snapshot {
     long timestamp();
 
     void delete();
+
+    SnapshotReader reader();
 }

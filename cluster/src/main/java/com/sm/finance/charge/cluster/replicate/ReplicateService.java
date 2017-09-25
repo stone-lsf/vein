@@ -16,11 +16,13 @@ public interface ReplicateService extends Startable, Closable {
 
     CompletableFuture<ReplicateResponse> handleReplicate(ReplicateRequest request);
 
-    void handleReplicateResponse(ReplicateResponse response,ClusterMember member);
+    void handleReplicateResponse(ReplicateResponse response, ClusterMember member);
 
     void handleReplicateResponseFailure(ClusterMember member, ReplicateRequest request, Throwable error);
 
-    CompletableFuture<InstallSnapshotResponse> install(InstallSnapshotRequest request);
+    void snapshot(ClusterMember member);
+
+    CompletableFuture<InstallSnapshotResponse> handleSnapshot(InstallSnapshotRequest request);
 
     void handleInstallSnapshotResponse(InstallSnapshotResponse request);
 

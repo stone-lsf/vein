@@ -8,8 +8,10 @@ import com.sm.finance.charge.cluster.storage.Log;
 import com.sm.finance.charge.cluster.storage.entry.Entry;
 import com.sm.finance.charge.cluster.storage.snapshot.Snapshot;
 import com.sm.finance.charge.cluster.storage.snapshot.SnapshotManager;
+import com.sm.finance.charge.cluster.storage.snapshot.SnapshotReader;
 import com.sm.finance.charge.common.AbstractService;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -27,13 +29,15 @@ public class DefaultReplicateService extends AbstractService implements Replicat
     private final int maxBatchSize;
     private ExecutorService executorService;
     private final int replicateTimeout;
+    private final int snapshotTimeout;
     private final ClusterMember self;
     private final StateMachine stateMachine;
 
 
-    public DefaultReplicateService(int maxBatchSize, int replicateTimeout, ClusterMember self, StateMachine stateMachine) {
+    public DefaultReplicateService(int maxBatchSize, int replicateTimeout, int snapshotTimeout, ClusterMember self, StateMachine stateMachine) {
         this.maxBatchSize = maxBatchSize;
         this.replicateTimeout = replicateTimeout;
+        this.snapshotTimeout = snapshotTimeout;
         this.self = self;
         this.stateMachine = stateMachine;
     }
@@ -56,21 +60,14 @@ public class DefaultReplicateService extends AbstractService implements Replicat
         MemberState state = member.getState();
         long nextLogIndex = state.getNextLogIndex();
         if (needInstallSnapshot(nextLogIndex, state)) {
-            InstallSnapshotRequest request = buildSnapshotRequest();
-            this.replicateSnapshot(member, request).whenComplete((response, error) -> {
-                if (error == null) {
-                    this.handleInstallSnapshotResponse(response);
-                } else {
-                    this.handleInstallSnapshotResponseFailure(member, request, error);
-                }
-            });
+            this.snapshot(member);
             return;
         }
 
         Entry prevEntry = getPrevEntry(state);
         ReplicateRequest request = buildReplicateRequest(state, prevEntry);
 
-        this.replicate(member, request).whenComplete((response, error) -> {
+        this.<ReplicateResponse>request(member, request, replicateTimeout).whenComplete((response, error) -> {
             if (error == null) {
                 this.handleReplicateResponse(response, member);
             } else {
@@ -84,11 +81,6 @@ public class DefaultReplicateService extends AbstractService implements Replicat
         Snapshot snapshot = snapshotManager.currentSnapshot();
 
         return snapshot != null && snapshot.index() >= nextLogIndex && snapshot.index() > member.getSnapshotIndex();
-    }
-
-    private InstallSnapshotRequest buildSnapshotRequest() {
-
-        return null;
     }
 
     private ReplicateRequest buildReplicateRequest(MemberState member, Entry prevEntry) {
@@ -145,26 +137,6 @@ public class DefaultReplicateService extends AbstractService implements Replicat
             prevIndex--;
         }
         return null;
-    }
-
-    private CompletableFuture<ReplicateResponse> replicate(ClusterMember member, ReplicateRequest request) {
-        CompletableFuture<ReplicateResponse> result = new CompletableFuture<>();
-
-        member.getConnection().whenComplete((connection, error) -> {
-            if (error == null) {
-                connection.<ReplicateResponse>request(request, replicateTimeout).whenComplete((response, e) -> {
-                    if (e != null) {
-                        result.completeExceptionally(e);
-                    } else {
-                        result.complete(response);
-                    }
-                });
-            } else {
-                result.completeExceptionally(error);
-            }
-        });
-
-        return result;
     }
 
 
@@ -296,12 +268,75 @@ public class DefaultReplicateService extends AbstractService implements Replicat
         }
     }
 
-    private CompletableFuture<InstallSnapshotResponse> replicateSnapshot(ClusterMember member, InstallSnapshotRequest request) {
-        return null;
+    @Override
+    public void snapshot(ClusterMember member) {
+        InstallSnapshotRequest request;
+        try {
+            request = buildSnapshotRequest(member);
+        } catch (IOException e) {
+            logger.warn("build snapshot request for member:{} failed", member.getId());
+            executorService.execute(() -> replicate(member));
+            return;
+        }
+
+        InstallSnapshotRequest finalRequest = request;
+        this.<InstallSnapshotResponse>request(member, request, snapshotTimeout).whenComplete((response, error) -> {
+            if (error == null) {
+                this.handleInstallSnapshotResponse(response);
+            } else {
+                this.handleInstallSnapshotResponseFailure(member, finalRequest, error);
+            }
+        });
+    }
+
+    private <T> CompletableFuture<T> request(ClusterMember member, Object request, int timeout) {
+        CompletableFuture<T> future = new CompletableFuture<>();
+        member.getConnection().whenComplete((connection, error) -> {
+            if (error == null) {
+                connection.<T>request(request, timeout).whenComplete((response, e) -> {
+                    if (e != null) {
+                        future.completeExceptionally(e);
+                    } else {
+                        future.complete(response);
+                    }
+                });
+            } else {
+                future.completeExceptionally(error);
+            }
+        });
+        return future;
+    }
+
+    private InstallSnapshotRequest buildSnapshotRequest(ClusterMember member) throws IOException {
+        Snapshot snapshot = context.getSnapshotManager().currentSnapshot();
+
+        MemberState state = member.getState();
+        if (snapshot.index() != state.getNextSnapshotIndex()) {
+            state.setNextSnapshotIndex(snapshot.index());
+            state.setNextSnapshotOffset(0L);
+        }
+
+        InstallSnapshotRequest request = new InstallSnapshotRequest();
+        request.setVersion(self.getState().getVersion());
+        request.setFrom(self.getId());
+        request.setIndex(state.getNextSnapshotIndex());
+        request.setOffset(state.getNextSnapshotOffset());
+
+        try (SnapshotReader reader = snapshot.reader()) {
+            byte[] data = new byte[Math.min(maxBatchSize, (int) reader.remaining())];
+            reader.read(data);
+            request.setData(data);
+            request.setComplete(!reader.hasRemaining());
+        } catch (Exception e) {
+            logger.error("read snapshot:{} data caught exception:{}", snapshot.index(), e);
+            throw new IOException(e);
+        }
+
+        return request;
     }
 
     @Override
-    public CompletableFuture<InstallSnapshotResponse> install(InstallSnapshotRequest request) {
+    public CompletableFuture<InstallSnapshotResponse> handleSnapshot(InstallSnapshotRequest request) {
         return null;
     }
 

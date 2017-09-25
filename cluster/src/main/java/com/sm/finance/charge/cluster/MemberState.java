@@ -34,6 +34,16 @@ public class MemberState {
     private volatile long snapshotIndex;
 
     /**
+     * 需要复制的下一个snapshot的index
+     */
+    private volatile long nextSnapshotIndex;
+
+    /**
+     * 需要复制的下一个snapshot的offset
+     */
+    private volatile long nextSnapshotOffset;
+
+    /**
      * 最后被应用到状态机的日志条目索引值（初始化为 0，持续递增）
      */
     private long lastApplied;
@@ -110,5 +120,21 @@ public class MemberState {
 
     public void setLastApplied(long lastApplied) {
         this.lastApplied = lastApplied;
+    }
+
+    public long getNextSnapshotIndex() {
+        return nextSnapshotIndex;
+    }
+
+    public void setNextSnapshotIndex(long nextSnapshotIndex) {
+        this.nextSnapshotIndex = nextSnapshotIndex;
+    }
+
+    public long getNextSnapshotOffset() {
+        return nextSnapshotOffset;
+    }
+
+    public void setNextSnapshotOffset(long nextSnapshotOffset) {
+        this.nextSnapshotOffset = nextSnapshotOffset;
     }
 }
