@@ -4,7 +4,7 @@ package com.sm.finance.charge.storage.api.segment;
  * @author shifeng.luo
  * @version created on 2017/9/25 下午11:47
  */
-public interface Header {
+public interface Header extends ReadWritable{
 
     /**
      * 序号

@@ -23,6 +23,13 @@ public interface FileStorage {
     int maxSegmentSize();
 
     /**
+     * 每条记录的最大大小
+     *
+     * @return 字节数
+     */
+    int maxMessageSize();
+
+    /**
      * appender
      *
      * @return appender

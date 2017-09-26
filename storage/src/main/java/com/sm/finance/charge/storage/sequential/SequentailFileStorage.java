@@ -1,8 +1,8 @@
 package com.sm.finance.charge.storage.sequential;
 
 import com.sm.finance.charge.storage.api.FileStorage;
-import com.sm.finance.charge.storage.api.RollingWriter;
 import com.sm.finance.charge.storage.api.RollingReader;
+import com.sm.finance.charge.storage.api.RollingWriter;
 
 import java.io.File;
 
@@ -13,11 +13,13 @@ import java.io.File;
 public class SequentailFileStorage implements FileStorage {
 
     private final File directory;
-    private final int maxsegmentSize;
+    private final int maxSegmentSize;
+    private final int maxMessageSize;
 
-    public SequentailFileStorage(File directory, int maxsegmentSize) {
+    public SequentailFileStorage(File directory, int maxSegmentSize, int maxMessageSize) {
         this.directory = directory;
-        this.maxsegmentSize = maxsegmentSize;
+        this.maxSegmentSize = maxSegmentSize;
+        this.maxMessageSize = maxMessageSize;
     }
 
 
@@ -28,7 +30,12 @@ public class SequentailFileStorage implements FileStorage {
 
     @Override
     public int maxSegmentSize() {
-        return maxsegmentSize;
+        return maxSegmentSize;
+    }
+
+    @Override
+    public int maxMessageSize() {
+        return maxMessageSize;
     }
 
     @Override

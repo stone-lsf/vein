@@ -2,6 +2,8 @@ package com.sm.finance.charge.storage.sequential.segment;
 
 import com.sm.finance.charge.storage.api.segment.Header;
 
+import java.nio.ByteBuffer;
+
 /**
  * @author shifeng.luo
  * @version created on 2017/9/26 上午12:05
@@ -48,5 +50,25 @@ public class SequentialHeader implements Header {
     @Override
     public byte[] extend() {
         return extend;
+    }
+
+    @Override
+    public int size() {
+        return 0;
+    }
+
+    @Override
+    public boolean initComplete() {
+        return false;
+    }
+
+    @Override
+    public void writeTo(ByteBuffer buffer) {
+
+    }
+
+    @Override
+    public void readFrom(ByteBuffer buffer) {
+
     }
 }
