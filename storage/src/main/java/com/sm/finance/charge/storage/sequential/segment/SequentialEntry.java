@@ -11,8 +11,12 @@ import java.nio.ByteBuffer;
  */
 public class SequentialEntry implements Entry {
 
-    private Header header;
+    private ByteBuffer readBuffer;
+    private ByteBuffer writeBuffer;
+    private boolean readComplete;
+    private boolean writeComplete;
 
+    private Header header;
     private byte[] payload;
 
     @Override
@@ -31,17 +35,78 @@ public class SequentialEntry implements Entry {
     }
 
     @Override
-    public boolean initComplete() {
-        return false;
+    public boolean readComplete() {
+        return readComplete;
+    }
+
+    @Override
+    public boolean writeComplete() {
+        return writeComplete;
     }
 
     @Override
     public void writeTo(ByteBuffer buffer) {
+        if (writeComplete()) {
+            return;
+        }
 
+        if (writeBuffer == null) {
+            writeBuffer = ByteBuffer.allocate(payload.length);
+            writeBuffer.put(payload);
+            writeBuffer.flip();
+        }
+
+        if (!header.writeComplete()) {
+            header.writeTo(buffer);
+            if (!header.writeComplete()) {
+                return;
+            }
+        }
+
+        buffer.put(writeBuffer);
+        if (writeBuffer.hasRemaining()) {
+            return;
+        }
+
+        writeComplete = true;
+        writeBuffer = null;
     }
 
     @Override
     public void readFrom(ByteBuffer buffer) {
+        if (readComplete()) {
+            return;
+        }
 
+        if (header == null) {
+            header = new SequentialHeader();
+        }
+
+        if (!header.readComplete()) {
+            header.readFrom(buffer);
+            if (!header.readComplete()) {
+                return;
+            }
+        }
+
+        if (readBuffer == null) {
+            int entrySize = header.entrySize();
+            int headerSize = header.headerSize();
+            int payloadLength = entrySize - headerSize;
+            readBuffer = ByteBuffer.allocate(payloadLength);
+            payload = new byte[payloadLength];
+        }
+
+        readBuffer.put(buffer);
+
+        if (readBuffer.hasRemaining()) {
+            return;
+        }
+
+        readBuffer.flip();
+        readBuffer.get(payload);
+
+        this.readComplete = true;
+        this.readBuffer = null;
     }
 }

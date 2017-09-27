@@ -10,7 +10,9 @@ public interface ReadWritable {
 
     int size();
 
-    boolean initComplete();
+    boolean readComplete();
+
+    boolean writeComplete();
 
     void writeTo(ByteBuffer buffer);
 
