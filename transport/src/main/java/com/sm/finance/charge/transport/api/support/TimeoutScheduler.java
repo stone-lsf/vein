@@ -12,18 +12,18 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
+import static com.sm.finance.charge.common.SystemConstants.PROCESSORS;
+
 /**
  * @author shifeng.luo
  * @version created on 2017/9/23 下午3:51
  */
 public class TimeoutScheduler {
-    private static final int PROCESSORS;
     private static final ScheduledExecutorService SCHEDULED_EXECUTOR;
     private final Connection connection;
     private ConcurrentMap<Integer, ScheduledFuture<?>> scheduledMap = new ConcurrentHashMap<>();
 
     static {
-        PROCESSORS = Runtime.getRuntime().availableProcessors();
         SCHEDULED_EXECUTOR = Executors.newScheduledThreadPool(PROCESSORS + 1, new NamedThreadFactory("TimeoutHandler"));
     }
 

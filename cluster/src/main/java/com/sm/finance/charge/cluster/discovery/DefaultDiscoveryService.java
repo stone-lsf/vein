@@ -33,12 +33,13 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
+import static com.sm.finance.charge.common.SystemConstants.PROCESSORS;
+
 /**
  * @author shifeng.luo
  * @version created on 2017/9/11 下午9:00
  */
 public class DefaultDiscoveryService extends AbstractService implements DiscoveryService {
-    private static final int PROCESSORS = Runtime.getRuntime().availableProcessors();
 
     private final DiscoveryNode localNode;
     private final DiscoveryConfig config;

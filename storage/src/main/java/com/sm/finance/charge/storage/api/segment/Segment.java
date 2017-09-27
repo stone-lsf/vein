@@ -50,5 +50,5 @@ public interface Segment {
      *
      * @return 写入器
      */
-    SegmentAppender appender();
+    SegmentAppender appender() throws IOException;
 }

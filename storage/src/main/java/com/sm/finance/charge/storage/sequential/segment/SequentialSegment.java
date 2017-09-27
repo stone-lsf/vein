@@ -84,8 +84,8 @@ public class SequentialSegment extends LogSupport implements Segment {
     }
 
     @Override
-    public SegmentAppender appender() {
-        return null;
+    public SegmentAppender appender() throws IOException {
+        return new SequentialSegmentAppender(this);
     }
 
 

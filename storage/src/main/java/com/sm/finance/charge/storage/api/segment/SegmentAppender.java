@@ -24,14 +24,6 @@ public interface SegmentAppender extends AutoCloseable {
     CompletableFuture<Boolean> write(Entry entry);
 
     /**
-     * 删除指定文件内偏移处之后的数据
-     *
-     * @param offset 文件内偏移
-     * @return {@link SegmentAppender}
-     */
-    SegmentAppender truncate(long offset);
-
-    /**
      * 刷新缓存到磁盘
      *
      * @return {@link SegmentAppender}
