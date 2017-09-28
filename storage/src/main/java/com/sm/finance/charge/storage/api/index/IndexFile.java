@@ -19,6 +19,12 @@ public interface IndexFile {
      */
     long firstSequence();
 
+    /**
+     * 最后一条索引记录
+     *
+     * @return {@link OffsetIndex}索引记录
+     */
+    OffsetIndex lastIndex();
 
     /**
      * 获取文件

@@ -11,5 +11,7 @@ public interface IndexManager extends Startable, Closable {
 
     IndexFile create(long sequence);
 
+    IndexFile get(long sequence);
+
     IndexFile last();
 }

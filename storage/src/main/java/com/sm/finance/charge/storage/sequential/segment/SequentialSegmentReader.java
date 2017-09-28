@@ -58,7 +58,7 @@ public class SequentialSegmentReader extends LogSupport implements SegmentReader
     }
 
     @Override
-    public Entry readEntry() throws BadDataException {
+    public Entry readEntry() {
         SequentialEntry entry = new SequentialEntry();
         entry.readFrom(explicit);
         while (!entry.readComplete()) {

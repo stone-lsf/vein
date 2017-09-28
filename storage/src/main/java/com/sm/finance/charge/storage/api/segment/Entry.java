@@ -1,10 +1,12 @@
 package com.sm.finance.charge.storage.api.segment;
 
+import com.sm.finance.charge.storage.api.CheckSum;
+
 /**
  * @author shifeng.luo
  * @version created on 2017/9/25 下午11:21
  */
-public interface Entry extends ReadWritable{
+public interface Entry extends ReadWritable, CheckSum {
 
     /**
      * 首部

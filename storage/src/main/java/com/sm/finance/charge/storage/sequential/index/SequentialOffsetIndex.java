@@ -1,5 +1,6 @@
 package com.sm.finance.charge.storage.sequential.index;
 
+import com.sm.finance.charge.storage.api.exceptions.BadDataException;
 import com.sm.finance.charge.storage.api.index.OffsetIndex;
 
 import java.nio.ByteBuffer;
@@ -19,6 +20,14 @@ public class SequentialOffsetIndex implements OffsetIndex {
     private long sequence;
     private long offset;
     private int crc32;
+
+    public SequentialOffsetIndex() {
+    }
+
+    public SequentialOffsetIndex(long sequence, long offset) {
+        this.sequence = sequence;
+        this.offset = offset;
+    }
 
     @Override
     public long sequence() {
@@ -95,5 +104,15 @@ public class SequentialOffsetIndex implements OffsetIndex {
 
         this.readComplete = true;
         readBuffer = null;
+    }
+
+    @Override
+    public int calculate() {
+        return 0;
+    }
+
+    @Override
+    public void check() throws BadDataException {
+
     }
 }

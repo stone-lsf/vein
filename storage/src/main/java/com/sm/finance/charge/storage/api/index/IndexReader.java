@@ -1,7 +1,5 @@
 package com.sm.finance.charge.storage.api.index;
 
-import com.sm.finance.charge.storage.api.exceptions.BadDataException;
-
 /**
  * @author shifeng.luo
  * @version created on 2017/9/25 下午11:02
@@ -15,5 +13,5 @@ public interface IndexReader extends AutoCloseable {
      *
      * @return 记录
      */
-    OffsetIndex readIndex() throws BadDataException;
+    OffsetIndex readIndex();
 }

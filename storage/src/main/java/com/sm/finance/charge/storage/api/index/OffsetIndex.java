@@ -1,12 +1,13 @@
 package com.sm.finance.charge.storage.api.index;
 
+import com.sm.finance.charge.storage.api.CheckSum;
 import com.sm.finance.charge.storage.api.segment.ReadWritable;
 
 /**
  * @author shifeng.luo
  * @version created on 2017/9/25 下午11:13
  */
-public interface OffsetIndex extends ReadWritable {
+public interface OffsetIndex extends ReadWritable, CheckSum {
 
     /**
      * entry序号

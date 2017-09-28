@@ -37,6 +37,11 @@ public class SequentialIndexManager extends AbstractService implements IndexMana
         return segment;
     }
 
+    @Override
+    public IndexFile get(long sequence) {
+        return indexMap.get(sequence);
+    }
+
     private File buildIndexFile(long sequence) {
         String name = sequence + EXTENSION_SEPARATOR + EXTENSION;
         return new File(directory, name);

@@ -1,7 +1,5 @@
 package com.sm.finance.charge.storage.api.segment;
 
-import com.sm.finance.charge.storage.api.exceptions.BadDataException;
-
 /**
  * @author shifeng.luo
  * @version created on 2017/9/25 下午10:31
@@ -28,5 +26,5 @@ public interface SegmentReader extends AutoCloseable {
      *
      * @return 记录
      */
-    Entry readEntry() throws BadDataException;
+    Entry readEntry();
 }

@@ -25,6 +25,7 @@ public class SequentialSegment extends LogSupport implements Segment {
     private final File file;
     private final SegmentDescriptor descriptor;
 
+
     SequentialSegment(SegmentDescriptor descriptor, File file) {
         this.file = file;
         this.descriptor = descriptor;
@@ -47,6 +48,7 @@ public class SequentialSegment extends LogSupport implements Segment {
         Entry entry;
         try {
             while ((entry = reader.readEntry()) != null) {
+                entry.check();
                 offset += entry.size();
             }
         } catch (BadDataException e) {

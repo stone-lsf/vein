@@ -1,5 +1,7 @@
 package com.sm.finance.charge.storage.sequential.segment;
 
+import com.google.common.collect.Lists;
+
 import com.sm.finance.charge.common.AbstractService;
 import com.sm.finance.charge.common.FileUtil;
 import com.sm.finance.charge.storage.api.segment.Segment;
@@ -9,6 +11,7 @@ import com.sm.finance.charge.storage.api.segment.SegmentManager;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.concurrent.ConcurrentSkipListMap;
@@ -22,10 +25,12 @@ public class SequentialSegmentManager extends AbstractService implements Segment
     private static final char EXTENSION_SEPARATOR = '.';
 
     private final File directory;
+
     private ConcurrentNavigableMap<Long, Segment> segmentMap = new ConcurrentSkipListMap<>();
 
     public SequentialSegmentManager(File directory) {
         this.directory = directory;
+
     }
 
     @Override
@@ -96,21 +101,22 @@ public class SequentialSegmentManager extends AbstractService implements Segment
     public Segment last() {
         checkStarted();
         Map.Entry<Long, Segment> entry = segmentMap.lastEntry();
-        if (entry == null){
+        if (entry == null) {
             return null;
         }
         return entry.getValue();
+    }
+
+    @Override
+    public List<Segment> higher(long sequence) {
+        ConcurrentNavigableMap<Long, Segment> tailMap = segmentMap.tailMap(sequence, true);
+        return Lists.newArrayList(tailMap.values());
     }
 
 
     private File buildSegmentFile(long sequence) {
         String name = sequence + EXTENSION_SEPARATOR + EXTENSION;
         return new File(directory, name);
-    }
-
-    @Override
-    public void close() throws Exception {
-
     }
 
     @Override

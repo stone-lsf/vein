@@ -1,5 +1,6 @@
 package com.sm.finance.charge.storage.sequential.segment;
 
+import com.sm.finance.charge.storage.api.exceptions.BadDataException;
 import com.sm.finance.charge.storage.api.segment.Entry;
 import com.sm.finance.charge.storage.api.segment.Header;
 
@@ -108,5 +109,15 @@ public class SequentialEntry implements Entry {
 
         this.readComplete = true;
         this.readBuffer = null;
+    }
+
+    @Override
+    public int calculate() {
+        return 0;
+    }
+
+    @Override
+    public void check() throws BadDataException {
+
     }
 }

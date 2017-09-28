@@ -2,6 +2,9 @@ package com.sm.finance.charge.storage.sequential.index;
 
 import com.sm.finance.charge.storage.api.index.IndexAppender;
 import com.sm.finance.charge.storage.api.index.IndexFile;
+import com.sm.finance.charge.storage.api.index.OffsetIndex;
+
+import java.util.concurrent.CompletableFuture;
 
 /**
  * @author shifeng.luo
@@ -16,7 +19,17 @@ public class SequentialIndexAppender implements IndexAppender {
     }
 
     @Override
-    public IndexFile getSegmentIndex() {
+    public IndexFile getIndexFile() {
         return indexFile;
+    }
+
+    @Override
+    public CompletableFuture<Boolean> write(OffsetIndex index) {
+        return null;
+    }
+
+    @Override
+    public IndexAppender flush() {
+        return null;
     }
 }

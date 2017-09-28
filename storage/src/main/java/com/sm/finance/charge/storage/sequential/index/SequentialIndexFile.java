@@ -34,6 +34,11 @@ public class SequentialIndexFile extends LogSupport implements IndexFile {
     }
 
     @Override
+    public OffsetIndex lastIndex() {
+        return null;
+    }
+
+    @Override
     public File getFile() {
         return file;
     }
@@ -45,6 +50,7 @@ public class SequentialIndexFile extends LogSupport implements IndexFile {
         OffsetIndex index;
         try {
             while ((index = reader.readIndex()) != null) {
+                index.check();
                 offset += index.size();
             }
         } catch (BadDataException e) {

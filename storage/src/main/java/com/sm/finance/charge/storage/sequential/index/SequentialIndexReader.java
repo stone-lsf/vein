@@ -1,6 +1,5 @@
 package com.sm.finance.charge.storage.sequential.index;
 
-import com.sm.finance.charge.storage.api.exceptions.BadDataException;
 import com.sm.finance.charge.storage.api.index.IndexFile;
 import com.sm.finance.charge.storage.api.index.IndexReader;
 import com.sm.finance.charge.storage.api.index.OffsetIndex;
@@ -23,7 +22,7 @@ public class SequentialIndexReader implements IndexReader {
     }
 
     @Override
-    public OffsetIndex readIndex() throws BadDataException {
+    public OffsetIndex readIndex() {
         return null;
     }
 
