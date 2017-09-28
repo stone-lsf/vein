@@ -1,5 +1,7 @@
 package com.sm.finance.charge.common;
 
+import com.sm.finance.charge.common.exceptions.NotStartedException;
+
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -28,4 +30,10 @@ public abstract class AbstractService extends LogSupport implements Startable, C
     }
 
     protected abstract void doClose();
+
+    protected void checkStarted() {
+        if (!started.get()) {
+            throw new NotStartedException("SequentialStore hasn't started!");
+        }
+    }
 }

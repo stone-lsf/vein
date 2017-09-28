@@ -1,7 +1,7 @@
 package com.sm.finance.charge.storage.sequential.segment;
 
+import com.sm.finance.charge.common.AbstractService;
 import com.sm.finance.charge.common.FileUtil;
-import com.sm.finance.charge.common.LogSupport;
 import com.sm.finance.charge.storage.api.segment.Segment;
 import com.sm.finance.charge.storage.api.segment.SegmentDescriptor;
 import com.sm.finance.charge.storage.api.segment.SegmentManager;
@@ -17,7 +17,7 @@ import java.util.concurrent.ConcurrentSkipListMap;
  * @author shifeng.luo
  * @version created on 2017/9/25 下午11:54
  */
-public class SequentialSegmentManager extends LogSupport implements SegmentManager {
+public class SequentialSegmentManager extends AbstractService implements SegmentManager {
     private static final String EXTENSION = "segment";
     private static final char EXTENSION_SEPARATOR = '.';
 
@@ -29,7 +29,7 @@ public class SequentialSegmentManager extends LogSupport implements SegmentManag
     }
 
     @Override
-    public void start() throws Exception {
+    protected void doStart() throws Exception {
         loadSegments();
         Map.Entry<Long, Segment> entry = segmentMap.lastEntry();
         if (entry == null) {
@@ -63,10 +63,6 @@ public class SequentialSegmentManager extends LogSupport implements SegmentManag
         }
 
         int end = name.lastIndexOf(EXTENSION_SEPARATOR);
-        if (end < 0) {
-            return null;
-        }
-
         String sequence = name.substring(0, end);
         long value;
         try {
@@ -85,12 +81,25 @@ public class SequentialSegmentManager extends LogSupport implements SegmentManag
 
     @Override
     public Segment create(long sequence) {
+        checkStarted();
         SegmentDescriptor descriptor = new SequentialSegmentDescriptor(sequence);
         File file = buildSegmentFile(sequence);
 
         Segment segment = new SequentialSegment(descriptor, file);
         segmentMap.put(sequence, segment);
+
+
         return segment;
+    }
+
+    @Override
+    public Segment last() {
+        checkStarted();
+        Map.Entry<Long, Segment> entry = segmentMap.lastEntry();
+        if (entry == null){
+            return null;
+        }
+        return entry.getValue();
     }
 
 
@@ -104,5 +113,9 @@ public class SequentialSegmentManager extends LogSupport implements SegmentManag
 
     }
 
+    @Override
+    protected void doClose() {
+
+    }
 
 }

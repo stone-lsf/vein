@@ -10,4 +10,6 @@ import com.sm.finance.charge.common.Startable;
 public interface SegmentManager extends Startable, Closable {
 
     Segment create(long sequence);
+
+    Segment last();
 }

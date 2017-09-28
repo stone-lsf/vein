@@ -2,10 +2,16 @@ package com.sm.finance.charge.common;
 
 import com.google.common.collect.Lists;
 
+import com.sm.finance.charge.common.exceptions.BadDiskException;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel;
 import java.nio.file.NotDirectoryException;
 import java.util.Collection;
@@ -16,6 +22,7 @@ import java.util.Collections;
  * @version created on 2017/9/26 下午9:58
  */
 public class FileUtil {
+    private static final Logger logger = LoggerFactory.getLogger(FileUtil.class);
 
     /**
      * 列出指定目录下的所有文件
@@ -109,5 +116,25 @@ public class FileUtil {
             }
         }
         return directory;
+    }
+
+
+    /**
+     * 删除指定文件内偏移处之后的数据
+     *
+     * @param offset 文件内偏移
+     */
+    public static void truncate(long offset, File file) throws FileNotFoundException {
+        RandomAccessFile accessFile = new RandomAccessFile(file, "wr");
+        FileChannel channel = accessFile.getChannel();
+
+        try {
+            channel.truncate(offset);
+        } catch (IOException e) {
+            logger.error("truncate file caught exception", e);
+            throw new BadDiskException(e);
+        } finally {
+            IoUtil.close(accessFile);
+        }
     }
 }

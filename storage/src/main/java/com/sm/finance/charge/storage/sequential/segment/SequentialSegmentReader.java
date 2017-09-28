@@ -2,8 +2,7 @@ package com.sm.finance.charge.storage.sequential.segment;
 
 import com.sm.finance.charge.common.LogSupport;
 import com.sm.finance.charge.common.NamedThreadFactory;
-import com.sm.finance.charge.storage.api.exceptions.BadEntryException;
-import com.sm.finance.charge.storage.api.exceptions.StorageException;
+import com.sm.finance.charge.storage.api.exceptions.BadDataException;
 import com.sm.finance.charge.storage.api.segment.Entry;
 import com.sm.finance.charge.storage.api.segment.Segment;
 import com.sm.finance.charge.storage.api.segment.SegmentReader;
@@ -27,10 +26,10 @@ public class SequentialSegmentReader extends LogSupport implements SegmentReader
     private static final ExecutorService EXECUTOR_SERVICE = Executors.newFixedThreadPool(PROCESSORS, new NamedThreadFactory("PreReadPool"));
 
     private final Segment segment;
-    private long offset = 0;
     private final FileChannel fileChannel;
     private volatile ByteBuffer implicit = ByteBuffer.allocate(Constants.maxEntrySize * 4);
     private volatile ByteBuffer explicit = ByteBuffer.allocate(Constants.maxEntrySize * 4);
+
     private final Object readComplete = new Object();
     private AtomicBoolean reading = new AtomicBoolean(false);
 
@@ -46,46 +45,20 @@ public class SequentialSegmentReader extends LogSupport implements SegmentReader
         return segment;
     }
 
-    @Override
-    public long remaining() {
-        try {
-            return fileChannel.size() - offset;
-        } catch (IOException e) {
-            logger.error("get file size caught exception", e);
-            throw new StorageException(e);
-        }
-    }
-
-    @Override
-    public boolean hasRemaining() {
-        return remaining() > 0;
-    }
 
     @Override
     public SegmentReader skip(long bytes) {
-        position(offset + bytes);
-        return this;
-    }
-
-    @Override
-    public SegmentReader position(long position) {
         try {
-            fileChannel.position(position);
-            this.offset = position;
+            fileChannel.position(bytes);
         } catch (IOException e) {
             logger.error("set reader position caught exception", e);
-            throw new StorageException(e);
+            System.exit(-1);
         }
         return this;
     }
 
     @Override
-    public long position() {
-        return offset;
-    }
-
-    @Override
-    public Entry readEntry() throws BadEntryException {
+    public Entry readEntry() throws BadDataException {
         SequentialEntry entry = new SequentialEntry();
         entry.readFrom(explicit);
         while (!entry.readComplete()) {

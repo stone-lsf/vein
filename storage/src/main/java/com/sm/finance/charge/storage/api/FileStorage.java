@@ -1,12 +1,14 @@
 package com.sm.finance.charge.storage.api;
 
+import com.sm.finance.charge.common.Startable;
+
 import java.io.File;
 
 /**
  * @author shifeng.luo
  * @version created on 2017/9/25 下午11:19
  */
-public interface FileStorage {
+public interface FileStorage extends Startable{
 
     /**
      * 返回存储目录
@@ -34,12 +36,12 @@ public interface FileStorage {
      *
      * @return appender
      */
-    RollingWriter appender();
+    StorageWriter appender();
 
     /**
      * rolling reader
      *
      * @return rolling reader
      */
-    RollingReader reader();
+    StorageReader reader();
 }
