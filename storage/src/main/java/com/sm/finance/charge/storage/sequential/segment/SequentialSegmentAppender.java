@@ -47,6 +47,11 @@ public class SequentialSegmentAppender extends LogSupport implements SegmentAppe
     }
 
     @Override
+    public SegmentAppender appendFrom(long offset) {
+        return null;
+    }
+
+    @Override
     public SegmentAppender flush() {
         checkClosed();
         try {

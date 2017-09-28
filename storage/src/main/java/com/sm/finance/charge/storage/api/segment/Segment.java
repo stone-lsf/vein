@@ -1,5 +1,7 @@
 package com.sm.finance.charge.storage.api.segment;
 
+import com.sm.finance.charge.storage.api.index.IndexFile;
+
 import java.io.File;
 import java.io.IOException;
 

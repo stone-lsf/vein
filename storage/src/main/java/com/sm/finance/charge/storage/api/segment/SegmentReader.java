@@ -14,12 +14,12 @@ public interface SegmentReader extends AutoCloseable {
     Segment getSegment();
 
     /**
-     * 跳过bytes字节数
+     * 设置读取起始点
      *
-     * @param bytes 字节数
+     * @param offset 字节数
      * @return {@link SegmentReader}
      */
-    SegmentReader skip(long bytes);
+    SegmentReader readFrom(long offset);
 
     /**
      * 读取记录

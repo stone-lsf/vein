@@ -16,6 +16,14 @@ public interface SegmentAppender extends AutoCloseable {
     Segment getSegment();
 
     /**
+     * 设置append起始点
+     *
+     * @param offset 字节数
+     * @return {@link SegmentAppender}
+     */
+    SegmentAppender appendFrom(long offset);
+
+    /**
      * 写入一条记录
      *
      * @param entry 记录

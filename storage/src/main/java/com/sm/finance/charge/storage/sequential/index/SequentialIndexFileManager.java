@@ -16,14 +16,14 @@ import java.util.concurrent.ConcurrentSkipListMap;
  * @author shifeng.luo
  * @version created on 2017/9/26 上午12:08
  */
-public class SequentialIndexManager extends AbstractService implements IndexManager {
+public class SequentialIndexFileManager extends AbstractService implements IndexManager {
     private static final String EXTENSION = "index";
     private static final char EXTENSION_SEPARATOR = '.';
 
     private final File directory;
     private ConcurrentNavigableMap<Long, IndexFile> indexMap = new ConcurrentSkipListMap<>();
 
-    public SequentialIndexManager(File directory) {
+    public SequentialIndexFileManager(File directory) {
         this.directory = directory;
     }
 

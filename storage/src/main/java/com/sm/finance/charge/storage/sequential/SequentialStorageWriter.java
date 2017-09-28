@@ -1,6 +1,7 @@
 package com.sm.finance.charge.storage.sequential;
 
 import com.sm.finance.charge.common.AbstractService;
+import com.sm.finance.charge.common.LongIdGenerator;
 import com.sm.finance.charge.storage.api.StorageWriter;
 import com.sm.finance.charge.storage.api.segment.Segment;
 import com.sm.finance.charge.storage.api.segment.SegmentAppender;
@@ -15,10 +16,12 @@ import java.util.List;
 public class SequentialStorageWriter extends AbstractService implements StorageWriter {
 
     private final SegmentManager segmentManager;
+    private final LongIdGenerator sequenceGenerator;
     private volatile SegmentAppender appender;
 
-    public SequentialStorageWriter(SegmentManager segmentManager) {
+    public SequentialStorageWriter(SegmentManager segmentManager,long startSequence) {
         this.segmentManager = segmentManager;
+        this.sequenceGenerator = new LongIdGenerator(startSequence);
     }
 
     @Override
@@ -63,6 +66,16 @@ public class SequentialStorageWriter extends AbstractService implements StorageW
 
     @Override
     protected void doClose() {
+
+    }
+
+
+    private void appende(List<Object> messages){
+        long sequence;
+        for (Object message:messages) {
+            sequence = sequenceGenerator.nextId();
+
+        }
 
     }
 }

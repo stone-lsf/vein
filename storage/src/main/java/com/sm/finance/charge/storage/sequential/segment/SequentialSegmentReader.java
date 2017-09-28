@@ -47,9 +47,9 @@ public class SequentialSegmentReader extends LogSupport implements SegmentReader
 
 
     @Override
-    public SegmentReader skip(long bytes) {
+    public SegmentReader readFrom(long offset) {
         try {
-            fileChannel.position(bytes);
+            fileChannel.position(offset);
         } catch (IOException e) {
             logger.error("set reader position caught exception", e);
             System.exit(-1);

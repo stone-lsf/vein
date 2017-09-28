@@ -6,7 +6,6 @@ import com.sm.finance.charge.storage.api.FileStorage;
 import com.sm.finance.charge.storage.api.StorageConfig;
 import com.sm.finance.charge.storage.api.StorageReader;
 import com.sm.finance.charge.storage.api.StorageWriter;
-import com.sm.finance.charge.storage.api.index.IndexAppender;
 import com.sm.finance.charge.storage.api.index.IndexFile;
 import com.sm.finance.charge.storage.api.index.IndexManager;
 import com.sm.finance.charge.storage.api.index.OffsetIndex;
@@ -14,11 +13,9 @@ import com.sm.finance.charge.storage.api.segment.Entry;
 import com.sm.finance.charge.storage.api.segment.Segment;
 import com.sm.finance.charge.storage.api.segment.SegmentManager;
 import com.sm.finance.charge.storage.api.segment.SegmentReader;
-import com.sm.finance.charge.storage.sequential.index.SequentialIndexManager;
+import com.sm.finance.charge.storage.sequential.index.SequentialIndexFileManager;
 import com.sm.finance.charge.storage.sequential.index.SequentialOffsetIndex;
 import com.sm.finance.charge.storage.sequential.segment.SequentialSegmentManager;
-
-import org.apache.commons.collections.CollectionUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -39,7 +36,7 @@ public class SequentialFileStorage extends AbstractService implements FileStorag
         this.directory = directory;
         this.storageConfig = storageConfig;
         this.segmentManager = new SequentialSegmentManager(directory);
-        this.indexManager = new SequentialIndexManager(directory);
+        this.indexManager = new SequentialIndexFileManager(directory);
     }
 
     @Override
@@ -77,10 +74,16 @@ public class SequentialFileStorage extends AbstractService implements FileStorag
         recovery();
     }
 
-    private void recovery() throws IOException {
+    /**
+     * 恢复索引文件，并返回最后一条entry的sequence
+     *
+     * @return 最后一条entry的sequence
+     * @throws IOException IO异常
+     */
+    private long recovery() throws IOException {
         Segment segment = segmentManager.last();
         if (segment == null) {
-            return;
+            return 0;
         }
 
         long sequence = segment.descriptor().sequence();
@@ -95,10 +98,9 @@ public class SequentialFileStorage extends AbstractService implements FileStorag
             if (indexFile == null) {
                 indexFile = indexManager.create(sequence);
             }
-            replenishIndex(segment, indexFile);
-        } else {
-            replenishIndexFrom(indexSequence);
+            return replenishIndex(segment, indexFile);
         }
+        return replenishIndexFrom(indexSequence);
     }
 
     /**
@@ -106,24 +108,22 @@ public class SequentialFileStorage extends AbstractService implements FileStorag
      *
      * @param sequence 最后一个索引文件的sequence
      */
-    private void replenishIndexFrom(long sequence) throws IOException {
+    private long replenishIndexFrom(long sequence) throws IOException {
         IndexFile indexFile = indexManager.get(sequence);
         if (indexFile == null) {
             indexFile = indexManager.create(sequence);
         }
 
+        long lastSequence = 0;
         List<Segment> segments = segmentManager.higher(sequence);
-        if (CollectionUtils.isEmpty(segments)) {
-            return;
-        }
-
         for (Segment segment : segments) {
             long segmentSequence = segment.descriptor().sequence();
             if (segmentSequence != indexFile.firstSequence()) {
                 indexFile = indexManager.create(segmentSequence);
             }
-            replenishIndex(segment, indexFile);
+            lastSequence = replenishIndex(segment, indexFile);
         }
+        return lastSequence;
     }
 
     /**
@@ -132,35 +132,49 @@ public class SequentialFileStorage extends AbstractService implements FileStorag
      * @param segment   record文件
      * @param indexFile record文件对应的索引文件
      */
-    private void replenishIndex(Segment segment, IndexFile indexFile) throws IOException {
-        SegmentReader segmentReader = segment.reader();
-        OffsetIndex index = indexFile.lastIndex();
+    private long replenishIndex(Segment segment, IndexFile indexFile) throws IOException {
+        long sequence = segment.descriptor().sequence();
+        File file = segment.getFile();
+        if (file.length() == 0) {
+            return sequence - 1;
+        }
+
+        OffsetIndex index = indexFile.floorOffset(file.length());
+        if (index == null){
+            index = indexFile.lastIndex();
+        } else {
+            indexFile.truncate(index);
+        }
+
         long offset = 0;
         if (index != null) {
             offset = index.offset();
-            segmentReader.skip(offset);
+            sequence = index.sequence();
         }
 
-        IndexAppender indexAppender = indexFile.appender();
+        SegmentReader segmentReader = segment.reader();
+        segmentReader.readFrom(offset);
+
         int interval = storageConfig.getIndexInterval();
-        int preIndexed = 1;
+        int preIndexed = 0;
         int readCount = 0;
 
         Entry entry;
         while ((entry = segmentReader.readEntry()) != null) {
-            readCount++;
+            sequence = entry.head().sequence();
             if (readCount - preIndexed == interval) {
-                long sequence = entry.head().sequence();
                 SequentialOffsetIndex offsetIndex = new SequentialOffsetIndex(sequence, offset);
-                indexAppender.write(offsetIndex);
+                indexFile.write(offsetIndex);
                 preIndexed = readCount;
             }
             offset += entry.size();
+            readCount++;
         }
 
-        indexAppender.flush();
-        IoUtil.close(indexAppender);
+        indexFile.flush();
+        IoUtil.close(indexFile);
         IoUtil.close(segmentReader);
+        return sequence;
     }
 
     @Override
