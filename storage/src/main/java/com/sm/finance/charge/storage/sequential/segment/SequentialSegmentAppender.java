@@ -34,10 +34,6 @@ public class SequentialSegmentAppender extends LogSupport implements SegmentAppe
 
     private AtomicBoolean writing = new AtomicBoolean(false);
     private final Object writeComplete = new Object();
-    private AtomicBoolean flushing = new AtomicBoolean(false);
-    private final Object flushComplete = new Object();
-    private boolean writeBuffer = false;
-    private final Object writeBufferComplete = new Object();
 
     SequentialSegmentAppender(Segment segment) throws IOException {
         this.segment = segment;
@@ -53,62 +49,26 @@ public class SequentialSegmentAppender extends LogSupport implements SegmentAppe
     @Override
     public SegmentAppender flush() {
         checkClosed();
-        if (!flushing.compareAndSet(false, true)) {
-            return this;
+        try {
+            fileChannel.write(explicit);
+            explicit.flip();
+        } catch (IOException e) {
+            logger.error("flush file:{} caught exception:{}", segment.getFile(), e);
+            System.exit(-1);
         }
-
-        synchronized (writeBufferComplete) {
-            while (writeBuffer) {
-                try {
-                    writeBufferComplete.wait();
-                } catch (InterruptedException e) {
-                    logger.warn("waiting write buffer end is interrupted", e);
-                }
-            }
-
-            try {
-                fileChannel.write(explicit);
-                explicit.flip();
-            } catch (IOException e) {
-                logger.error("flush file:{} caught exception:{}", segment.getFile(), e);
-                System.exit(-1);
-            }
-
-            flushing.set(false);
-            synchronized (flushComplete) {
-                flushComplete.notify();
-            }
-
-            return this;
-        }
+        return this;
     }
 
     @Override
     public CompletableFuture<Boolean> write(Entry entry) {
         checkClosed();
-        synchronized (flushComplete) {
-            while (flushing.get()) {
-                try {
-                    flushComplete.wait();
-                } catch (InterruptedException e) {
-                    logger.warn("waiting flush end is interrupted", e);
-                }
-            }
-
-            writeBuffer = true;
-            CompletableFuture<Boolean> future = new CompletableFuture<>();
-            entry.writeTo(explicit);
-            while (!entry.writeComplete()) {
-                exchangeBuffer();
-            }
-
-            writeBuffer = false;
-            synchronized (writeBufferComplete) {
-                writeBufferComplete.notify();
-            }
-
-            return future;
+        CompletableFuture<Boolean> future = new CompletableFuture<>();
+        entry.writeTo(explicit);
+        while (!entry.writeComplete()) {
+            exchangeBuffer();
         }
+
+        return future;
     }
 
 
