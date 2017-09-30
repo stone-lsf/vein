@@ -4,7 +4,7 @@ package com.sm.finance.charge.common.exceptions;
  * @author shifeng.luo
  * @version created on 2017/9/28 下午2:18
  */
-public class BadDiskException extends RuntimeException {
+public class BadDiskException extends Exception {
 
     public BadDiskException() {
     }

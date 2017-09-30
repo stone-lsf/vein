@@ -1,6 +1,9 @@
 package com.sm.finance.charge.storage.api.segment;
 
-import com.sm.finance.charge.storage.api.index.IndexFile;
+import com.sm.finance.charge.storage.sequential.ReadBuffer;
+import com.sm.finance.charge.storage.sequential.WriterBuffer;
+
+import org.apache.commons.lang3.tuple.Pair;
 
 import java.io.File;
 import java.io.IOException;
@@ -10,6 +13,8 @@ import java.io.IOException;
  * @version created on 2017/9/25 下午10:27
  */
 public interface Segment {
+
+    void setEntryListener(EntryListener listener);
 
     /**
      * the sequence of segment first entry
@@ -28,9 +33,9 @@ public interface Segment {
     /**
      * 校验文件是否完整，或者被非法修改过
      *
-     * @return 完整数据截止处
+     * @return 完整数据截止处, left:sequence,right:offset
      */
-    long check() throws IOException;
+    Pair<Long, Long> check() ;
 
     /**
      * 删除指定文件内偏移处之后的数据
@@ -45,12 +50,12 @@ public interface Segment {
      *
      * @return 读取器
      */
-    SegmentReader reader() throws IOException;
+    SegmentReader reader(ReadBuffer buffer) ;
 
     /**
      * segment写入器
      *
      * @return 写入器
      */
-    SegmentAppender appender() throws IOException;
+    SegmentAppender appender(WriterBuffer buffer) ;
 }

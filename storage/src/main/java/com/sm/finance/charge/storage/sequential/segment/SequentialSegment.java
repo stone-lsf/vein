@@ -7,10 +7,16 @@ import com.sm.finance.charge.common.exceptions.BadDiskException;
 import com.sm.finance.charge.storage.api.exceptions.BadDataException;
 import com.sm.finance.charge.storage.api.exceptions.StorageException;
 import com.sm.finance.charge.storage.api.segment.Entry;
+import com.sm.finance.charge.storage.api.segment.EntryListener;
 import com.sm.finance.charge.storage.api.segment.Segment;
 import com.sm.finance.charge.storage.api.segment.SegmentAppender;
 import com.sm.finance.charge.storage.api.segment.SegmentDescriptor;
 import com.sm.finance.charge.storage.api.segment.SegmentReader;
+import com.sm.finance.charge.storage.sequential.ReadBuffer;
+import com.sm.finance.charge.storage.sequential.WriterBuffer;
+
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -24,11 +30,26 @@ public class SequentialSegment extends LogSupport implements Segment {
 
     private final File file;
     private final SegmentDescriptor descriptor;
+    private EntryListener listener;
 
 
-    SequentialSegment(SegmentDescriptor descriptor, File file) {
+    SequentialSegment(SegmentDescriptor descriptor, File file) throws BadDiskException {
+        try {
+            boolean newFile = file.createNewFile();
+            if (newFile) {
+                logger.info("create segment file:{}", file);
+            }
+        } catch (IOException e) {
+            throw new BadDiskException(e);
+        }
         this.file = file;
         this.descriptor = descriptor;
+    }
+
+
+    @Override
+    public void setEntryListener(EntryListener listener) {
+        this.listener = listener;
     }
 
     @Override
@@ -42,13 +63,17 @@ public class SequentialSegment extends LogSupport implements Segment {
     }
 
     @Override
-    public long check() throws IOException {
-        SegmentReader reader = reader();
+    public Pair<Long, Long> check() {
+        SegmentReader reader = reader(new ReadBuffer());
         long offset = 0;
+        long sequence = descriptor.sequence();
         Entry entry;
         try {
             while ((entry = reader.readEntry()) != null) {
-                entry.check();
+                entry.validCheckSum();
+                sequence = entry.head().sequence();
+
+                listener.onCreate(sequence, offset);
                 offset += entry.size();
             }
         } catch (BadDataException e) {
@@ -56,7 +81,7 @@ public class SequentialSegment extends LogSupport implements Segment {
         } finally {
             IoUtil.close(reader);
         }
-        return offset;
+        return new ImmutablePair<>(sequence, offset);
     }
 
     @Override
@@ -75,13 +100,13 @@ public class SequentialSegment extends LogSupport implements Segment {
     }
 
     @Override
-    public SegmentReader reader() throws IOException {
-        return new SequentialSegmentReader(this);
+    public SegmentReader reader(ReadBuffer buffer) {
+        return new SequentialSegmentReader(this, buffer);
     }
 
     @Override
-    public SegmentAppender appender() throws IOException {
-        return new SequentialSegmentAppender(this);
+    public SegmentAppender appender(WriterBuffer buffer) {
+        return new SequentialSegmentAppender(this, buffer, listener);
     }
 
 

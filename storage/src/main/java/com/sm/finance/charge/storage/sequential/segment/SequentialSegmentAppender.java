@@ -2,43 +2,46 @@ package com.sm.finance.charge.storage.sequential.segment;
 
 import com.sm.finance.charge.common.IoUtil;
 import com.sm.finance.charge.common.LogSupport;
-import com.sm.finance.charge.common.NamedThreadFactory;
 import com.sm.finance.charge.storage.api.exceptions.ClosedException;
 import com.sm.finance.charge.storage.api.segment.Entry;
+import com.sm.finance.charge.storage.api.segment.EntryListener;
 import com.sm.finance.charge.storage.api.segment.Segment;
 import com.sm.finance.charge.storage.api.segment.SegmentAppender;
-import com.sm.finance.charge.storage.sequential.Constants;
+import com.sm.finance.charge.storage.sequential.WriterBuffer;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * @author shifeng.luo
  * @version created on 2017/9/25 下午11:54
  */
 public class SequentialSegmentAppender extends LogSupport implements SegmentAppender {
-    private static final ExecutorService EXECUTOR_SERVICE = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("AppendPool"));
 
     private final Segment segment;
     private final FileChannel fileChannel;
-    private volatile ByteBuffer implicit = ByteBuffer.allocate(Constants.maxEntrySize * 4);
-    private volatile ByteBuffer explicit = ByteBuffer.allocate(Constants.maxEntrySize * 4);
+    private final WriterBuffer buffer;
+    private final EntryListener listener;
 
     private volatile boolean closed = false;
+    private volatile long appendOffset = 0;
 
-    private AtomicBoolean writing = new AtomicBoolean(false);
-    private final Object writeComplete = new Object();
-
-    SequentialSegmentAppender(Segment segment) throws IOException {
+    SequentialSegmentAppender(Segment segment, WriterBuffer buffer, EntryListener listener) {
         this.segment = segment;
-        RandomAccessFile accessFile = new RandomAccessFile(segment.getFile(), "wr");
+        this.buffer = buffer;
+        this.listener = listener;
+        RandomAccessFile accessFile = null;
+        try {
+            accessFile = new RandomAccessFile(segment.getFile(), "wr");
+        } catch (FileNotFoundException e) {
+            logger.error("can't find file:{}", segment.getFile());
+            throw new IllegalStateException(e);
+        }
         this.fileChannel = accessFile.getChannel();
+        this.buffer.setFileChannel(fileChannel);
     }
 
     @Override
@@ -48,17 +51,29 @@ public class SequentialSegmentAppender extends LogSupport implements SegmentAppe
 
     @Override
     public SegmentAppender appendFrom(long offset) {
-        return null;
+        appendOffset = offset;
+        try {
+            fileChannel.position(appendOffset);
+        } catch (IOException e) {
+            logger.error("set append from:{} caught exception:{}", offset, e);
+            System.exit(-1);
+        }
+        return this;
+    }
+
+    @Override
+    public long appendOffset() {
+        return appendOffset;
     }
 
     @Override
     public SegmentAppender flush() {
         checkClosed();
+        buffer.flush();
         try {
-            fileChannel.write(explicit);
-            explicit.flip();
+            fileChannel.force(false);
         } catch (IOException e) {
-            logger.error("flush file:{} caught exception:{}", segment.getFile(), e);
+            logger.error("file channel force caught exception", e);
             System.exit(-1);
         }
         return this;
@@ -67,53 +82,11 @@ public class SequentialSegmentAppender extends LogSupport implements SegmentAppe
     @Override
     public CompletableFuture<Boolean> write(Entry entry) {
         checkClosed();
-        CompletableFuture<Boolean> future = new CompletableFuture<>();
-        entry.writeTo(explicit);
-        while (!entry.writeComplete()) {
-            exchangeBuffer();
-        }
-
+        CompletableFuture<Boolean> future = buffer.add(entry);
+        listener.onCreate(entry.head().sequence(), appendOffset);
+        appendOffset += entry.size();
         return future;
     }
-
-
-    private void exchangeBuffer() {
-        synchronized (writeComplete) {
-            while (writing.get()) {
-                try {
-                    writeComplete.wait();
-                } catch (InterruptedException e) {
-                    logger.warn("waiting read end is interrupted", e);
-                }
-            }
-            ByteBuffer tmp = implicit;
-            implicit = explicit;
-            explicit = tmp;
-
-            implicit.flip();
-            appendBuffer();
-        }
-    }
-
-    private void appendBuffer() {
-        if (writing.compareAndSet(false, true)) {
-            EXECUTOR_SERVICE.execute(() -> {
-                try {
-                    fileChannel.write(implicit);
-                    implicit.flip();
-                    writing.set(false);
-
-                    synchronized (writeComplete) {
-                        writeComplete.notify();
-                    }
-                } catch (IOException e) {
-                    logger.error("write to file:{} caught exception:{}", segment.getFile(), e);
-                    System.exit(-1);
-                }
-            });
-        }
-    }
-
 
     private void checkClosed() {
         if (closed) {
@@ -123,9 +96,7 @@ public class SequentialSegmentAppender extends LogSupport implements SegmentAppe
 
 
     @Override
-    public void close() throws Exception {
-        implicit = null;
-        explicit = null;
+    public void close() {
         closed = true;
         IoUtil.close(fileChannel);
     }

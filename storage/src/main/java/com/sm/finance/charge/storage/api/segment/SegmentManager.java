@@ -2,6 +2,7 @@ package com.sm.finance.charge.storage.api.segment;
 
 import com.sm.finance.charge.common.Closable;
 import com.sm.finance.charge.common.Startable;
+import com.sm.finance.charge.common.exceptions.BadDiskException;
 
 import java.util.List;
 
@@ -11,7 +12,7 @@ import java.util.List;
  */
 public interface SegmentManager extends Startable, Closable {
 
-    Segment create(long sequence);
+    Segment create(long sequence) throws BadDiskException;
 
     Segment last();
 

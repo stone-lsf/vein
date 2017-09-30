@@ -10,7 +10,7 @@ import java.nio.ByteBuffer;
  * @version created on 2017/9/25 下午10:54
  */
 public class SequentialOffsetIndex implements OffsetIndex {
-    private static final int LENGTH = 8 + 8 + 4;
+    public static final int LENGTH = 8 + 8 + 4;
 
     private ByteBuffer readBuffer;
     private ByteBuffer writeBuffer;
@@ -47,6 +47,18 @@ public class SequentialOffsetIndex implements OffsetIndex {
     @Override
     public int size() {
         return LENGTH;
+    }
+
+    public void setSequence(long sequence) {
+        this.sequence = sequence;
+    }
+
+    public void setOffset(long offset) {
+        this.offset = offset;
+    }
+
+    public void setCrc32(int crc32) {
+        this.crc32 = crc32;
     }
 
     @Override
@@ -107,12 +119,12 @@ public class SequentialOffsetIndex implements OffsetIndex {
     }
 
     @Override
-    public int calculate() {
+    public int buildCheckSum() {
         return 0;
     }
 
     @Override
-    public void check() throws BadDataException {
+    public void validCheckSum() throws BadDataException {
 
     }
 }

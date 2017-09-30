@@ -8,7 +8,7 @@ import com.sm.finance.charge.storage.api.exceptions.BadDataException;
  */
 public interface CheckSum {
 
-    int calculate();
+    int buildCheckSum();
 
-    void check() throws BadDataException;
+    void validCheckSum() throws BadDataException;
 }

@@ -4,6 +4,7 @@ import com.google.common.collect.Lists;
 
 import com.sm.finance.charge.common.AbstractService;
 import com.sm.finance.charge.common.FileUtil;
+import com.sm.finance.charge.common.exceptions.BadDiskException;
 import com.sm.finance.charge.storage.api.segment.Segment;
 import com.sm.finance.charge.storage.api.segment.SegmentDescriptor;
 import com.sm.finance.charge.storage.api.segment.SegmentManager;
@@ -36,17 +37,9 @@ public class SequentialSegmentManager extends AbstractService implements Segment
     @Override
     protected void doStart() throws Exception {
         loadSegments();
-        Map.Entry<Long, Segment> entry = segmentMap.lastEntry();
-        if (entry == null) {
-            return;
-        }
-
-        Segment segment = entry.getValue();
-        long validOffset = segment.check();
-        segment.truncate(validOffset);
     }
 
-    private void loadSegments() throws IOException {
+    private void loadSegments() throws IOException, BadDiskException {
         Collection<File> files = FileUtil.listAllFile(directory, File::isFile);
 
         for (File file : files) {
@@ -85,15 +78,13 @@ public class SequentialSegmentManager extends AbstractService implements Segment
     }
 
     @Override
-    public Segment create(long sequence) {
+    public Segment create(long sequence) throws BadDiskException {
         checkStarted();
         SegmentDescriptor descriptor = new SequentialSegmentDescriptor(sequence);
         File file = buildSegmentFile(sequence);
 
         Segment segment = new SequentialSegment(descriptor, file);
         segmentMap.put(sequence, segment);
-
-
         return segment;
     }
 

@@ -21,6 +21,11 @@ public class StorageConfig {
      */
     private int maxMessageSize;
 
+    /**
+     * 每个索引文件的最大大小
+     */
+    private int maxIndexFileSize;
+
     public int getIndexInterval() {
         return indexInterval;
     }
@@ -43,5 +48,13 @@ public class StorageConfig {
 
     public void setMaxMessageSize(int maxMessageSize) {
         this.maxMessageSize = maxMessageSize;
+    }
+
+    public int getMaxIndexFileSize() {
+        return maxIndexFileSize;
+    }
+
+    public void setMaxIndexFileSize(int maxIndexFileSize) {
+        this.maxIndexFileSize = maxIndexFileSize;
     }
 }

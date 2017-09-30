@@ -9,7 +9,7 @@ import java.nio.ByteBuffer;
  * @version created on 2017/9/26 上午12:05
  */
 public class SequentialHeader implements Header {
-    private static final int FIXED_LENGTH = 8 + 4 + 4 + 4 + 2;
+    public static final int FIXED_LENGTH = 8 + 4 + 4 + 4 + 2;
     private ByteBuffer length = ByteBuffer.allocate(4);
     private ByteBuffer readBuffer;
     private ByteBuffer writeBuffer;
@@ -62,6 +62,62 @@ public class SequentialHeader implements Header {
     @Override
     public int size() {
         return headerSize;
+    }
+
+    public int getHeaderSize() {
+        return headerSize;
+    }
+
+    public void setHeaderSize(int headerSize) {
+        this.headerSize = headerSize;
+    }
+
+    public int getEntrySize() {
+        return entrySize;
+    }
+
+    public void setEntrySize(int entrySize) {
+        this.entrySize = entrySize;
+    }
+
+    public long getSequence() {
+        return sequence;
+    }
+
+    public void setSequence(long sequence) {
+        this.sequence = sequence;
+    }
+
+    public int getCrc32() {
+        return crc32;
+    }
+
+    public void setCrc32(int crc32) {
+        this.crc32 = crc32;
+    }
+
+    public byte getVersion() {
+        return version;
+    }
+
+    public void setVersion(byte version) {
+        this.version = version;
+    }
+
+    public byte getCompress() {
+        return compress;
+    }
+
+    public void setCompress(byte compress) {
+        this.compress = compress;
+    }
+
+    public byte[] getExtend() {
+        return extend;
+    }
+
+    public void setExtend(byte[] extend) {
+        this.extend = extend;
     }
 
     @Override

@@ -20,6 +20,14 @@ public class SequentialEntry implements Entry {
     private Header header;
     private byte[] payload;
 
+    public SequentialEntry() {
+    }
+
+    public SequentialEntry(Header header, byte[] payload) {
+        this.header = header;
+        this.payload = payload;
+    }
+
     @Override
     public Header head() {
         return header;
@@ -112,12 +120,20 @@ public class SequentialEntry implements Entry {
     }
 
     @Override
-    public int calculate() {
+    public int buildCheckSum() {
         return 0;
     }
 
     @Override
-    public void check() throws BadDataException {
+    public void validCheckSum() throws BadDataException {
 
+    }
+
+    public void setHeader(Header header) {
+        this.header = header;
+    }
+
+    public void setPayload(byte[] payload) {
+        this.payload = payload;
     }
 }

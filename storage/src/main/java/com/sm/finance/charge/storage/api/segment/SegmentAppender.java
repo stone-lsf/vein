@@ -24,6 +24,13 @@ public interface SegmentAppender extends AutoCloseable {
     SegmentAppender appendFrom(long offset);
 
     /**
+     * 返回当前的append偏移，包含缓存的数据
+     *
+     * @return 偏移量
+     */
+    long appendOffset();
+
+    /**
      * 写入一条记录
      *
      * @param entry 记录
@@ -37,4 +44,6 @@ public interface SegmentAppender extends AutoCloseable {
      * @return {@link SegmentAppender}
      */
     SegmentAppender flush();
+
+    void close();
 }

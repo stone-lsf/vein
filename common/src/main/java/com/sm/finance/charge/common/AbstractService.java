@@ -8,7 +8,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @author shifeng.luo
  * @version created on 2017/9/11 下午3:45
  */
-public abstract class AbstractService extends LogSupport implements Startable, Closable {
+public abstract class AbstractService extends LogSupport implements Startable, AutoCloseable {
 
     protected AtomicBoolean started = new AtomicBoolean(false);
     protected AtomicBoolean closed = new AtomicBoolean(false);

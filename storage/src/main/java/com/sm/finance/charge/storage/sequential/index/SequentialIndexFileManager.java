@@ -2,8 +2,9 @@ package com.sm.finance.charge.storage.sequential.index;
 
 import com.sm.finance.charge.common.AbstractService;
 import com.sm.finance.charge.common.FileUtil;
+import com.sm.finance.charge.common.exceptions.BadDiskException;
 import com.sm.finance.charge.storage.api.index.IndexFile;
-import com.sm.finance.charge.storage.api.index.IndexManager;
+import com.sm.finance.charge.storage.api.index.IndexFileManager;
 
 import java.io.File;
 import java.io.IOException;
@@ -16,23 +17,27 @@ import java.util.concurrent.ConcurrentSkipListMap;
  * @author shifeng.luo
  * @version created on 2017/9/26 上午12:08
  */
-public class SequentialIndexFileManager extends AbstractService implements IndexManager {
+public class SequentialIndexFileManager extends AbstractService implements IndexFileManager {
     private static final String EXTENSION = "index";
     private static final char EXTENSION_SEPARATOR = '.';
 
     private final File directory;
+    private final int indexInterval;
+    private final int maxFileSize;
     private ConcurrentNavigableMap<Long, IndexFile> indexMap = new ConcurrentSkipListMap<>();
 
-    public SequentialIndexFileManager(File directory) {
+    public SequentialIndexFileManager(File directory, int indexInterval, int maxFileSize) {
         this.directory = directory;
+        this.indexInterval = indexInterval;
+        this.maxFileSize = maxFileSize;
     }
 
     @Override
-    public IndexFile create(long sequence) {
+    public IndexFile create(long sequence) throws BadDiskException {
         checkStarted();
         File file = buildIndexFile(sequence);
 
-        IndexFile segment = new SequentialIndexFile(file, sequence);
+        IndexFile segment = new SequentialIndexFile(file, sequence, indexInterval, maxFileSize);
         indexMap.put(sequence, segment);
         return segment;
     }
@@ -57,18 +62,9 @@ public class SequentialIndexFileManager extends AbstractService implements Index
     @Override
     protected void doStart() throws Exception {
         loadSegments();
-
-        Map.Entry<Long, IndexFile> entry = indexMap.lastEntry();
-        if (entry == null) {
-            return;
-        }
-
-        IndexFile indexFile = entry.getValue();
-        long validOffset = indexFile.check();
-        indexFile.truncate(validOffset);
     }
 
-    private void loadSegments() throws IOException {
+    private void loadSegments() throws BadDiskException, IOException {
         Collection<File> files = FileUtil.listAllFile(directory, File::isFile);
 
         for (File file : files) {
@@ -76,7 +72,7 @@ public class SequentialIndexFileManager extends AbstractService implements Index
             if (firstSequence <= 0) {
                 continue;
             }
-            IndexFile indexFile = new SequentialIndexFile(file, firstSequence);
+            IndexFile indexFile = new SequentialIndexFile(file, firstSequence, indexInterval, maxFileSize);
             indexMap.put(firstSequence, indexFile);
         }
     }

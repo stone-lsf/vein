@@ -1,6 +1,8 @@
 package com.sm.finance.charge.storage.api.rolling;
 
+import com.sm.finance.charge.common.exceptions.BadDiskException;
 import com.sm.finance.charge.storage.api.segment.Segment;
+import com.sm.finance.charge.storage.api.segment.SegmentDescriptor;
 
 /**
  * @author shifeng.luo
@@ -26,5 +28,5 @@ public interface RollingPolicy {
      *
      * @return {@link Segment}
      */
-    Segment nextSegment();
+    Segment nextSegment(SegmentDescriptor descriptor) throws BadDiskException;
 }

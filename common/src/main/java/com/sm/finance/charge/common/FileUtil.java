@@ -124,7 +124,7 @@ public class FileUtil {
      *
      * @param offset 文件内偏移
      */
-    public static void truncate(long offset, File file) throws FileNotFoundException {
+    public static void truncate(long offset, File file) throws FileNotFoundException, BadDiskException {
         RandomAccessFile accessFile = new RandomAccessFile(file, "wr");
         FileChannel channel = accessFile.getChannel();
 

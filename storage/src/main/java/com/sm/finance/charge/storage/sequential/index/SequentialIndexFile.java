@@ -1,19 +1,20 @@
 package com.sm.finance.charge.storage.sequential.index;
 
 import com.sm.finance.charge.common.FileUtil;
+import com.sm.finance.charge.common.IoUtil;
 import com.sm.finance.charge.common.LogSupport;
 import com.sm.finance.charge.common.exceptions.BadDiskException;
-import com.sm.finance.charge.storage.api.exceptions.BadDataException;
-import com.sm.finance.charge.storage.api.exceptions.StorageException;
+import com.sm.finance.charge.storage.api.exceptions.ClosedException;
 import com.sm.finance.charge.storage.api.index.IndexFile;
 import com.sm.finance.charge.storage.api.index.OffsetIndex;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentNavigableMap;
-import java.util.concurrent.ConcurrentSkipListMap;
+import java.io.RandomAccessFile;
+import java.nio.ByteBuffer;
+import java.nio.MappedByteBuffer;
+import java.nio.channels.FileChannel;
 
 /**
  * @author shifeng.luo
@@ -21,33 +22,123 @@ import java.util.concurrent.ConcurrentSkipListMap;
  */
 public class SequentialIndexFile extends LogSupport implements IndexFile {
     private final File file;
-    private final long firstSequence;
-    private final ConcurrentNavigableMap<Long, OffsetIndex> sequenceIndexMap = new ConcurrentSkipListMap<>();
-    private final ConcurrentNavigableMap<Long, OffsetIndex> offsetIndexMap = new ConcurrentSkipListMap<>();
+    private final long baseSequence;
+    private final int indexInterval;
+    private final int maxFileSize;
+    private final int maxEntries;
+    private volatile MappedByteBuffer mapBuffer;
 
-    SequentialIndexFile(File file, long firstSequence) {
+    private volatile boolean closed = false;
+
+
+    private volatile int entries;
+    private volatile long lastIndexSequence;
+
+
+    SequentialIndexFile(File file, long baseSequence, int indexInterval, int maxFileSize) throws BadDiskException {
+        boolean newFile;
+        try {
+            newFile = file.createNewFile();
+        } catch (IOException e) {
+            logger.error("create file fail", e);
+            throw new BadDiskException(e);
+        }
         this.file = file;
-        this.firstSequence = firstSequence;
+        this.baseSequence = baseSequence;
+        this.indexInterval = indexInterval;
+        this.maxFileSize = maxFileSize;
+        RandomAccessFile raf;
+        try {
+            raf = new RandomAccessFile(file, "rw");
+        } catch (FileNotFoundException e) {
+            logger.error("can't find file:{}", file);
+            throw new IllegalStateException(e);
+        }
+
+        try {
+            if (newFile) {
+                raf.setLength(maxFileSize);
+            }
+
+            this.mapBuffer = raf.getChannel().map(FileChannel.MapMode.READ_WRITE, 0, raf.length());
+            if (newFile) {
+                mapBuffer.position(0);
+            } else {
+                mapBuffer.position(roundToExactMultiple(mapBuffer.limit(), SequentialOffsetIndex.LENGTH));
+            }
+            this.entries = mapBuffer.position() / SequentialOffsetIndex.LENGTH;
+            this.maxEntries = mapBuffer.limit() / SequentialOffsetIndex.LENGTH;
+        } catch (IOException e) {
+            logger.error("create file fail", e);
+            throw new BadDiskException(e);
+        } finally {
+            IoUtil.close(raf);
+        }
+    }
+
+    private int roundToExactMultiple(int number, int factor) {
+        return factor * (number / factor);
     }
 
     @Override
-    public long firstSequence() {
-        return firstSequence;
+    public long baseSequence() {
+        return baseSequence;
     }
 
     @Override
     public OffsetIndex lastIndex() {
-        return null;
+        if (entries == 0) {
+            return null;
+        }
+
+        long sequence = getSequence(mapBuffer, entries);
+        long offset = getOffset(mapBuffer, entries);
+        return new SequentialOffsetIndex(sequence, offset);
+    }
+
+    /**
+     * 读取序列号
+     *
+     * @param mapBuffer buffer
+     * @param num       索引文件的第num条记录
+     * @return sequence
+     */
+    private long getSequence(ByteBuffer mapBuffer, int num) {
+        return mapBuffer.getLong(num * SequentialOffsetIndex.LENGTH);
+    }
+
+    /**
+     * 读取序列号
+     *
+     * @param mapBuffer buffer
+     * @param num       索引文件的第num条记录
+     * @return sequence
+     */
+    private long getOffset(ByteBuffer mapBuffer, int num) {
+        return mapBuffer.getLong(num * SequentialOffsetIndex.LENGTH + 8);
     }
 
     @Override
-    public OffsetIndex floorOffset(long entryOffset) {
-        return null;
+    public OffsetIndex lookup(long sequence) {
+        ByteBuffer duplicate = mapBuffer.duplicate();
+
+        long interval = sequence - baseSequence;
+        if (entries == 0) {
+            return null;
+        }
+
+        int slot = (int) ((interval + indexInterval) / indexInterval);
+        OffsetIndex offsetIndex = getOffsetIndex(duplicate, slot);
+        while (offsetIndex.sequence() > sequence) {
+            offsetIndex = getOffsetIndex(duplicate, slot--);
+        }
+        return offsetIndex;
     }
 
-    @Override
-    public OffsetIndex floorSequence(long sequence) {
-        return null;
+    private OffsetIndex getOffsetIndex(ByteBuffer buffer, int slot) {
+        long sequence = getSequence(buffer, slot);
+        long offset = getOffset(buffer, slot);
+        return new SequentialOffsetIndex(sequence, offset);
     }
 
     @Override
@@ -56,59 +147,76 @@ public class SequentialIndexFile extends LogSupport implements IndexFile {
     }
 
     @Override
-    public long check() throws IOException {
-        long offset = 0;
-        OffsetIndex index;
-        try {
-            while ((index = readIndex()) != null) {
-                index.check();
-                offset += index.size();
-                sequenceIndexMap.put(index.sequence(), index);
-                offsetIndexMap.put(index.offset(), index);
-            }
-        } catch (BadDataException e) {
-            logger.warn("segment:{} has bad data", file.getName());
-        }
-        return offset;
-    }
-
-    @Override
-    public IndexFile truncate(long offset) {
+    public IndexFile truncate(long offset) throws BadDiskException {
         try {
             FileUtil.truncate(offset, file);
+            resize();
         } catch (FileNotFoundException e) {
-            logger.error("truncate index file caught exception", e);
-            throw new StorageException(e);
-        } catch (BadDiskException e) {
-            logger.error("truncate index file caught bad disk exception", e);
-            System.exit(-1);
+            logger.error("truncate index file:{} not found, exception:{}", file, e);
+            throw new IllegalStateException(e);
         }
         return this;
     }
 
+    private void resize() throws FileNotFoundException, BadDiskException {
+        RandomAccessFile raf = new RandomAccessFile(file, "rw");
+        int position = mapBuffer.position();
+        try {
+            this.mapBuffer = raf.getChannel().map(FileChannel.MapMode.READ_WRITE, 0, raf.length());
+            mapBuffer.position(roundToExactMultiple(mapBuffer.limit(), SequentialOffsetIndex.LENGTH));
+
+            this.entries = mapBuffer.position() / SequentialOffsetIndex.LENGTH;
+            mapBuffer.position(position);
+        } catch (IOException e) {
+            throw new BadDiskException(e);
+        } finally {
+            IoUtil.close(raf);
+        }
+    }
+
+
     @Override
-    public IndexFile truncate(OffsetIndex index) {
-        return null;
+    public void receiveEntry(long sequence, long offset) {
+        if (sequence - lastIndexSequence >= indexInterval) {
+            SequentialOffsetIndex index = new SequentialOffsetIndex(sequence, offset);
+            int checkSum = index.buildCheckSum();
+            index.setCrc32(checkSum);
+            index.writeTo(mapBuffer);
+            entries += 1;
+            lastIndexSequence = sequence;
+        }
     }
 
     @Override
-    public OffsetIndex readIndex() {
-        return null;
-    }
-
-    @Override
-    public CompletableFuture<Boolean> write(OffsetIndex index) {
-        return null;
+    public void trimToValidSize() throws BadDiskException {
+        truncate(entries * 8);
     }
 
     @Override
     public IndexFile flush() {
-        return null;
+        checkClosed();
+        mapBuffer.force();
+        return this;
     }
 
+    @Override
+    public int maxFileSize() {
+        return maxFileSize;
+    }
+
+    @Override
+    public boolean isFull() {
+        return entries >= maxEntries;
+    }
 
     @Override
     public void close() throws Exception {
+        closed = true;
+    }
 
+    private void checkClosed() {
+        if (closed) {
+            throw new ClosedException(file.getName() + " appender has closed!");
+        }
     }
 }

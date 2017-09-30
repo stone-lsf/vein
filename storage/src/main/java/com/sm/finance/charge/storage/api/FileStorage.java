@@ -44,4 +44,7 @@ public interface FileStorage extends Startable{
      * @return rolling reader
      */
     StorageReader reader();
+
+
+    void setExceptionHandler(ExceptionHandler handler);
 }

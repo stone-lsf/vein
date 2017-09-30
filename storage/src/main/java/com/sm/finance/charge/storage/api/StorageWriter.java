@@ -16,14 +16,14 @@ public interface StorageWriter<T> extends Startable, Closable {
      *
      * @param message 数据
      */
-    void append(T message);
+    boolean append(T message);
 
     /**
      * 同步批量写数据，此时数据只会写入操作系统内存，不会强制刷盘
      *
      * @param messages 数据
      */
-    void append(List<T> messages);
+    boolean append(List<T> messages);
 
     /**
      * 同步且强制刷盘写数据，此时数据不仅会写入操作系统内存，并且会同时强制刷盘
