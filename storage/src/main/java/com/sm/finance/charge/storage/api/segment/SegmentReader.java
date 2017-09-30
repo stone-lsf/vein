@@ -1,5 +1,7 @@
 package com.sm.finance.charge.storage.api.segment;
 
+import com.sm.finance.charge.common.exceptions.BadDiskException;
+
 /**
  * @author shifeng.luo
  * @version created on 2017/9/25 下午10:31
@@ -19,7 +21,7 @@ public interface SegmentReader extends AutoCloseable {
      * @param offset 字节数
      * @return {@link SegmentReader}
      */
-    SegmentReader readFrom(long offset);
+    SegmentReader readFrom(long offset) throws BadDiskException;
 
     /**
      * 读取记录

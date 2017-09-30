@@ -7,6 +7,7 @@ import com.sm.finance.charge.common.NamedThreadFactory;
 import com.sm.finance.charge.common.exceptions.BadDiskException;
 import com.sm.finance.charge.serializer.api.Serializer;
 import com.sm.finance.charge.storage.api.ExceptionHandler;
+import com.sm.finance.charge.storage.api.StorageConfig;
 import com.sm.finance.charge.storage.api.StorageWriter;
 import com.sm.finance.charge.storage.api.index.IndexFile;
 import com.sm.finance.charge.storage.api.index.IndexFileManager;
@@ -60,16 +61,16 @@ public class SequentialStorageWriter extends AbstractService implements StorageW
 
 
     public SequentialStorageWriter(SegmentManager segmentManager, long startSequence, IndexFileManager indexFileManager,
-                                   Serializer serializer, int maxSegmentSize, ExceptionHandler handler,
+                                   Serializer serializer, StorageConfig config, ExceptionHandler handler,
                                    SequentialFileStorage fileStorage) {
         this.segmentManager = segmentManager;
         this.sequenceGenerator = new LongIdGenerator(startSequence);
         this.indexFileManager = indexFileManager;
         this.serializer = serializer;
-        this.maxSegmentSize = maxSegmentSize;
+        this.maxSegmentSize = config.getMaxSegmentSize();
         this.handler = handler;
         this.fileStorage = fileStorage;
-        this.writerBuffer = new WriterBuffer();
+        this.writerBuffer = new WriterBuffer(handler, config.getFlushInterval());
         this.future = executorService.submit(this::writeAsync);
     }
 
@@ -169,9 +170,9 @@ public class SequentialStorageWriter extends AbstractService implements StorageW
             long offset = appender.appendOffset();
             TimeSizeEvent event = new TimeSizeEvent(offset + entry.size(), new Date());
             if (isTriggerEvent(event)) {
-                rollover();
                 Segment segment = null;
                 try {
+                    rollover();
                     segment = nextSegment(new SequentialSegmentDescriptor(sequence));
                 } catch (BadDiskException e) {
                     logger.error("create segment caught exception", e);
@@ -186,11 +187,13 @@ public class SequentialStorageWriter extends AbstractService implements StorageW
             appender.write(entry).whenComplete((result, error) -> {
                 if (error != null) {
                     logger.error("append message caught exception", error);
-                    System.exit(-1);
-                }
-                CompletableFuture<Boolean> future = futureMap.get(sequence);
-                if (future != null) {
-                    future.complete(result);
+                    IoUtil.close(fileStorage);
+                    handler.onBadDiskException((BadDiskException) error);
+                } else {
+                    CompletableFuture<Boolean> future = futureMap.get(sequence);
+                    if (future != null) {
+                        future.complete(result);
+                    }
                 }
             });
         }
@@ -239,7 +242,7 @@ public class SequentialStorageWriter extends AbstractService implements StorageW
     }
 
     @Override
-    public void rollover() {
+    public void rollover() throws BadDiskException {
         appender.flush();
         appender.close();
     }

@@ -2,6 +2,7 @@ package com.sm.finance.charge.storage.sequential;
 
 import com.sm.finance.charge.common.AbstractService;
 import com.sm.finance.charge.common.exceptions.BadDiskException;
+import com.sm.finance.charge.serializer.api.Serializer;
 import com.sm.finance.charge.storage.api.ExceptionHandler;
 import com.sm.finance.charge.storage.api.FileStorage;
 import com.sm.finance.charge.storage.api.StorageConfig;
@@ -28,6 +29,9 @@ public class SequentialFileStorage extends AbstractService implements FileStorag
     private final StorageConfig storageConfig;
     private final SegmentManager segmentManager;
     private final IndexFileManager indexManager;
+    private ExceptionHandler handler;
+    private StorageWriter storageWriter;
+    private Serializer serializer;
 
     public SequentialFileStorage(File directory, StorageConfig config) {
         this.directory = directory;
@@ -54,7 +58,7 @@ public class SequentialFileStorage extends AbstractService implements FileStorag
     @Override
     public StorageWriter appender() {
         checkStarted();
-        return null;
+        return storageWriter;
     }
 
     @Override
@@ -65,7 +69,7 @@ public class SequentialFileStorage extends AbstractService implements FileStorag
 
     @Override
     public void setExceptionHandler(ExceptionHandler handler) {
-
+        this.handler = handler;
     }
 
 
@@ -73,7 +77,8 @@ public class SequentialFileStorage extends AbstractService implements FileStorag
     protected void doStart() throws Exception {
         segmentManager.start();
         indexManager.start();
-        recovery();
+        long sequence = recovery();
+        storageWriter = new SequentialStorageWriter(segmentManager, sequence, indexManager, serializer, storageConfig, handler, this);
     }
 
     /**
@@ -95,17 +100,8 @@ public class SequentialFileStorage extends AbstractService implements FileStorag
             indexFile = indexManager.create(sequence);
             segment.setEntryListener(indexFile::receiveEntry);
         }
-        return replenishIndex(segment, indexFile);
-    }
 
-    /**
-     * 补充指定record文件的索引
-     *
-     * @param segment   record文件
-     * @param indexFile record文件对应的索引文件
-     */
-    private long replenishIndex(Segment segment, IndexFile indexFile) {
-        Pair<Long, Long> pair = segment.check();
+        Pair<Long, Long> pair = segment.check(handler);
         segment.truncate(pair.getRight());
         indexFile.flush();
 

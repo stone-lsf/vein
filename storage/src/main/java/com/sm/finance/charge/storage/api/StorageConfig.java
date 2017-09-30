@@ -26,6 +26,8 @@ public class StorageConfig {
      */
     private int maxIndexFileSize;
 
+    private int flushInterval;
+
     public int getIndexInterval() {
         return indexInterval;
     }
@@ -56,5 +58,13 @@ public class StorageConfig {
 
     public void setMaxIndexFileSize(int maxIndexFileSize) {
         this.maxIndexFileSize = maxIndexFileSize;
+    }
+
+    public int getFlushInterval() {
+        return flushInterval;
+    }
+
+    public void setFlushInterval(int flushInterval) {
+        this.flushInterval = flushInterval;
     }
 }

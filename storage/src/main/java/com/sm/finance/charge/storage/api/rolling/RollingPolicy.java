@@ -21,7 +21,7 @@ public interface RollingPolicy {
     /**
      * 当需要切分文件的时候，需要对当前正在写入的文件做相应的善后处理，此时调用rollover方法
      */
-    void rollover();
+    void rollover() throws BadDiskException;
 
     /**
      * 获取下一个日志文件

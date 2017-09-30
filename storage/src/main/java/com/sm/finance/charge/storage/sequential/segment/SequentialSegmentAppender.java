@@ -2,6 +2,7 @@ package com.sm.finance.charge.storage.sequential.segment;
 
 import com.sm.finance.charge.common.IoUtil;
 import com.sm.finance.charge.common.LogSupport;
+import com.sm.finance.charge.common.exceptions.BadDiskException;
 import com.sm.finance.charge.storage.api.exceptions.ClosedException;
 import com.sm.finance.charge.storage.api.segment.Entry;
 import com.sm.finance.charge.storage.api.segment.EntryListener;
@@ -50,13 +51,13 @@ public class SequentialSegmentAppender extends LogSupport implements SegmentAppe
     }
 
     @Override
-    public SegmentAppender appendFrom(long offset) {
+    public SegmentAppender appendFrom(long offset) throws BadDiskException {
         appendOffset = offset;
         try {
             fileChannel.position(appendOffset);
         } catch (IOException e) {
             logger.error("set append from:{} caught exception:{}", offset, e);
-            System.exit(-1);
+            throw new BadDiskException(e);
         }
         return this;
     }
@@ -67,14 +68,14 @@ public class SequentialSegmentAppender extends LogSupport implements SegmentAppe
     }
 
     @Override
-    public SegmentAppender flush() {
+    public SegmentAppender flush() throws BadDiskException {
         checkClosed();
         buffer.flush();
         try {
             fileChannel.force(false);
         } catch (IOException e) {
             logger.error("file channel force caught exception", e);
-            System.exit(-1);
+            throw new BadDiskException(e);
         }
         return this;
     }
@@ -82,7 +83,7 @@ public class SequentialSegmentAppender extends LogSupport implements SegmentAppe
     @Override
     public CompletableFuture<Boolean> write(Entry entry) {
         checkClosed();
-        CompletableFuture<Boolean> future = buffer.add(entry);
+        CompletableFuture<Boolean> future = buffer.put(entry);
         listener.onCreate(entry.head().sequence(), appendOffset);
         appendOffset += entry.size();
         return future;

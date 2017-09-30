@@ -1,6 +1,7 @@
 package com.sm.finance.charge.storage.sequential.segment;
 
 import com.sm.finance.charge.common.LogSupport;
+import com.sm.finance.charge.common.exceptions.BadDiskException;
 import com.sm.finance.charge.storage.api.segment.Entry;
 import com.sm.finance.charge.storage.api.segment.Segment;
 import com.sm.finance.charge.storage.api.segment.SegmentReader;
@@ -40,12 +41,12 @@ public class SequentialSegmentReader extends LogSupport implements SegmentReader
 
 
     @Override
-    public SegmentReader readFrom(long offset) {
+    public SegmentReader readFrom(long offset) throws BadDiskException {
         try {
             fileChannel.position(offset);
         } catch (IOException e) {
             logger.error("set reader position caught exception", e);
-            System.exit(-1);
+            throw new BadDiskException(e);
         }
         return this;
     }
@@ -53,7 +54,7 @@ public class SequentialSegmentReader extends LogSupport implements SegmentReader
     @Override
     public Entry readEntry() {
         SequentialEntry entry = new SequentialEntry();
-        buffer.writeTo(entry);
+        buffer.get(entry);
         if (!entry.readComplete()) {
             return null;
         }

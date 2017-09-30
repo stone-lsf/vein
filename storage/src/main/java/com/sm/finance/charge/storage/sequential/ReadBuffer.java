@@ -2,6 +2,8 @@ package com.sm.finance.charge.storage.sequential;
 
 import com.sm.finance.charge.common.LogSupport;
 import com.sm.finance.charge.common.NamedThreadFactory;
+import com.sm.finance.charge.common.exceptions.BadDiskException;
+import com.sm.finance.charge.storage.api.ExceptionHandler;
 import com.sm.finance.charge.storage.api.segment.ReadWritable;
 
 import java.io.IOException;
@@ -24,13 +26,15 @@ public class ReadBuffer extends LogSupport {
 
     private final Object readComplete = new Object();
     private AtomicBoolean reading = new AtomicBoolean(false);
+    private final ExceptionHandler handler;
 
-    public ReadBuffer() {
+    public ReadBuffer(ExceptionHandler handler) {
+        this.handler = handler;
         explicit.readComplete();
         preRead();
     }
 
-    public void writeTo(ReadWritable readWritable) {
+    public void get(ReadWritable readWritable) {
         if (!explicit.hasRemaining()) {
             return;
         }
@@ -69,7 +73,13 @@ public class ReadBuffer extends LogSupport {
     private void preRead() {
         if (reading.compareAndSet(false, true)) {
             executorService.execute(() -> {
-                implicit.readFrom(fileChannel);
+                try {
+                    implicit.readFrom(fileChannel);
+                } catch (BadDiskException e) {
+                    executorService.shutdownNow();
+                    handler.onBadDiskException(e);
+                    return;
+                }
                 implicit.readComplete();
 
                 reading.set(false);
@@ -96,14 +106,14 @@ public class ReadBuffer extends LogSupport {
             }
         }
 
-        void readFrom(FileChannel channel) {
+        void readFrom(FileChannel channel) throws BadDiskException {
             try {
                 while (buffer.hasRemaining()) {
                     channel.read(buffer);
                 }
             } catch (IOException e) {
                 logger.error("write to file caught exception", e);
-                System.exit(-1);
+                throw new BadDiskException(e);
             }
         }
 

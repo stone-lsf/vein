@@ -2,6 +2,8 @@ package com.sm.finance.charge.storage.sequential;
 
 import com.sm.finance.charge.common.LogSupport;
 import com.sm.finance.charge.common.NamedThreadFactory;
+import com.sm.finance.charge.common.exceptions.BadDiskException;
+import com.sm.finance.charge.storage.api.ExceptionHandler;
 import com.sm.finance.charge.storage.api.segment.ReadWritable;
 
 import java.io.IOException;
@@ -11,8 +13,10 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -20,16 +24,23 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @version created on 2017/9/29 上午11:30
  */
 public class WriterBuffer extends LogSupport {
-    private static final ExecutorService EXECUTOR_SERVICE = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("AppendPool"));
+    private static final ScheduledExecutorService EXECUTOR_SERVICE = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("AppendPool"));
 
     private volatile ByteBufferWrapper implicit = new ByteBufferWrapper();
     private volatile ByteBufferWrapper explicit = new ByteBufferWrapper();
     private volatile FileChannel fileChannel;
+    private volatile Future future;
 
     private AtomicBoolean writing = new AtomicBoolean(false);
     private final Object writeComplete = new Object();
+    private final ExceptionHandler handler;
 
-    public CompletableFuture<Boolean> add(ReadWritable readWritable) {
+    public WriterBuffer(ExceptionHandler handler, int flushInterval) {
+        this.handler = handler;
+        future = EXECUTOR_SERVICE.scheduleWithFixedDelay(this::appendBuffer, flushInterval, flushInterval, TimeUnit.MILLISECONDS);
+    }
+
+    public CompletableFuture<Boolean> put(ReadWritable readWritable) {
         CompletableFuture<Boolean> future = new CompletableFuture<>();
         while (!readWritable.writeComplete()) {
             explicit.add(readWritable);
@@ -46,7 +57,7 @@ public class WriterBuffer extends LogSupport {
         this.fileChannel = fileChannel;
     }
 
-    public void flush() {
+    public void flush() throws BadDiskException {
         synchronized (writeComplete) {
             while (writing.get()) {
                 try {
@@ -75,21 +86,27 @@ public class WriterBuffer extends LogSupport {
             ByteBufferWrapper tmp = implicit;
             implicit = explicit;
             explicit = tmp;
-            appendBuffer();
+            EXECUTOR_SERVICE.execute(this::appendBuffer);
         }
     }
 
     private void appendBuffer() {
         if (writing.compareAndSet(false, true)) {
-            EXECUTOR_SERVICE.execute(() -> {
+            try {
                 implicit.writeTo(fileChannel);
-                implicit.writeComplete();
-                writing.set(false);
-
-                synchronized (writeComplete) {
-                    writeComplete.notify();
+            } catch (BadDiskException e) {
+                handler.onBadDiskException(e);
+                if (future != null) {
+                    future.cancel(false);
                 }
-            });
+                return;
+            }
+            implicit.writeComplete();
+            writing.set(false);
+
+            synchronized (writeComplete) {
+                writeComplete.notify();
+            }
         }
     }
 
@@ -115,14 +132,14 @@ public class WriterBuffer extends LogSupport {
             }
         }
 
-        void writeTo(FileChannel channel) {
+        void writeTo(FileChannel channel) throws BadDiskException {
             try {
                 while (buffer.hasRemaining()) {
                     channel.write(buffer);
                 }
             } catch (IOException e) {
                 logger.error("write to file caught exception", e);
-                System.exit(-1);
+                throw new BadDiskException(e);
             }
         }
 

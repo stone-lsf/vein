@@ -4,8 +4,8 @@ import com.sm.finance.charge.common.FileUtil;
 import com.sm.finance.charge.common.IoUtil;
 import com.sm.finance.charge.common.LogSupport;
 import com.sm.finance.charge.common.exceptions.BadDiskException;
+import com.sm.finance.charge.storage.api.ExceptionHandler;
 import com.sm.finance.charge.storage.api.exceptions.BadDataException;
-import com.sm.finance.charge.storage.api.exceptions.StorageException;
 import com.sm.finance.charge.storage.api.segment.Entry;
 import com.sm.finance.charge.storage.api.segment.EntryListener;
 import com.sm.finance.charge.storage.api.segment.Segment;
@@ -63,10 +63,10 @@ public class SequentialSegment extends LogSupport implements Segment {
     }
 
     @Override
-    public Pair<Long, Long> check() {
-        SegmentReader reader = reader(new ReadBuffer());
+    public Pair<Long, Long> check(ExceptionHandler handler) {
+        SegmentReader reader = reader(new ReadBuffer(handler));
         long offset = 0;
-        long sequence = descriptor.sequence();
+        long sequence = descriptor.sequence() - 1;
         Entry entry;
         try {
             while ((entry = reader.readEntry()) != null) {
@@ -85,16 +85,13 @@ public class SequentialSegment extends LogSupport implements Segment {
     }
 
     @Override
-    public Segment truncate(long offset) {
+    public Segment truncate(long offset) throws BadDiskException {
 
         try {
             FileUtil.truncate(offset, file);
         } catch (FileNotFoundException e) {
             logger.error("truncate segment file caught exception", e);
-            throw new StorageException(e);
-        } catch (BadDiskException e) {
-            logger.error("truncate segment file caught bad disk exception", e);
-            System.exit(-1);
+            throw new IllegalStateException(e);
         }
         return this;
     }
