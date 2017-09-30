@@ -44,8 +44,8 @@ public class PushPullController extends LogSupport implements PushPullService {
         PushPullRequest request = new PushPullRequest(nodes.getLocalNodeId(), states);
         Connection connection = connectionMap.get(nodeAddress);
         if (connection == null) {
-            connection = transportClient.connect(nodeAddress, 3).handle((conn,error)->{
-                if (error != null){
+            connection = transportClient.connect(nodeAddress, 3).handle((conn, error) -> {
+                if (error != null) {
                     return null;
                 }
                 return conn;
@@ -87,7 +87,7 @@ public class PushPullController extends LogSupport implements PushPullService {
 
     @Override
     public CompletableFuture<PushPullResponse> handle(PushPullRequest request) {
-        return CompletableFuture.supplyAsync(()->{
+        return CompletableFuture.supplyAsync(() -> {
             List<PushNodeState> states = nodes.buildPushNodeStates();
             mergeRemoteState(request.getStates());
             return new PushPullResponse(states);

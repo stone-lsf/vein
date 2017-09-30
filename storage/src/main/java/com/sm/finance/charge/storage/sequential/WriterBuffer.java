@@ -2,8 +2,6 @@ package com.sm.finance.charge.storage.sequential;
 
 import com.sm.finance.charge.common.LogSupport;
 import com.sm.finance.charge.common.NamedThreadFactory;
-import com.sm.finance.charge.common.exceptions.BadDiskException;
-import com.sm.finance.charge.storage.api.ExceptionHandler;
 import com.sm.finance.charge.storage.api.segment.ReadWritable;
 
 import java.io.IOException;
@@ -14,7 +12,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -24,20 +21,17 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @version created on 2017/9/29 上午11:30
  */
 public class WriterBuffer extends LogSupport {
-    private static final ScheduledExecutorService EXECUTOR_SERVICE = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("AppendPool"));
+    private final ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("AppendPool"));
 
     private volatile ByteBufferWrapper implicit = new ByteBufferWrapper();
     private volatile ByteBufferWrapper explicit = new ByteBufferWrapper();
     private volatile FileChannel fileChannel;
-    private volatile Future future;
 
     private AtomicBoolean writing = new AtomicBoolean(false);
     private final Object writeComplete = new Object();
-    private final ExceptionHandler handler;
 
-    public WriterBuffer(ExceptionHandler handler, int flushInterval) {
-        this.handler = handler;
-        future = EXECUTOR_SERVICE.scheduleWithFixedDelay(this::appendBuffer, flushInterval, flushInterval, TimeUnit.MILLISECONDS);
+    public WriterBuffer(int flushInterval) {
+        executorService.scheduleWithFixedDelay(this::appendBuffer, flushInterval, flushInterval, TimeUnit.MILLISECONDS);
     }
 
     public CompletableFuture<Boolean> put(ReadWritable readWritable) {
@@ -45,7 +39,7 @@ public class WriterBuffer extends LogSupport {
         while (!readWritable.writeComplete()) {
             explicit.add(readWritable);
             if (!explicit.hasRemaining()) {
-                explicit.prepareComplete();
+                explicit.productComplete();
                 exchange();
             }
         }
@@ -57,7 +51,7 @@ public class WriterBuffer extends LogSupport {
         this.fileChannel = fileChannel;
     }
 
-    public void flush() throws BadDiskException {
+    public void flush() throws IOException {
         synchronized (writeComplete) {
             while (writing.get()) {
                 try {
@@ -68,9 +62,9 @@ public class WriterBuffer extends LogSupport {
             }
         }
 
-        explicit.prepareComplete();
+        explicit.productComplete();
         explicit.writeTo(fileChannel);
-        explicit.writeComplete();
+        explicit.consumeComplete();
     }
 
     private void exchange() {
@@ -86,7 +80,7 @@ public class WriterBuffer extends LogSupport {
             ByteBufferWrapper tmp = implicit;
             implicit = explicit;
             explicit = tmp;
-            EXECUTOR_SERVICE.execute(this::appendBuffer);
+            executorService.execute(this::appendBuffer);
         }
     }
 
@@ -94,14 +88,11 @@ public class WriterBuffer extends LogSupport {
         if (writing.compareAndSet(false, true)) {
             try {
                 implicit.writeTo(fileChannel);
-            } catch (BadDiskException e) {
-                handler.onBadDiskException(e);
-                if (future != null) {
-                    future.cancel(false);
-                }
-                return;
+                implicit.consumeComplete();
+            } catch (IOException e) {
+                logger.error("append message caught exception", e);
+                implicit.consumeComplete(e);
             }
-            implicit.writeComplete();
             writing.set(false);
 
             synchronized (writeComplete) {
@@ -132,27 +123,32 @@ public class WriterBuffer extends LogSupport {
             }
         }
 
-        void writeTo(FileChannel channel) throws BadDiskException {
-            try {
-                while (buffer.hasRemaining()) {
-                    channel.write(buffer);
-                }
-            } catch (IOException e) {
-                logger.error("write to file caught exception", e);
-                throw new BadDiskException(e);
+        void writeTo(FileChannel channel) throws IOException {
+            while (buffer.hasRemaining()) {
+                channel.write(buffer);
             }
         }
 
-        void prepareComplete() {
+        void productComplete() {
             buffer.flip();
         }
 
-        void writeComplete() {
+        void consumeComplete() {
             buffer.flip();
             Iterator<CompletableFuture<Boolean>> iterator = futures.iterator();
             while (iterator.hasNext()) {
                 CompletableFuture<Boolean> future = iterator.next();
                 future.complete(true);
+                iterator.remove();
+            }
+        }
+
+        void consumeComplete(IOException e) {
+            buffer.clear();
+            Iterator<CompletableFuture<Boolean>> iterator = futures.iterator();
+            while (iterator.hasNext()) {
+                CompletableFuture<Boolean> future = iterator.next();
+                future.completeExceptionally(e);
                 iterator.remove();
             }
         }

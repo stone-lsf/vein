@@ -1,14 +1,12 @@
 package com.sm.finance.charge.storage.sequential;
 
 import com.sm.finance.charge.common.AbstractService;
-import com.sm.finance.charge.common.IoUtil;
 import com.sm.finance.charge.common.LongIdGenerator;
 import com.sm.finance.charge.common.NamedThreadFactory;
-import com.sm.finance.charge.common.exceptions.BadDiskException;
 import com.sm.finance.charge.serializer.api.Serializer;
-import com.sm.finance.charge.storage.api.ExceptionHandler;
 import com.sm.finance.charge.storage.api.StorageConfig;
 import com.sm.finance.charge.storage.api.StorageWriter;
+import com.sm.finance.charge.storage.api.exceptions.StorageException;
 import com.sm.finance.charge.storage.api.index.IndexFile;
 import com.sm.finance.charge.storage.api.index.IndexFileManager;
 import com.sm.finance.charge.storage.api.rolling.Event;
@@ -22,12 +20,14 @@ import com.sm.finance.charge.storage.sequential.segment.SequentialEntry;
 import com.sm.finance.charge.storage.sequential.segment.SequentialHeader;
 import com.sm.finance.charge.storage.sequential.segment.SequentialSegmentDescriptor;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
@@ -52,8 +52,6 @@ public class SequentialStorageWriter extends AbstractService implements StorageW
     private final Serializer serializer;
     private final WriterBuffer writerBuffer;
     private final int maxSegmentSize;
-    private final ExceptionHandler handler;
-    private final SequentialFileStorage fileStorage;
 
     private volatile SegmentAppender appender;
     private BlockingQueue<Message> blockingQueue = new LinkedBlockingQueue<>(1000 * 1000);
@@ -61,16 +59,13 @@ public class SequentialStorageWriter extends AbstractService implements StorageW
 
 
     public SequentialStorageWriter(SegmentManager segmentManager, long startSequence, IndexFileManager indexFileManager,
-                                   Serializer serializer, StorageConfig config, ExceptionHandler handler,
-                                   SequentialFileStorage fileStorage) {
+                                   Serializer serializer, StorageConfig config) {
         this.segmentManager = segmentManager;
         this.sequenceGenerator = new LongIdGenerator(startSequence);
         this.indexFileManager = indexFileManager;
         this.serializer = serializer;
         this.maxSegmentSize = config.getMaxSegmentSize();
-        this.handler = handler;
-        this.fileStorage = fileStorage;
-        this.writerBuffer = new WriterBuffer(handler, config.getFlushInterval());
+        this.writerBuffer = new WriterBuffer(config.getFlushInterval());
         this.future = executorService.submit(this::writeAsync);
     }
 
@@ -85,46 +80,24 @@ public class SequentialStorageWriter extends AbstractService implements StorageW
 
     @Override
     public boolean append(Object message) {
-        CompletableFuture<Boolean> future = new CompletableFuture<>();
-
-        byte[] bytes = serializer.serialize(message);
-        Message msg = new Message(bytes, future);
-        return doAppend(msg);
+        CompletableFuture<Boolean> future = appendAsync(message);
+        try {
+            future.join();
+            return true;
+        } catch (CompletionException e) {
+            throw new StorageException(e.getCause());
+        }
     }
 
     @Override
     public boolean append(List messages) {
-        CompletableFuture<Boolean> future = new CompletableFuture<>();
-
-        List<Message> list = new ArrayList<>(messages.size());
-        int length = 0;
-        for (Object message : messages) {
-            byte[] bytes = serializer.serialize(message);
-            Message msg = new Message(bytes);
-            list.add(msg);
-            length += bytes.length;
-        }
-        BatchMessage msg = new BatchMessage(list, future);
-        msg.length = length;
-
-        return doAppend(msg);
-    }
-
-    private boolean doAppend(Message message) {
+        CompletableFuture<Boolean> future = appendAsync(messages);
         try {
-            blockingQueue.put(message);
-        } catch (InterruptedException e) {
-            logger.warn("put message is interrupted", e);
-            return false;
+            future.join();
+            return true;
+        } catch (CompletionException e) {
+            throw new StorageException(e.getCause());
         }
-
-        return message.future.handle((result, throwable) -> {
-            if (throwable != null) {
-                logger.error("append message:{} caught exception:{}", message, throwable);
-                return false;
-            }
-            return result;
-        }).join();
     }
 
     @Override
@@ -138,13 +111,42 @@ public class SequentialStorageWriter extends AbstractService implements StorageW
     }
 
     @Override
-    public void appendAsync(Object message) {
+    public CompletableFuture<Boolean> appendAsync(Object message) {
+        CompletableFuture<Boolean> future = new CompletableFuture<>();
+        byte[] bytes = serializer.serialize(message);
+        Message msg = new Message(bytes, future);
 
+        try {
+            blockingQueue.put(msg);
+        } catch (InterruptedException e) {
+            logger.warn("put message is interrupted", e);
+            return CompletableFuture.completedFuture(false);
+        }
+        return future;
     }
 
     @Override
-    public void appendAsync(List messages) {
+    public CompletableFuture<Boolean> appendAsync(List messages) {
+        List<Message> list = new ArrayList<>(messages.size());
+        int length = 0;
+        for (Object message : messages) {
+            byte[] bytes = serializer.serialize(message);
+            Message msg = new Message(bytes);
+            list.add(msg);
+            length += bytes.length;
+        }
 
+        CompletableFuture<Boolean> future = new CompletableFuture<>();
+        BatchMessage msg = new BatchMessage(list, future);
+        msg.length = length;
+
+        try {
+            blockingQueue.put(msg);
+        } catch (InterruptedException e) {
+            logger.warn("put message is interrupted", e);
+            return CompletableFuture.completedFuture(false);
+        }
+        return future;
     }
 
 
@@ -170,27 +172,28 @@ public class SequentialStorageWriter extends AbstractService implements StorageW
             long offset = appender.appendOffset();
             TimeSizeEvent event = new TimeSizeEvent(offset + entry.size(), new Date());
             if (isTriggerEvent(event)) {
-                Segment segment = null;
                 try {
                     rollover();
-                    segment = nextSegment(new SequentialSegmentDescriptor(sequence));
-                } catch (BadDiskException e) {
+                    Segment segment = nextSegment(new SequentialSegmentDescriptor(sequence));
+                    this.appender = segment.appender(writerBuffer);
+                } catch (IOException e) {
                     logger.error("create segment caught exception", e);
-                    IoUtil.close(fileStorage);
-                    handler.onBadDiskException(e);
+                    CompletableFuture future = futureMap.remove(sequence);
+                    if (future != null) {
+                        future.completeExceptionally(new StorageException(e));
+                    }
                     break;
                 }
-
-                this.appender = segment.appender(writerBuffer);
             }
 
             appender.write(entry).whenComplete((result, error) -> {
+                CompletableFuture<Boolean> future = futureMap.remove(sequence);
                 if (error != null) {
                     logger.error("append message caught exception", error);
-                    IoUtil.close(fileStorage);
-                    handler.onBadDiskException((BadDiskException) error);
+                    if (future != null) {
+                        future.completeExceptionally(new StorageException(error));
+                    }
                 } else {
-                    CompletableFuture<Boolean> future = futureMap.get(sequence);
                     if (future != null) {
                         future.complete(result);
                     }
@@ -242,13 +245,13 @@ public class SequentialStorageWriter extends AbstractService implements StorageW
     }
 
     @Override
-    public void rollover() throws BadDiskException {
+    public void rollover() throws IOException {
         appender.flush();
         appender.close();
     }
 
     @Override
-    public Segment nextSegment(SegmentDescriptor descriptor) throws BadDiskException {
+    public Segment nextSegment(SegmentDescriptor descriptor) throws IOException {
         Segment segment = segmentManager.create(descriptor.sequence());
         IndexFile indexFile = indexFileManager.create(descriptor.sequence());
         segment.setEntryListener(indexFile::receiveEntry);

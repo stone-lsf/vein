@@ -28,7 +28,7 @@ public interface ProbeService {
      */
     boolean redirectPing(DiscoveryNode node, int timeout);
 
-    CompletableFuture<Ack>  handle(Ping ping);
+    CompletableFuture<Ack> handle(Ping ping);
 
 
     CompletableFuture<Ack> handle(RedirectPing ping);

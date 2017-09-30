@@ -1,7 +1,5 @@
 package com.sm.finance.charge.storage.api.segment;
 
-import com.sm.finance.charge.common.exceptions.BadDiskException;
-import com.sm.finance.charge.storage.api.ExceptionHandler;
 import com.sm.finance.charge.storage.sequential.ReadBuffer;
 import com.sm.finance.charge.storage.sequential.WriterBuffer;
 
@@ -37,7 +35,7 @@ public interface Segment {
      *
      * @return 完整数据截止处, left:sequence,right:offset
      */
-    Pair<Long, Long> check(ExceptionHandler handler) ;
+    Pair<Long, Long> check() throws IOException;
 
     /**
      * 删除指定文件内偏移处之后的数据
@@ -45,19 +43,19 @@ public interface Segment {
      * @param offset 文件内偏移
      * @return {@link Segment}
      */
-    Segment truncate(long offset) throws BadDiskException;
+    Segment truncate(long offset) throws IOException;
 
     /**
      * segment读取器
      *
      * @return 读取器
      */
-    SegmentReader reader(ReadBuffer buffer) ;
+    SegmentReader reader(ReadBuffer buffer) throws IOException;
 
     /**
      * segment写入器
      *
      * @return 写入器
      */
-    SegmentAppender appender(WriterBuffer buffer) ;
+    SegmentAppender appender(WriterBuffer buffer) throws IOException;
 }

@@ -3,8 +3,6 @@ package com.sm.finance.charge.storage.sequential.segment;
 import com.sm.finance.charge.common.FileUtil;
 import com.sm.finance.charge.common.IoUtil;
 import com.sm.finance.charge.common.LogSupport;
-import com.sm.finance.charge.common.exceptions.BadDiskException;
-import com.sm.finance.charge.storage.api.ExceptionHandler;
 import com.sm.finance.charge.storage.api.exceptions.BadDataException;
 import com.sm.finance.charge.storage.api.segment.Entry;
 import com.sm.finance.charge.storage.api.segment.EntryListener;
@@ -19,7 +17,6 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 
 /**
@@ -33,14 +30,10 @@ public class SequentialSegment extends LogSupport implements Segment {
     private EntryListener listener;
 
 
-    SequentialSegment(SegmentDescriptor descriptor, File file) throws BadDiskException {
-        try {
-            boolean newFile = file.createNewFile();
-            if (newFile) {
-                logger.info("create segment file:{}", file);
-            }
-        } catch (IOException e) {
-            throw new BadDiskException(e);
+    SequentialSegment(SegmentDescriptor descriptor, File file) throws IOException {
+        boolean newFile = file.createNewFile();
+        if (newFile) {
+            logger.info("create segment file:{}", file);
         }
         this.file = file;
         this.descriptor = descriptor;
@@ -63,8 +56,8 @@ public class SequentialSegment extends LogSupport implements Segment {
     }
 
     @Override
-    public Pair<Long, Long> check(ExceptionHandler handler) {
-        SegmentReader reader = reader(new ReadBuffer(handler));
+    public Pair<Long, Long> check() throws IOException {
+        SegmentReader reader = reader(new ReadBuffer());
         long offset = 0;
         long sequence = descriptor.sequence() - 1;
         Entry entry;
@@ -85,24 +78,19 @@ public class SequentialSegment extends LogSupport implements Segment {
     }
 
     @Override
-    public Segment truncate(long offset) throws BadDiskException {
+    public Segment truncate(long offset) throws IOException {
 
-        try {
-            FileUtil.truncate(offset, file);
-        } catch (FileNotFoundException e) {
-            logger.error("truncate segment file caught exception", e);
-            throw new IllegalStateException(e);
-        }
+        FileUtil.truncate(offset, file);
         return this;
     }
 
     @Override
-    public SegmentReader reader(ReadBuffer buffer) {
+    public SegmentReader reader(ReadBuffer buffer) throws IOException {
         return new SequentialSegmentReader(this, buffer);
     }
 
     @Override
-    public SegmentAppender appender(WriterBuffer buffer) {
+    public SegmentAppender appender(WriterBuffer buffer) throws IOException {
         return new SequentialSegmentAppender(this, buffer, listener);
     }
 

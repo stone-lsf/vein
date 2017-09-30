@@ -50,8 +50,8 @@ public interface Connection extends Startable, Closable {
     /**
      * 异步发送消息
      *
-     * @param message         消息
-     * @param timeout         超时时间
+     * @param message 消息
+     * @param timeout 超时时间
      * @param handler 返回结果处理器
      */
     <T> void send(Object message, int timeout, ResponseHandler<T> handler);
@@ -112,12 +112,14 @@ public interface Connection extends Startable, Closable {
 
     /**
      * 获取本地地址
+     *
      * @return {@link Address}
      */
     Address localAddress();
 
     /**
      * 获取远程地址
+     *
      * @return {@link Address}
      */
     Address remoteAddress();

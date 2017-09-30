@@ -1,7 +1,6 @@
 package com.sm.finance.charge.cluster;
 
 import com.sm.finance.charge.cluster.client.Command;
-import com.sm.finance.charge.cluster.replicate.ReplicateResponse;
 import com.sm.finance.charge.common.Closable;
 import com.sm.finance.charge.common.Startable;
 

@@ -1,9 +1,9 @@
 package com.sm.finance.charge.transport.local;
 
 import com.sm.finance.charge.common.Address;
+import com.sm.finance.charge.transport.api.AbstractConnection;
 import com.sm.finance.charge.transport.api.Request;
 import com.sm.finance.charge.transport.api.Response;
-import com.sm.finance.charge.transport.api.AbstractConnection;
 import com.sm.finance.charge.transport.netty.ChannelHelper;
 
 import io.netty.channel.Channel;

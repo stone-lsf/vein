@@ -2,8 +2,7 @@ package com.sm.finance.charge.storage.sequential;
 
 import com.sm.finance.charge.common.LogSupport;
 import com.sm.finance.charge.common.NamedThreadFactory;
-import com.sm.finance.charge.common.exceptions.BadDiskException;
-import com.sm.finance.charge.storage.api.ExceptionHandler;
+import com.sm.finance.charge.storage.api.exceptions.BadDataException;
 import com.sm.finance.charge.storage.api.segment.ReadWritable;
 
 import java.io.IOException;
@@ -23,27 +22,41 @@ public class ReadBuffer extends LogSupport {
     private volatile ByteBufferWrapper implicit = new ByteBufferWrapper();
     private volatile ByteBufferWrapper explicit = new ByteBufferWrapper();
     private volatile FileChannel fileChannel;
+    private volatile IOException exception;
 
     private final Object readComplete = new Object();
     private AtomicBoolean reading = new AtomicBoolean(false);
-    private final ExceptionHandler handler;
 
-    public ReadBuffer(ExceptionHandler handler) {
-        this.handler = handler;
-        explicit.readComplete();
+
+    public ReadBuffer() {
+        explicit.productComplete();
         preRead();
     }
 
-    public void get(ReadWritable readWritable) {
-        if (!explicit.hasRemaining()) {
-            return;
+    public void get(ReadWritable readWritable) throws IOException, BadDataException {
+        if (exception != null) {
+            throw exception;
         }
 
-        while (!readWritable.writeComplete()) {
-            explicit.writeTo(readWritable);
+        if (!explicit.hasRemaining()) {
+            explicit.consumeComplete();
+            exchangeBuffer();
             if (!explicit.hasRemaining()) {
-                explicit.prepareComplete();
-                exchangeBuffer();
+                return;
+            }
+        }
+
+        boolean exchange = false;
+        while (!readWritable.writeComplete()) {
+            if (!exchange) {
+                explicit.get(readWritable);
+                if (!explicit.hasRemaining()) {
+                    explicit.consumeComplete();
+                    exchangeBuffer();
+                    exchange = true;
+                }
+            } else {
+                throw new BadDataException();
             }
         }
     }
@@ -75,12 +88,12 @@ public class ReadBuffer extends LogSupport {
             executorService.execute(() -> {
                 try {
                     implicit.readFrom(fileChannel);
-                } catch (BadDiskException e) {
-                    executorService.shutdownNow();
-                    handler.onBadDiskException(e);
-                    return;
+                    implicit.productComplete();
+                } catch (IOException e) {
+                    logger.error("read caught exception", e);
+                    exception = e;
+                    implicit.productCompleteException();
                 }
-                implicit.readComplete();
 
                 reading.set(false);
                 synchronized (readComplete) {
@@ -97,7 +110,7 @@ public class ReadBuffer extends LogSupport {
             return buffer.hasRemaining();
         }
 
-        void writeTo(ReadWritable readWritable) {
+        void get(ReadWritable readWritable) {
             while (buffer.hasRemaining()) {
                 readWritable.readFrom(buffer);
                 if (readWritable.writeComplete()) {
@@ -106,22 +119,25 @@ public class ReadBuffer extends LogSupport {
             }
         }
 
-        void readFrom(FileChannel channel) throws BadDiskException {
-            try {
-                while (buffer.hasRemaining()) {
-                    channel.read(buffer);
+        void readFrom(FileChannel channel) throws IOException {
+            while (buffer.hasRemaining()) {
+                int readCount = channel.read(buffer);
+                if (readCount < 0) {
+                    break;
                 }
-            } catch (IOException e) {
-                logger.error("write to file caught exception", e);
-                throw new BadDiskException(e);
             }
         }
 
-        void prepareComplete() {
+        void consumeComplete() {
             buffer.flip();
         }
 
-        void readComplete() {
+        void productComplete() {
+            buffer.flip();
+        }
+
+        void productCompleteException() {
+            buffer.reset();
             buffer.flip();
         }
     }

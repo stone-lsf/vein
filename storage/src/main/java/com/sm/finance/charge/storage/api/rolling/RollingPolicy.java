@@ -1,8 +1,9 @@
 package com.sm.finance.charge.storage.api.rolling;
 
-import com.sm.finance.charge.common.exceptions.BadDiskException;
 import com.sm.finance.charge.storage.api.segment.Segment;
 import com.sm.finance.charge.storage.api.segment.SegmentDescriptor;
+
+import java.io.IOException;
 
 /**
  * @author shifeng.luo
@@ -21,12 +22,12 @@ public interface RollingPolicy {
     /**
      * 当需要切分文件的时候，需要对当前正在写入的文件做相应的善后处理，此时调用rollover方法
      */
-    void rollover() throws BadDiskException;
+    void rollover() throws IOException;
 
     /**
      * 获取下一个日志文件
      *
      * @return {@link Segment}
      */
-    Segment nextSegment(SegmentDescriptor descriptor) throws BadDiskException;
+    Segment nextSegment(SegmentDescriptor descriptor) throws IOException;
 }

@@ -4,6 +4,7 @@ import com.sm.finance.charge.common.Closable;
 import com.sm.finance.charge.common.Startable;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * @author shifeng.luo
@@ -44,12 +45,12 @@ public interface StorageWriter<T> extends Startable, Closable {
      *
      * @param message 数据
      */
-    void appendAsync(T message);
+    CompletableFuture<Boolean> appendAsync(T message);
 
     /**
      * 异步写数据，但是此时数据只会写入操作系统内存，不会强制刷盘
      *
      * @param messages 数据
      */
-    void appendAsync(List<T> messages);
+    CompletableFuture<Boolean> appendAsync(List<T> messages);
 }

@@ -8,7 +8,7 @@ import java.io.File;
  * @author shifeng.luo
  * @version created on 2017/9/25 下午11:19
  */
-public interface FileStorage extends Startable{
+public interface FileStorage extends Startable {
 
     /**
      * 返回存储目录
@@ -44,7 +44,5 @@ public interface FileStorage extends Startable{
      * @return rolling reader
      */
     StorageReader reader();
-
-
-    void setExceptionHandler(ExceptionHandler handler);
 }
+

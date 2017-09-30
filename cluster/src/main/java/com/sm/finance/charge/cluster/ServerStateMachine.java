@@ -20,8 +20,6 @@ public class ServerStateMachine implements StateMachine {
     }
 
 
-
-
     @Override
     public <T> CompletableFuture<T> apply(Entry entry) {
         CompletableFuture<T> future = new CompletableFuture<>();

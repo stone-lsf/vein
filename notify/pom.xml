@@ -21,8 +21,6 @@
     </dependencies>
 
 
-
-
     <build>
         <finalName>notify</finalName>
     </build>

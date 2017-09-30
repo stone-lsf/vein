@@ -1,6 +1,8 @@
 package com.sm.finance.charge.storage.api.segment;
 
-import com.sm.finance.charge.common.exceptions.BadDiskException;
+import com.sm.finance.charge.storage.api.exceptions.BadDataException;
+
+import java.io.IOException;
 
 /**
  * @author shifeng.luo
@@ -21,12 +23,12 @@ public interface SegmentReader extends AutoCloseable {
      * @param offset 字节数
      * @return {@link SegmentReader}
      */
-    SegmentReader readFrom(long offset) throws BadDiskException;
+    SegmentReader readFrom(long offset) throws IOException;
 
     /**
      * 读取记录
      *
      * @return 记录
      */
-    Entry readEntry();
+    Entry readEntry() throws IOException, BadDataException;
 }

@@ -2,7 +2,8 @@ package com.sm.finance.charge.storage.api.index;
 
 import com.sm.finance.charge.common.Closable;
 import com.sm.finance.charge.common.Startable;
-import com.sm.finance.charge.common.exceptions.BadDiskException;
+
+import java.io.IOException;
 
 /**
  * @author shifeng.luo
@@ -10,7 +11,7 @@ import com.sm.finance.charge.common.exceptions.BadDiskException;
  */
 public interface IndexFileManager extends Startable, Closable {
 
-    IndexFile create(long sequence) throws BadDiskException;
+    IndexFile create(long sequence) throws IOException;
 
     IndexFile get(long sequence);
 

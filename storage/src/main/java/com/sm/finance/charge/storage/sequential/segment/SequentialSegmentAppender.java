@@ -2,7 +2,6 @@ package com.sm.finance.charge.storage.sequential.segment;
 
 import com.sm.finance.charge.common.IoUtil;
 import com.sm.finance.charge.common.LogSupport;
-import com.sm.finance.charge.common.exceptions.BadDiskException;
 import com.sm.finance.charge.storage.api.exceptions.ClosedException;
 import com.sm.finance.charge.storage.api.segment.Entry;
 import com.sm.finance.charge.storage.api.segment.EntryListener;
@@ -30,17 +29,11 @@ public class SequentialSegmentAppender extends LogSupport implements SegmentAppe
     private volatile boolean closed = false;
     private volatile long appendOffset = 0;
 
-    SequentialSegmentAppender(Segment segment, WriterBuffer buffer, EntryListener listener) {
+    SequentialSegmentAppender(Segment segment, WriterBuffer buffer, EntryListener listener) throws FileNotFoundException {
         this.segment = segment;
         this.buffer = buffer;
         this.listener = listener;
-        RandomAccessFile accessFile = null;
-        try {
-            accessFile = new RandomAccessFile(segment.getFile(), "wr");
-        } catch (FileNotFoundException e) {
-            logger.error("can't find file:{}", segment.getFile());
-            throw new IllegalStateException(e);
-        }
+        RandomAccessFile accessFile = new RandomAccessFile(segment.getFile(), "wr");
         this.fileChannel = accessFile.getChannel();
         this.buffer.setFileChannel(fileChannel);
     }
@@ -51,14 +44,9 @@ public class SequentialSegmentAppender extends LogSupport implements SegmentAppe
     }
 
     @Override
-    public SegmentAppender appendFrom(long offset) throws BadDiskException {
+    public SegmentAppender appendFrom(long offset) throws IOException {
         appendOffset = offset;
-        try {
-            fileChannel.position(appendOffset);
-        } catch (IOException e) {
-            logger.error("set append from:{} caught exception:{}", offset, e);
-            throw new BadDiskException(e);
-        }
+        fileChannel.position(appendOffset);
         return this;
     }
 
@@ -68,15 +56,10 @@ public class SequentialSegmentAppender extends LogSupport implements SegmentAppe
     }
 
     @Override
-    public SegmentAppender flush() throws BadDiskException {
+    public SegmentAppender flush() throws IOException {
         checkClosed();
         buffer.flush();
-        try {
-            fileChannel.force(false);
-        } catch (IOException e) {
-            logger.error("file channel force caught exception", e);
-            throw new BadDiskException(e);
-        }
+        fileChannel.force(false);
         return this;
     }
 

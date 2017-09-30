@@ -3,13 +3,11 @@ package com.sm.finance.charge.storage.sequential.index;
 import com.sm.finance.charge.common.FileUtil;
 import com.sm.finance.charge.common.IoUtil;
 import com.sm.finance.charge.common.LogSupport;
-import com.sm.finance.charge.common.exceptions.BadDiskException;
 import com.sm.finance.charge.storage.api.exceptions.ClosedException;
 import com.sm.finance.charge.storage.api.index.IndexFile;
 import com.sm.finance.charge.storage.api.index.OffsetIndex;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
@@ -35,26 +33,13 @@ public class SequentialIndexFile extends LogSupport implements IndexFile {
     private volatile long lastIndexSequence;
 
 
-    SequentialIndexFile(File file, long baseSequence, int indexInterval, int maxFileSize) throws BadDiskException {
-        boolean newFile;
-        try {
-            newFile = file.createNewFile();
-        } catch (IOException e) {
-            logger.error("create file fail", e);
-            throw new BadDiskException(e);
-        }
+    SequentialIndexFile(File file, long baseSequence, int indexInterval, int maxFileSize) throws IOException {
+        boolean newFile = file.createNewFile();
         this.file = file;
         this.baseSequence = baseSequence;
         this.indexInterval = indexInterval;
         this.maxFileSize = maxFileSize;
-        RandomAccessFile raf;
-        try {
-            raf = new RandomAccessFile(file, "rw");
-        } catch (FileNotFoundException e) {
-            logger.error("can't find file:{}", file);
-            throw new IllegalStateException(e);
-        }
-
+        RandomAccessFile raf = new RandomAccessFile(file, "rw");
         try {
             if (newFile) {
                 raf.setLength(maxFileSize);
@@ -68,9 +53,6 @@ public class SequentialIndexFile extends LogSupport implements IndexFile {
             }
             this.entries = mapBuffer.position() / SequentialOffsetIndex.LENGTH;
             this.maxEntries = mapBuffer.limit() / SequentialOffsetIndex.LENGTH;
-        } catch (IOException e) {
-            logger.error("create file fail", e);
-            throw new BadDiskException(e);
         } finally {
             IoUtil.close(raf);
         }
@@ -147,18 +129,13 @@ public class SequentialIndexFile extends LogSupport implements IndexFile {
     }
 
     @Override
-    public IndexFile truncate(long offset) throws BadDiskException {
-        try {
-            FileUtil.truncate(offset, file);
-            resize();
-        } catch (FileNotFoundException e) {
-            logger.error("truncate index file:{} not found, exception:{}", file, e);
-            throw new IllegalStateException(e);
-        }
+    public IndexFile truncate(long offset) throws IOException {
+        FileUtil.truncate(offset, file);
+        resize();
         return this;
     }
 
-    private void resize() throws FileNotFoundException, BadDiskException {
+    private void resize() throws IOException {
         RandomAccessFile raf = new RandomAccessFile(file, "rw");
         int position = mapBuffer.position();
         try {
@@ -167,8 +144,6 @@ public class SequentialIndexFile extends LogSupport implements IndexFile {
 
             this.entries = mapBuffer.position() / SequentialOffsetIndex.LENGTH;
             mapBuffer.position(position);
-        } catch (IOException e) {
-            throw new BadDiskException(e);
         } finally {
             IoUtil.close(raf);
         }
@@ -188,7 +163,7 @@ public class SequentialIndexFile extends LogSupport implements IndexFile {
     }
 
     @Override
-    public void trimToValidSize() throws BadDiskException {
+    public void trimToValidSize() throws IOException {
         truncate(entries * 8);
     }
 

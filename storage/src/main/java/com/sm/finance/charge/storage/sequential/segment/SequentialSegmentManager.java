@@ -4,7 +4,6 @@ import com.google.common.collect.Lists;
 
 import com.sm.finance.charge.common.AbstractService;
 import com.sm.finance.charge.common.FileUtil;
-import com.sm.finance.charge.common.exceptions.BadDiskException;
 import com.sm.finance.charge.storage.api.segment.Segment;
 import com.sm.finance.charge.storage.api.segment.SegmentDescriptor;
 import com.sm.finance.charge.storage.api.segment.SegmentManager;
@@ -39,7 +38,7 @@ public class SequentialSegmentManager extends AbstractService implements Segment
         loadSegments();
     }
 
-    private void loadSegments() throws IOException, BadDiskException {
+    private void loadSegments() throws IOException {
         Collection<File> files = FileUtil.listAllFile(directory, File::isFile);
 
         for (File file : files) {
@@ -78,7 +77,7 @@ public class SequentialSegmentManager extends AbstractService implements Segment
     }
 
     @Override
-    public Segment create(long sequence) throws BadDiskException {
+    public Segment create(long sequence) throws IOException {
         checkStarted();
         SegmentDescriptor descriptor = new SequentialSegmentDescriptor(sequence);
         File file = buildSegmentFile(sequence);

@@ -2,8 +2,6 @@ package com.sm.finance.charge.common;
 
 import com.google.common.collect.Lists;
 
-import com.sm.finance.charge.common.exceptions.BadDiskException;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -124,15 +122,12 @@ public class FileUtil {
      *
      * @param offset 文件内偏移
      */
-    public static void truncate(long offset, File file) throws FileNotFoundException, BadDiskException {
+    public static void truncate(long offset, File file) throws IOException {
         RandomAccessFile accessFile = new RandomAccessFile(file, "wr");
         FileChannel channel = accessFile.getChannel();
 
         try {
             channel.truncate(offset);
-        } catch (IOException e) {
-            logger.error("truncate file caught exception", e);
-            throw new BadDiskException(e);
         } finally {
             IoUtil.close(accessFile);
         }

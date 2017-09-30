@@ -25,7 +25,7 @@ public class GossipTask extends LogSupport implements Runnable {
     private final int maxGossipCount;
 
 
-    public GossipTask(DiscoveryNodes nodes, MessageQueue messageQueue, DiscoveryConfig config){
+    public GossipTask(DiscoveryNodes nodes, MessageQueue messageQueue, DiscoveryConfig config) {
         this.nodes = nodes;
         this.messageQueue = messageQueue;
         this.gossipNodes = config.getNodesPerGossip();

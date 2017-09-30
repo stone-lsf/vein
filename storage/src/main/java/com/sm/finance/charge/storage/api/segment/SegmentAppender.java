@@ -1,7 +1,6 @@
 package com.sm.finance.charge.storage.api.segment;
 
-import com.sm.finance.charge.common.exceptions.BadDiskException;
-
+import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -23,7 +22,7 @@ public interface SegmentAppender extends AutoCloseable {
      * @param offset 字节数
      * @return {@link SegmentAppender}
      */
-    SegmentAppender appendFrom(long offset) throws BadDiskException;
+    SegmentAppender appendFrom(long offset) throws IOException;
 
     /**
      * 返回当前的append偏移，包含缓存的数据
@@ -45,7 +44,7 @@ public interface SegmentAppender extends AutoCloseable {
      *
      * @return {@link SegmentAppender}
      */
-    SegmentAppender flush() throws BadDiskException;
+    SegmentAppender flush() throws IOException;
 
     void close();
 }

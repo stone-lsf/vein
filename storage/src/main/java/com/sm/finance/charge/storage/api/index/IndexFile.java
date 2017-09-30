@@ -1,9 +1,9 @@
 package com.sm.finance.charge.storage.api.index;
 
-import com.sm.finance.charge.common.exceptions.BadDiskException;
 import com.sm.finance.charge.storage.api.segment.Entry;
 
 import java.io.File;
+import java.io.IOException;
 
 /**
  * @author shifeng.luo
@@ -46,7 +46,7 @@ public interface IndexFile extends AutoCloseable {
      * @param offset 文件内偏移
      * @return {@link IndexFile}
      */
-    IndexFile truncate(long offset) throws BadDiskException;
+    IndexFile truncate(long offset) throws IOException;
 
     /**
      * 收到新增entry记录的sequence和offset
@@ -56,7 +56,7 @@ public interface IndexFile extends AutoCloseable {
      */
     void receiveEntry(long sequence, long offset);
 
-    void trimToValidSize() throws BadDiskException;
+    void trimToValidSize() throws IOException;
 
     /**
      * 刷新缓存到磁盘

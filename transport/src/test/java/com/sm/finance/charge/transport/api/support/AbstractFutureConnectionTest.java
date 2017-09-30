@@ -30,7 +30,7 @@ public class AbstractFutureConnectionTest {
                 throw new NullPointerException();
             }).join();
             System.out.println(result);
-        } catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
         }
 

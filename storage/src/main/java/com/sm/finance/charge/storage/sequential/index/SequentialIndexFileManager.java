@@ -2,7 +2,6 @@ package com.sm.finance.charge.storage.sequential.index;
 
 import com.sm.finance.charge.common.AbstractService;
 import com.sm.finance.charge.common.FileUtil;
-import com.sm.finance.charge.common.exceptions.BadDiskException;
 import com.sm.finance.charge.storage.api.index.IndexFile;
 import com.sm.finance.charge.storage.api.index.IndexFileManager;
 
@@ -33,7 +32,7 @@ public class SequentialIndexFileManager extends AbstractService implements Index
     }
 
     @Override
-    public IndexFile create(long sequence) throws BadDiskException {
+    public IndexFile create(long sequence) throws IOException {
         checkStarted();
         File file = buildIndexFile(sequence);
 
@@ -64,7 +63,7 @@ public class SequentialIndexFileManager extends AbstractService implements Index
         loadSegments();
     }
 
-    private void loadSegments() throws BadDiskException, IOException {
+    private void loadSegments() throws IOException {
         Collection<File> files = FileUtil.listAllFile(directory, File::isFile);
 
         for (File file : files) {

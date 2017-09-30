@@ -11,7 +11,7 @@ import io.netty.channel.ChannelPromise;
  * @author shifeng.luo
  * @version created on 2017/9/11 下午5:44
  */
-public class SerializerHandler  extends ChannelHandlerAdapter {
+public class SerializerHandler extends ChannelHandlerAdapter {
     private final Serializer serializer;
 
     public SerializerHandler(Serializer serializer) {
