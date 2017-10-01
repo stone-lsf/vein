@@ -42,8 +42,21 @@ public class SequentialIndexFileManager extends AbstractService implements Index
     }
 
     @Override
+    public boolean delete(long sequence) {
+        checkStarted();
+        IndexFile indexFile = indexMap.remove(sequence);
+        return indexFile == null || indexFile.delete();
+    }
+
+    @Override
     public IndexFile get(long sequence) {
         return indexMap.get(sequence);
+    }
+
+    @Override
+    public IndexFile lookup(long sequence) {
+        Map.Entry<Long, IndexFile> entry = indexMap.floorEntry(sequence);
+        return entry == null ? null : entry.getValue();
     }
 
     private File buildIndexFile(long sequence) {

@@ -6,6 +6,8 @@ import com.sm.finance.charge.storage.api.FileStorage;
 import com.sm.finance.charge.storage.api.StorageConfig;
 import com.sm.finance.charge.storage.api.StorageReader;
 import com.sm.finance.charge.storage.api.StorageWriter;
+import com.sm.finance.charge.storage.api.exceptions.BadDataException;
+import com.sm.finance.charge.storage.api.exceptions.StorageException;
 import com.sm.finance.charge.storage.api.index.IndexFile;
 import com.sm.finance.charge.storage.api.index.IndexFileManager;
 import com.sm.finance.charge.storage.api.segment.Segment;
@@ -60,9 +62,20 @@ public class SequentialFileStorage extends AbstractService implements FileStorag
     }
 
     @Override
-    public StorageReader reader() {
+    public StorageReader reader(long startSequence) {
         checkStarted();
-        return null;
+
+        SequentialStorageReader reader = new SequentialStorageReader(indexManager, segmentManager);
+        try {
+            reader.readFrom(startSequence);
+        } catch (IOException e) {
+            logger.error("locate start offset caught exception", e);
+            throw new StorageException(e);
+        } catch (BadDataException e) {
+            logger.error("file has been damage", e);
+            throw new IllegalStateException(e);
+        }
+        return reader;
     }
 
     @Override
@@ -85,7 +98,25 @@ public class SequentialFileStorage extends AbstractService implements FileStorag
             return 0;
         }
 
-        long sequence = segment.descriptor().sequence();
+        long sequence = segment.baseSequence();
+        if (segment.getFile().length() == 0) {
+            boolean deleted = segmentManager.delete(sequence);
+            if (!deleted) {
+                logger.error("delete segment file:{} fail", sequence);
+                throw new StorageException("delete segment file:" + sequence + " fail");
+            }
+            deleted = indexManager.delete(sequence);
+            if (!deleted) {
+                logger.error("delete index file:{} fail", sequence);
+                throw new StorageException("delete index file:" + sequence + " fail");
+            }
+            segment = segmentManager.last();
+            if (segment == null) {
+                return 0;
+            }
+        }
+
+
         IndexFile indexFile = indexManager.last();
 
         if (indexFile == null) {

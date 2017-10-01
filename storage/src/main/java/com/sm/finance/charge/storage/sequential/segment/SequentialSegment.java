@@ -28,7 +28,8 @@ public class SequentialSegment extends LogSupport implements Segment {
     private final File file;
     private final SegmentDescriptor descriptor;
     private EntryListener listener;
-
+    private boolean active;
+    private Segment segment;
 
     SequentialSegment(SegmentDescriptor descriptor, File file) throws IOException {
         boolean newFile = file.createNewFile();
@@ -41,6 +42,16 @@ public class SequentialSegment extends LogSupport implements Segment {
 
 
     @Override
+    public void setActive(boolean active) {
+        this.active = active;
+    }
+
+    @Override
+    public boolean isActive() {
+        return active;
+    }
+
+    @Override
     public void setEntryListener(EntryListener listener) {
         this.listener = listener;
     }
@@ -48,6 +59,11 @@ public class SequentialSegment extends LogSupport implements Segment {
     @Override
     public SegmentDescriptor descriptor() {
         return descriptor;
+    }
+
+    @Override
+    public long baseSequence() {
+        return descriptor.sequence();
     }
 
     @Override
@@ -59,7 +75,7 @@ public class SequentialSegment extends LogSupport implements Segment {
     public Pair<Long, Long> check() throws IOException {
         SegmentReader reader = reader(new ReadBuffer());
         long offset = 0;
-        long sequence = descriptor.sequence() - 1;
+        long sequence = descriptor.sequence();
         Entry entry;
         try {
             while ((entry = reader.readEntry()) != null) {
@@ -94,5 +110,18 @@ public class SequentialSegment extends LogSupport implements Segment {
         return new SequentialSegmentAppender(this, buffer, listener);
     }
 
+    @Override
+    public boolean delete() {
+        return file.delete();
+    }
 
+    @Override
+    public void setNext(Segment segment) {
+        this.segment = segment;
+    }
+
+    @Override
+    public Segment getNext() {
+        return segment;
+    }
 }

@@ -14,6 +14,11 @@ import java.io.IOException;
  */
 public interface Segment {
 
+
+    void setActive(boolean active);
+
+    boolean isActive();
+
     void setEntryListener(EntryListener listener);
 
     /**
@@ -22,6 +27,8 @@ public interface Segment {
      * @return the segment sequence
      */
     SegmentDescriptor descriptor();
+
+    long baseSequence();
 
     /**
      * 获取文件
@@ -58,4 +65,10 @@ public interface Segment {
      * @return 写入器
      */
     SegmentAppender appender(WriterBuffer buffer) throws IOException;
+
+    boolean delete();
+
+    void setNext(Segment segment);
+
+    Segment getNext();
 }

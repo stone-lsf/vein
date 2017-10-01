@@ -14,6 +14,10 @@ public interface SegmentManager extends Startable, Closable {
 
     Segment create(long sequence) throws IOException;
 
+    boolean delete(long sequence);
+
+    Segment get(long sequence);
+
     Segment last();
 
     List<Segment> higher(long sequence);

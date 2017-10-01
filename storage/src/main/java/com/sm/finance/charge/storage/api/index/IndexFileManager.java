@@ -13,7 +13,11 @@ public interface IndexFileManager extends Startable, Closable {
 
     IndexFile create(long sequence) throws IOException;
 
+    boolean delete(long sequence);
+
     IndexFile get(long sequence);
+
+    IndexFile lookup(long sequence);
 
     IndexFile last();
 }

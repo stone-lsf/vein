@@ -69,4 +69,6 @@ public interface IndexFile extends AutoCloseable {
     int maxFileSize();
 
     boolean isFull();
+
+    boolean delete();
 }

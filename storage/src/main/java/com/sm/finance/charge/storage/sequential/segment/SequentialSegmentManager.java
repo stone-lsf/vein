@@ -88,6 +88,19 @@ public class SequentialSegmentManager extends AbstractService implements Segment
     }
 
     @Override
+    public boolean delete(long sequence) {
+        checkStarted();
+        Segment segment = segmentMap.remove(sequence);
+        return segment == null || segment.delete();
+    }
+
+    @Override
+    public Segment get(long sequence) {
+        checkStarted();
+        return segmentMap.get(sequence);
+    }
+
+    @Override
     public Segment last() {
         checkStarted();
         Map.Entry<Long, Segment> entry = segmentMap.lastEntry();

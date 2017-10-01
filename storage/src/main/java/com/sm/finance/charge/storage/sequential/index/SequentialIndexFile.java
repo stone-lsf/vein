@@ -185,6 +185,12 @@ public class SequentialIndexFile extends LogSupport implements IndexFile {
     }
 
     @Override
+    public boolean delete() {
+        //TODO delete
+        return false;
+    }
+
+    @Override
     public void close() throws Exception {
         closed = true;
     }

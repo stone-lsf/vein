@@ -43,6 +43,6 @@ public interface FileStorage extends Startable {
      *
      * @return rolling reader
      */
-    StorageReader reader();
+    StorageReader reader(long startSequence);
 }
 

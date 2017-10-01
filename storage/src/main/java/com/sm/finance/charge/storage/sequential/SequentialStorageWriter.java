@@ -44,7 +44,7 @@ import static com.sm.finance.charge.storage.sequential.segment.SequentialHeader.
  */
 public class SequentialStorageWriter extends AbstractService implements StorageWriter, RollingPolicy {
     private final ExecutorService executorService = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("AsyncWritePool"));
-    private final Future<?> future;
+    private volatile Future<?> future;
 
     private final SegmentManager segmentManager;
     private final IndexFileManager indexFileManager;
@@ -58,15 +58,15 @@ public class SequentialStorageWriter extends AbstractService implements StorageW
     private ConcurrentMap<Long, CompletableFuture<Boolean>> futureMap = new ConcurrentHashMap<>(1000 * 1000);
 
 
-    public SequentialStorageWriter(SegmentManager segmentManager, long startSequence, IndexFileManager indexFileManager,
-                                   Serializer serializer, StorageConfig config) {
+    SequentialStorageWriter(SegmentManager segmentManager, long startSequence, IndexFileManager indexFileManager,
+                            Serializer serializer, StorageConfig config) {
         this.segmentManager = segmentManager;
         this.sequenceGenerator = new LongIdGenerator(startSequence);
         this.indexFileManager = indexFileManager;
         this.serializer = serializer;
         this.maxSegmentSize = config.getMaxSegmentSize();
         this.writerBuffer = new WriterBuffer(config.getFlushInterval());
-        this.future = executorService.submit(this::writeAsync);
+
     }
 
     @Override
@@ -76,6 +76,8 @@ public class SequentialStorageWriter extends AbstractService implements StorageW
             segment = segmentManager.create(1);
         }
         this.appender = segment.appender(writerBuffer);
+        segment.setActive(true);
+        this.future = executorService.submit(this::writeAsync);
     }
 
     @Override
@@ -101,13 +103,30 @@ public class SequentialStorageWriter extends AbstractService implements StorageW
     }
 
     @Override
-    public void appendForce(Object message) {
-
+    public boolean appendForce(Object message) {
+        boolean success = append(message);
+        if (success) {
+            flush();
+        }
+        return success;
     }
 
     @Override
-    public void appendForce(List messages) {
+    public boolean appendForce(List messages) {
+        boolean success = append(messages);
+        if (success) {
+            flush();
+        }
+        return success;
+    }
 
+    private void flush() {
+        try {
+            appender.flush();
+        } catch (IOException e) {
+            logger.error("flush appender:{} caught exception:{}", appender, e);
+            throw new StorageException(e);
+        }
     }
 
     @Override
@@ -240,7 +259,7 @@ public class SequentialStorageWriter extends AbstractService implements StorageW
     @Override
     public boolean isTriggerEvent(Event event) {
         TimeSizeEvent timeSizeEvent = (TimeSizeEvent) event;
-        IndexFile indexFile = indexFileManager.get(appender.getSegment().descriptor().sequence());
+        IndexFile indexFile = indexFileManager.get(appender.getSegment().baseSequence());
         return timeSizeEvent.getSize() > maxSegmentSize || indexFile.isFull();
     }
 
@@ -248,6 +267,7 @@ public class SequentialStorageWriter extends AbstractService implements StorageW
     public void rollover() throws IOException {
         appender.flush();
         appender.close();
+        appender.getSegment().setActive(false);
     }
 
     @Override
@@ -255,6 +275,7 @@ public class SequentialStorageWriter extends AbstractService implements StorageW
         Segment segment = segmentManager.create(descriptor.sequence());
         IndexFile indexFile = indexFileManager.create(descriptor.sequence());
         segment.setEntryListener(indexFile::receiveEntry);
+        segment.setActive(true);
         return segment;
     }
 

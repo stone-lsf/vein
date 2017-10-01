@@ -2,7 +2,10 @@ package com.sm.finance.charge.storage.api;
 
 import com.sm.finance.charge.common.Closable;
 import com.sm.finance.charge.common.Startable;
+import com.sm.finance.charge.storage.api.exceptions.BadDataException;
+import com.sm.finance.charge.storage.api.index.OffsetIndex;
 
+import java.io.IOException;
 import java.util.List;
 
 /**
@@ -16,7 +19,7 @@ public interface StorageReader<T> extends Startable, Closable {
      *
      * @param sequence 序列号
      */
-    void readFrom(long sequence);
+    void readFrom(long sequence) throws IOException, BadDataException;
 
     /**
      * 读取一条数据
