@@ -1,6 +1,5 @@
 package com.sm.finance.charge.cluster.storage;
 
-import com.sm.finance.charge.cluster.storage.entry.Entry;
 
 /**
  * @author shifeng.luo
@@ -25,4 +24,7 @@ public interface Log {
      * @param index 指定日志的索引
      */
     Log truncate(long index);
+
+
+    Log commit(long index);
 }

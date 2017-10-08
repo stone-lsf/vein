@@ -16,6 +16,7 @@
         <module>serializer</module>
         <module>cluster</module>
         <module>storage</module>
+        <module>buffer</module>
     </modules>
 
 

@@ -19,7 +19,7 @@ public class ClusterMember {
 
     private final Address address;
 
-    private final MemberState state;
+    private final ClusterMemberState state;
 
     private volatile Connection connection;
 
@@ -29,7 +29,7 @@ public class ClusterMember {
         this.client = client;
         this.id = id;
         this.address = address;
-        this.state = new MemberState(this);
+        this.state = new ClusterMemberState(this);
     }
 
     public long getId() {
@@ -40,7 +40,7 @@ public class ClusterMember {
         return address;
     }
 
-    public MemberState getState() {
+    public ClusterMemberState getState() {
         return state;
     }
 
@@ -61,7 +61,7 @@ public class ClusterMember {
     }
 
 
-    public CompletableFuture<Object> romoveCommitFuture(long logIndex) {
+    public CompletableFuture<Object> removeCommitFuture(long logIndex) {
         return commitFutures.remove(logIndex);
     }
 }

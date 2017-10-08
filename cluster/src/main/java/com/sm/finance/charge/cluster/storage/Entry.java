@@ -1,10 +1,10 @@
-package com.sm.finance.charge.cluster.storage.entry;
+package com.sm.finance.charge.cluster.storage;
 
 import com.sm.finance.charge.cluster.client.Command;
 
 /**
  * @author shifeng.luo
- * @version created on 2017/9/22 下午3:46
+ * @version created on 2017/10/8 下午3:24
  */
 public class Entry {
 
@@ -12,10 +12,11 @@ public class Entry {
     private long version;
     private Command command;
 
-    private int size = -1;
+    private int size;
 
-    public Entry(Command command) {
+    public Entry(Command command, long version) {
         this.command = command;
+        this.version = version;
     }
 
     public long getIndex() {

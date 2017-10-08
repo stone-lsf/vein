@@ -8,7 +8,7 @@ import java.util.concurrent.CompletableFuture;
 
 /**
  * @author shifeng.luo
- * @version created on 2017/9/11 下午8:28
+ * @version created on 2017/10/8 下午3:45
  */
 public interface ClusterServer extends Startable, Closable {
 
@@ -19,10 +19,7 @@ public interface ClusterServer extends Startable, Closable {
      */
     CompletableFuture<Boolean> join();
 
-    void send(Object message);
-
+    CompletableFuture<Boolean> leave();
 
     CompletableFuture<Object> handle(Command command);
-
-
 }

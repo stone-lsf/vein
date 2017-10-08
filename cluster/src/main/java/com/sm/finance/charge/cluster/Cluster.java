@@ -1,15 +1,22 @@
 package com.sm.finance.charge.cluster;
 
+import com.sm.finance.charge.cluster.elect.MasterListener;
+import com.sm.finance.charge.common.Closable;
+import com.sm.finance.charge.common.Startable;
+
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 
 /**
  * @author shifeng.luo
- * @version created on 2017/9/22 上午11:21
+ * @version created on 2017/10/8 下午3:36
  */
-public interface Cluster {
+public interface Cluster extends Startable, Closable {
+
+    String name();
 
     ClusterMember master();
+
+    void setMaster(ClusterMember master);
 
     ClusterMember member(long id);
 
@@ -19,7 +26,15 @@ public interface Cluster {
 
     long version();
 
+    void setVersion(long version);
+
     List<ClusterMember> members();
 
-    CompletableFuture<Boolean> join();
+    void add(ClusterMember member);
+
+    void remove(ClusterMember member);
+
+    void addMemberListener(MemberListener listener);
+
+    void addMasterListener(MasterListener listener);
 }

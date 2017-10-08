@@ -4,7 +4,7 @@ package com.sm.finance.charge.cluster;
  * @author shifeng.luo
  * @version created on 2017/9/22 上午11:11
  */
-public class MemberState {
+public class ClusterMemberState {
 
     private final ClusterMember member;
 
@@ -54,7 +54,7 @@ public class MemberState {
     private volatile long replicateFailureCount;
 
 
-    public MemberState(ClusterMember member) {
+    public ClusterMemberState(ClusterMember member) {
         this.member = member;
     }
 

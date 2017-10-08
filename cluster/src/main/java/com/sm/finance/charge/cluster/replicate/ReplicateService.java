@@ -1,6 +1,7 @@
 package com.sm.finance.charge.cluster.replicate;
 
 import com.sm.finance.charge.cluster.ClusterMember;
+import com.sm.finance.charge.cluster.storage.Entry;
 import com.sm.finance.charge.common.Closable;
 import com.sm.finance.charge.common.Startable;
 
@@ -12,7 +13,9 @@ import java.util.concurrent.CompletableFuture;
  */
 public interface ReplicateService extends Startable, Closable {
 
-    void replicate(ClusterMember member);
+    CompletableFuture<Object> replicate(Entry entry);
+
+    void replicateTo(ClusterMember member);
 
     CompletableFuture<ReplicateResponse> handleReplicate(ReplicateRequest request);
 
@@ -20,7 +23,7 @@ public interface ReplicateService extends Startable, Closable {
 
     void handleReplicateResponseFailure(ClusterMember member, ReplicateRequest request, Throwable error);
 
-    void snapshot(ClusterMember member);
+    void snapshotTo(ClusterMember member);
 
     CompletableFuture<InstallSnapshotResponse> handleSnapshot(InstallSnapshotRequest request);
 

@@ -1,6 +1,7 @@
 package com.sm.finance.charge.cluster.replicate;
 
-import com.sm.finance.charge.cluster.storage.entry.Entry;
+
+import com.sm.finance.charge.cluster.storage.Entry;
 
 import java.util.List;
 

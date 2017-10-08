@@ -1,11 +1,11 @@
 package com.sm.finance.charge.cluster.replicate;
 
 import com.sm.finance.charge.cluster.ClusterMember;
-import com.sm.finance.charge.cluster.MemberState;
+import com.sm.finance.charge.cluster.ClusterMemberState;
 import com.sm.finance.charge.cluster.ServerContext;
-import com.sm.finance.charge.cluster.StateMachine;
+import com.sm.finance.charge.cluster.ServerStateMachine;
+import com.sm.finance.charge.cluster.storage.Entry;
 import com.sm.finance.charge.cluster.storage.Log;
-import com.sm.finance.charge.cluster.storage.entry.Entry;
 import com.sm.finance.charge.cluster.storage.snapshot.Snapshot;
 import com.sm.finance.charge.cluster.storage.snapshot.SnapshotManager;
 import com.sm.finance.charge.cluster.storage.snapshot.SnapshotReader;
@@ -22,6 +22,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import static com.sm.finance.charge.common.SystemConstants.PROCESSORS;
+
 /**
  * @author shifeng.luo
  * @version created on 2017/9/20 下午1:36
@@ -34,28 +36,28 @@ public class DefaultReplicateService extends AbstractService implements Replicat
     private final int replicateTimeout;
     private final int snapshotTimeout;
     private final ClusterMember self;
-    private final StateMachine stateMachine;
+    private final ServerStateMachine stateMachine;
     private final ExecutorService executorService;
     private volatile Snapshot pendingSnapshot;
     private volatile long nextSnapshotOffset;
 
-
-    public DefaultReplicateService(ServerContext context, ReplicateConfig replicateConfig, ClusterMember self, StateMachine stateMachine) {
+    public DefaultReplicateService(ServerContext context) {
         this.log = context.getLog();
         this.context = context;
+        ReplicateConfig replicateConfig = context.getReplicateConfig();
         this.maxBatchSize = replicateConfig.getMaxBatchSize();
         this.replicateTimeout = replicateConfig.getReplicateTimeout();
         this.snapshotTimeout = replicateConfig.getSnapshotTimeout();
-        this.self = self;
-        this.stateMachine = stateMachine;
-        this.executorService = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors() + 1, new NamedThreadFactory("ReplicatePool"));
+        this.self = context.getSelf();
+        this.stateMachine = context.getStateMachine();
+        this.executorService = Executors.newScheduledThreadPool(PROCESSORS + 1, new NamedThreadFactory("ReplicatePool"));
     }
 
     @Override
     protected void doStart() throws Exception {
         List<ClusterMember> members = context.getCluster().members();
         for (ClusterMember member : members) {
-            executorService.execute(() -> replicate(member));
+            executorService.execute(() -> replicateTo(member));
         }
     }
 
@@ -65,11 +67,28 @@ public class DefaultReplicateService extends AbstractService implements Replicat
     }
 
     @Override
-    public void replicate(ClusterMember member) {
-        MemberState state = member.getState();
+    public CompletableFuture<Object> replicate(Entry entry) {
+        CompletableFuture<Object> future = new CompletableFuture<>();
+        long index = log.append(entry);
+
+        CompletableFuture<Object> commitFuture = new CompletableFuture<>();
+        commitFuture.whenComplete((result, error) -> {
+            if (error == null) {
+                future.complete(result);
+            } else {
+                future.completeExceptionally(error);
+            }
+        });
+        self.addCommitFuture(index,future);
+        return future;
+    }
+
+    @Override
+    public void replicateTo(ClusterMember member) {
+        ClusterMemberState state = member.getState();
         long nextLogIndex = state.getNextLogIndex();
         if (needInstallSnapshot(nextLogIndex, state)) {
-            this.snapshot(member);
+            this.snapshotTo(member);
             return;
         }
 
@@ -85,15 +104,15 @@ public class DefaultReplicateService extends AbstractService implements Replicat
         });
     }
 
-    private boolean needInstallSnapshot(long nextLogIndex, MemberState member) {
+    private boolean needInstallSnapshot(long nextLogIndex, ClusterMemberState member) {
         SnapshotManager snapshotManager = context.getSnapshotManager();
         Snapshot snapshot = snapshotManager.currentSnapshot();
 
         return snapshot != null && snapshot.index() >= nextLogIndex && snapshot.index() > member.getSnapshotIndex();
     }
 
-    private ReplicateRequest buildReplicateRequest(MemberState member, Entry prevEntry) {
-        MemberState local = context.getMember().getState();
+    private ReplicateRequest buildReplicateRequest(ClusterMemberState member, Entry prevEntry) {
+        ClusterMemberState local = context.getSelf().getState();
 
         ReplicateRequest request = new ReplicateRequest();
         request.setCurrentVersion(local.getVersion());
@@ -129,7 +148,7 @@ public class DefaultReplicateService extends AbstractService implements Replicat
     }
 
 
-    private Entry getPrevEntry(MemberState member) {
+    private Entry getPrevEntry(ClusterMemberState member) {
         long nextLogIndex = member.getNextLogIndex();
         if (nextLogIndex < 0) {
             return null;
@@ -152,7 +171,7 @@ public class DefaultReplicateService extends AbstractService implements Replicat
     @Override
     public CompletableFuture<ReplicateResponse> handleReplicate(ReplicateRequest request) {
         long requestVersion = request.getCurrentVersion();
-        MemberState selfState = self.getState();
+        ClusterMemberState selfState = self.getState();
         long version = selfState.getVersion();
 
         ReplicateResponse response = new ReplicateResponse();
@@ -185,37 +204,11 @@ public class DefaultReplicateService extends AbstractService implements Replicat
             log.append(entry);
         }
 
-        apply(request.getCommitIndex());
-        selfState.setCommittedIndex(request.getCommitIndex());
+        commit(request.getCommitIndex(), selfState);
 
         response.setSuccess(true);
         response.setNextIndex(log.lastIndex() + 1);
         return CompletableFuture.completedFuture(response);
-    }
-
-    private void apply(long index) {
-        MemberState state = self.getState();
-
-        long lastApplied = state.getLastApplied();
-        if (index < lastApplied + 1) {
-            return;
-        }
-
-        for (long i = lastApplied + 1; i <= index; i++) {
-            Entry entry = log.get(i);
-            if (entry != null) {
-                stateMachine.apply(entry).whenComplete((result, error) -> {
-                    CompletableFuture<Object> future = self.romoveCommitFuture(entry.getIndex());
-                    if (future != null) {
-                        if (error == null) {
-                            future.complete(result);
-                        } else {
-                            future.completeExceptionally(error);
-                        }
-                    }
-                });
-            }
-        }
     }
 
 
@@ -223,9 +216,9 @@ public class DefaultReplicateService extends AbstractService implements Replicat
     public void handleReplicateResponse(ReplicateResponse response, ClusterMember member) {
         if (response.isSuccess()) {
             member.getState().setMatchedIndex(response.getNextIndex() - 1);
-            commitEntries();
+            replicateSuccess();
             if (!closed.get()) {
-                executorService.execute(() -> replicate(member));
+                executorService.execute(() -> replicateTo(member));
             }
             return;
         }
@@ -242,14 +235,14 @@ public class DefaultReplicateService extends AbstractService implements Replicat
             return;
         }
 
-        MemberState state = member.getState();
+        ClusterMemberState state = member.getState();
         state.setNextLogIndex(response.getNextIndex());
         if (!closed.get()) {
-            executorService.execute(() -> replicate(member));
+            executorService.execute(() -> replicateTo(member));
         }
     }
 
-    private void commitEntries() {
+    private void replicateSuccess() {
         List<ClusterMember> members = context.getCluster().members();
         members.sort(Comparator.comparingLong(member -> member.getState().getMatchedIndex()));
         int quorum = context.getCluster().getQuorum();
@@ -259,32 +252,37 @@ public class DefaultReplicateService extends AbstractService implements Replicat
         ClusterMember member = members.get(quorum - 1);
         long commitIndex = member.getState().getMatchedIndex();
 
-        MemberState selfState = self.getState();
+        ClusterMemberState selfState = self.getState();
         long prevCommittedIndex = selfState.getCommittedIndex();
         if (commitIndex > prevCommittedIndex) {
-            apply(commitIndex);
-            selfState.setCommittedIndex(commitIndex);
+            commit(commitIndex, selfState);
         }
+    }
+
+    private void commit(long index, ClusterMemberState memberState) {
+        log.commit(Math.min(index, log.lastIndex()));
+        stateMachine.apply(index);
+        memberState.setCommittedIndex(index);
     }
 
     @Override
     public void handleReplicateResponseFailure(ClusterMember member, ReplicateRequest request, Throwable error) {
-        MemberState state = member.getState();
+        ClusterMemberState state = member.getState();
         state.incrementReplicateFailureCount();
         logger.error("replicate data to:{} failed:{}", member.getAddress(), error);
         if (!closed.get()) {
-            executorService.execute(() -> replicate(member));
+            executorService.execute(() -> replicateTo(member));
         }
     }
 
     @Override
-    public void snapshot(ClusterMember member) {
+    public void snapshotTo(ClusterMember member) {
         InstallSnapshotRequest request;
         try {
             request = buildSnapshotRequest(member);
         } catch (IOException e) {
             logger.warn("build snapshot request for member:{} failed", member.getId());
-            executorService.execute(() -> replicate(member));
+            executorService.execute(() -> replicateTo(member));
             return;
         }
 
@@ -319,7 +317,7 @@ public class DefaultReplicateService extends AbstractService implements Replicat
     private InstallSnapshotRequest buildSnapshotRequest(ClusterMember member) throws IOException {
         Snapshot snapshot = context.getSnapshotManager().currentSnapshot();
 
-        MemberState state = member.getState();
+        ClusterMemberState state = member.getState();
         if (snapshot.index() != state.getNextSnapshotIndex()) {
             state.setNextSnapshotIndex(snapshot.index());
             state.setNextSnapshotOffset(0L);
@@ -350,7 +348,7 @@ public class DefaultReplicateService extends AbstractService implements Replicat
 
         CompletableFuture.supplyAsync(() -> {
             InstallSnapshotResponse response = new InstallSnapshotResponse();
-            MemberState selfState = self.getState();
+            ClusterMemberState selfState = self.getState();
             response.setVersion(selfState.getVersion());
 
             if (request.getVersion() < selfState.getVersion()) {
@@ -373,9 +371,11 @@ public class DefaultReplicateService extends AbstractService implements Replicat
                     future.complete(response);
                     return null;
                 }
+                pendingSnapshot = context.getSnapshotManager().create(request.getIndex(), System.currentTimeMillis());
+                nextSnapshotOffset = 0;
             }
 
-            if (response.getNextOffset() > nextSnapshotOffset) {
+            if (request.getOffset() > nextSnapshotOffset) {
                 response.setSuccess(false);
                 response.setNextOffset(nextSnapshotOffset);
                 future.complete(response);
@@ -392,6 +392,7 @@ public class DefaultReplicateService extends AbstractService implements Replicat
 
             if (request.isComplete()) {
                 pendingSnapshot.complete();
+                stateMachine.installSnapshot(pendingSnapshot);
                 pendingSnapshot = null;
                 nextSnapshotOffset = 0;
             } else {
@@ -414,7 +415,7 @@ public class DefaultReplicateService extends AbstractService implements Replicat
         }
 
         if (response.isSuccess()) {
-            MemberState state = member.getState();
+            ClusterMemberState state = member.getState();
             if (request.isComplete()) {
                 state.setSnapshotIndex(request.getIndex());
                 state.setNextSnapshotIndex(0);
@@ -423,16 +424,16 @@ public class DefaultReplicateService extends AbstractService implements Replicat
                 state.setNextSnapshotOffset(request.getOffset() + request.getData().length);
             }
         } else {
-            MemberState state = member.getState();
+            ClusterMemberState state = member.getState();
             state.setNextSnapshotOffset(response.getNextOffset());
         }
 
-        executorService.execute(() -> replicate(member));
+        executorService.execute(() -> replicateTo(member));
     }
 
     @Override
     public void handleInstallSnapshotResponseFailure(ClusterMember member, InstallSnapshotRequest request, Throwable error) {
         logger.error("send snapshot to member:{} caught failure:{}", member.getId(), error);
-        executorService.execute(() -> replicate(member));
+        executorService.execute(() -> replicateTo(member));
     }
 }

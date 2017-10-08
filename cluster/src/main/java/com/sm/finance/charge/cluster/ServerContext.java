@@ -1,5 +1,6 @@
 package com.sm.finance.charge.cluster;
 
+import com.sm.finance.charge.cluster.replicate.ReplicateConfig;
 import com.sm.finance.charge.cluster.storage.Log;
 import com.sm.finance.charge.cluster.storage.snapshot.SnapshotManager;
 
@@ -9,43 +10,105 @@ import com.sm.finance.charge.cluster.storage.snapshot.SnapshotManager;
  */
 public class ServerContext {
 
-    private SnapshotManager snapshotManager;
+    private final ReplicateConfig replicateConfig;
 
-    private Log log;
+    private final SnapshotManager snapshotManager;
 
-    private ClusterMember member;
+    private final Log log;
 
-    private Cluster cluster;
+    private final ClusterMember self;
 
-    public Cluster getCluster() {
+    private final ChargeCluster cluster;
+
+    private final ServerStateMachine stateMachine;
+
+    private ServerContext(ReplicateConfig replicateConfig, SnapshotManager snapshotManager, Log log,
+                          ClusterMember self, ChargeCluster cluster, ServerStateMachine stateMachine) {
+        this.replicateConfig = replicateConfig;
+        this.snapshotManager = snapshotManager;
+        this.log = log;
+        this.self = self;
+        this.cluster = cluster;
+        this.stateMachine = stateMachine;
+    }
+
+    public ChargeCluster getCluster() {
         return cluster;
     }
 
-    public void setCluster(Cluster cluster) {
-        this.cluster = cluster;
-    }
 
     public SnapshotManager getSnapshotManager() {
         return snapshotManager;
     }
 
-    public void setSnapshotManager(SnapshotManager snapshotManager) {
-        this.snapshotManager = snapshotManager;
-    }
 
     public Log getLog() {
         return log;
     }
 
-    public void setLog(Log log) {
-        this.log = log;
+
+    public ClusterMember getSelf() {
+        return self;
     }
 
-    public ClusterMember getMember() {
-        return member;
+
+    public ServerStateMachine getStateMachine() {
+        return stateMachine;
     }
 
-    public void setMember(ClusterMember member) {
-        this.member = member;
+    public ReplicateConfig getReplicateConfig() {
+        return replicateConfig;
+    }
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public static class Builder {
+        private ReplicateConfig replicateConfig;
+
+        private SnapshotManager snapshotManager;
+
+        private Log log;
+
+        private ClusterMember self;
+
+        private ChargeCluster cluster;
+
+        private ServerStateMachine stateMachine;
+
+        public Builder setReplicateConfig(ReplicateConfig replicateConfig) {
+            this.replicateConfig = replicateConfig;
+            return this;
+        }
+
+        public Builder setSnapshotManager(SnapshotManager snapshotManager) {
+            this.snapshotManager = snapshotManager;
+            return this;
+        }
+
+        public Builder setLog(Log log) {
+            this.log = log;
+            return this;
+        }
+
+        public Builder setSelf(ClusterMember self) {
+            this.self = self;
+            return this;
+        }
+
+        public Builder setCluster(ChargeCluster cluster) {
+            this.cluster = cluster;
+            return this;
+        }
+
+        public Builder setStateMachine(ServerStateMachine stateMachine) {
+            this.stateMachine = stateMachine;
+            return this;
+        }
+
+        public ServerContext build() {
+            return new ServerContext(replicateConfig, snapshotManager, log, self, cluster, stateMachine);
+        }
     }
 }

@@ -1,6 +1,6 @@
 package com.sm.finance.charge.cluster.elect;
 
-import com.sm.finance.charge.cluster.discovery.DiscoveryNode;
+import com.sm.finance.charge.cluster.ClusterMember;
 
 import java.util.List;
 
@@ -13,8 +13,8 @@ public interface MasterElector {
     /**
      * 从节点列表中选出master
      *
-     * @param nodes 节点列表
+     * @param members 节点列表
      * @return master
      */
-    DiscoveryNode elect(List<DiscoveryNode> nodes);
+    ClusterMember elect(List<ClusterMember> members);
 }

@@ -1,6 +1,8 @@
 package com.sm.finance.charge.cluster.elect;
 
-import com.sm.finance.charge.cluster.discovery.DiscoveryNode;
+import com.sm.finance.charge.cluster.ClusterMember;
+import com.sm.finance.charge.cluster.ClusterMemberState;
+import com.sm.finance.charge.cluster.storage.Log;
 
 import java.util.Comparator;
 import java.util.List;
@@ -12,28 +14,24 @@ import java.util.List;
 public class DefaultMasterElector implements MasterElector {
 
     private volatile int minCandidateNum;
+    private final Log log;
 
-    public DefaultMasterElector(int minCandidateNum) {
+    public DefaultMasterElector(int minCandidateNum, Log log) {
         this.minCandidateNum = minCandidateNum;
+        this.log = log;
     }
 
     @Override
-    public DiscoveryNode elect(List<DiscoveryNode> nodes) {
-        if (nodes.size() < minCandidateNum) {
+    public ClusterMember elect(List<ClusterMember> members) {
+        if (members.size() < minCandidateNum) {
             return null;
         }
 
-        nodes.sort(new NodeComparator());
 
-        return nodes.get(0);
+
+        return members.get(0);
     }
 
 
-    private class NodeComparator implements Comparator<DiscoveryNode> {
 
-        @Override
-        public int compare(DiscoveryNode node1, DiscoveryNode node2) {
-            return node1.getNodeId().compareToIgnoreCase(node2.getNodeId());
-        }
-    }
 }
