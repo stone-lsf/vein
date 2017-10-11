@@ -53,7 +53,7 @@ public class GossipTask extends LogSupport implements Runnable {
                 GossipRequest request = new GossipRequest(messages);
                 connection.send(request);
             } catch (Exception e) {
-                logger.error("gossip message to node:{} caught exception:{}", node.getNodeId(), e);
+                logger.error("com.sm.charge.memory.gossip message to node:{} caught exception:{}", node.getNodeId(), e);
             }
         }
     }

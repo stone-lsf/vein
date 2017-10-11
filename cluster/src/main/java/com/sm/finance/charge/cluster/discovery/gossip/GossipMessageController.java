@@ -278,8 +278,8 @@ public class GossipMessageController extends LogSupport implements GossipMessage
                     messageNotifier.notify(message);
                     break;
                 default:
-                    logger.error("unknown gossip message type:{}", message.getType());
-                    throw new RuntimeException("unknown gossip message type:" + message.getType());
+                    logger.error("unknown com.sm.charge.memory.gossip message type:{}", message.getType());
+                    throw new RuntimeException("unknown com.sm.charge.memory.gossip message type:" + message.getType());
             }
         }
     }

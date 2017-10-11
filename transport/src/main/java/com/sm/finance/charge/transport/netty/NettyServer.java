@@ -49,7 +49,7 @@ public class NettyServer extends AbstractService implements TransportServer {
                     ch.pipeline().addLast("encoder", new LengthFieldPrepender(4, false));
                     ProtoStuffSerializer serialize = new ProtoStuffSerializer(new MessageType());
                     ch.pipeline().addLast("serializer", new SerializerHandler(serialize));
-                    ch.pipeline().addLast("handler", new NettyHandler(connectionManager, listener, defaultTimeout));
+                    ch.pipeline().addLast("com.sm.charge.memory.handler", new NettyHandler(connectionManager, listener, defaultTimeout));
                 }
             });
         try {

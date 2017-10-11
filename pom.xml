@@ -17,6 +17,8 @@
         <module>cluster</module>
         <module>storage</module>
         <module>buffer</module>
+        <module>discovery</module>
+        <module>raft</module>
     </modules>
 
 

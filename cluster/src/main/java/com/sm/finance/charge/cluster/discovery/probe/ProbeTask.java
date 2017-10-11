@@ -35,7 +35,7 @@ public class ProbeTask extends LogSupport implements Runnable {
         while (true) {
             int size = nodes.size();
             if (numCheck >= size) {
-                logger.info("can't find suitable node to probe");
+                logger.info("can't find suitable node to com.sm.charge.memory.probe");
                 return;
             }
 

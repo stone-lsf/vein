@@ -155,7 +155,7 @@ public abstract class AbstractConnection extends AbstractService implements Conn
         Object requestMessage = request.getMessage();
         RequestHandler handler = requestHandlers.get(requestMessage.getClass());
         if (handler == null) {
-            logger.error("[{}] don't have matched handler ", requestMessage.getClass());
+            logger.error("[{}] don't have matched com.sm.charge.memory.handler ", requestMessage.getClass());
             return;
         }
 

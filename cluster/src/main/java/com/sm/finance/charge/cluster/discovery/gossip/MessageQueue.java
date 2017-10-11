@@ -26,7 +26,7 @@ public class MessageQueue extends LogSupport {
             messages.put(message);
             return true;
         } catch (InterruptedException e) {
-            logger.error("enqueue gossip message:{} caught exception:{}", message, e);
+            logger.error("enqueue com.sm.charge.memory.gossip message:{} caught exception:{}", message, e);
             return false;
         }
     }

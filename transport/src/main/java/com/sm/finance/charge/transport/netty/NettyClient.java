@@ -48,7 +48,7 @@ public class NettyClient extends AbstractService implements TransportClient {
                     ch.pipeline().addLast("encoder", new LengthFieldPrepender(4, false));
                     ProtoStuffSerializer serialize = new ProtoStuffSerializer(new MessageType());
                     ch.pipeline().addLast("serializer", new SerializerHandler(serialize));
-                    ch.pipeline().addLast("handler", handler);
+                    ch.pipeline().addLast("com.sm.charge.memory.handler", handler);
                 }
             });
     }
