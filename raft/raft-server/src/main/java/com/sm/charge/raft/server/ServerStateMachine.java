@@ -1,6 +1,6 @@
 package com.sm.charge.raft.server;
 
-import com.sm.charge.raft.server.storage.Entry;
+import com.sm.charge.raft.server.storage.LogEntry;
 import com.sm.charge.raft.server.storage.Log;
 import com.sm.charge.raft.server.storage.snapshot.Snapshot;
 import com.sm.charge.raft.server.storage.snapshot.SnapshotManager;
@@ -43,7 +43,7 @@ public class ServerStateMachine extends LogSupport {
         }
 
         for (long i = lastApplied + 1; i <= index; i++) {
-            Entry entry = log.get(i);
+            LogEntry entry = log.get(i);
             if (entry != null) {
                 executorService.execute(() -> apply(entry));
             }
@@ -51,7 +51,7 @@ public class ServerStateMachine extends LogSupport {
         }
     }
 
-    private void apply(Entry entry) {
+    private void apply(LogEntry entry) {
         stateMachine.apply(entry.getCommand()).whenComplete((result, error) -> {
             CompletableFuture<Object> future = self.removeCommitFuture(entry.getIndex());
             if (future != null) {

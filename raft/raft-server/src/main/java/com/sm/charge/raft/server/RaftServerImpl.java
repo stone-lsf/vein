@@ -3,7 +3,7 @@ package com.sm.charge.raft.server;
 import com.sm.charge.memory.DiscoveryService;
 import com.sm.charge.raft.client.Command;
 import com.sm.charge.raft.server.election.MasterListener;
-import com.sm.charge.raft.server.storage.Entry;
+import com.sm.charge.raft.server.storage.LogEntry;
 import com.sm.finance.charge.common.AbstractService;
 
 import java.util.concurrent.CompletableFuture;
@@ -42,7 +42,7 @@ public class RaftServerImpl extends AbstractService implements RaftServer, Maste
 
     @Override
     public CompletableFuture<Object> handle(Command command) {
-        Entry entry = new Entry(command, cluster.version());
+        LogEntry entry = new LogEntry(command, cluster.version());
 
         return null;
     }

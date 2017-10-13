@@ -8,15 +8,15 @@ package com.sm.charge.raft.server.storage;
 public interface Log {
 
 
-    long append(Entry entry);
+    long append(LogEntry entry);
 
     long firstIndex();
 
     long lastIndex();
 
-    Entry get(long index);
+    LogEntry get(long index);
 
-    Entry lastEntry();
+    LogEntry lastEntry();
 
     /**
      * truncate所有大于index的日志

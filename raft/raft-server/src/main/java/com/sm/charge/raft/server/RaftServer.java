@@ -1,6 +1,10 @@
 package com.sm.charge.raft.server;
 
 import com.sm.charge.raft.client.Command;
+import com.sm.charge.raft.server.membership.JoinRequest;
+import com.sm.charge.raft.server.membership.JoinResponse;
+import com.sm.charge.raft.server.membership.LeaveRequest;
+import com.sm.charge.raft.server.membership.LeaveResponse;
 import com.sm.finance.charge.common.Closable;
 import com.sm.finance.charge.common.Startable;
 
@@ -21,7 +25,11 @@ public interface RaftServer extends Startable, Closable {
      */
     CompletableFuture<Boolean> join();
 
+    CompletableFuture<JoinResponse> handle(JoinRequest request);
+
     CompletableFuture<Boolean> leave();
+
+    CompletableFuture<LeaveResponse> handle(LeaveRequest request);
 
     CompletableFuture<Object> handle(Command command);
 }

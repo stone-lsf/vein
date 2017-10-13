@@ -7,7 +7,7 @@ import com.sm.charge.raft.client.Command;
  * @author shifeng.luo
  * @version created on 2017/10/8 下午3:24
  */
-public class Entry {
+public class LogEntry {
 
     private long index;
     private long version;
@@ -15,7 +15,7 @@ public class Entry {
 
     private int size;
 
-    public Entry(Command command, long version) {
+    public LogEntry(Command command, long version) {
         this.command = command;
         this.version = version;
     }

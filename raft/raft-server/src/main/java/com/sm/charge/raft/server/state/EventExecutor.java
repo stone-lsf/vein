@@ -1,5 +1,6 @@
 package com.sm.charge.raft.server.state;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -13,5 +14,5 @@ public interface EventExecutor {
 
     <T extends Event> void register(Class<T> event, Consumer<T> consumer);
 
-    <T extends Event, R> void register(Class<T> event, Function<T, R> consumer);
+    <T extends Event, R> CompletableFuture<R> register(Class<T> event, Function<T, R> consumer);
 }
