@@ -10,9 +10,9 @@ import java.util.function.Function;
  */
 public interface EventExecutor {
 
-    void submit(Event event);
+    <T> CompletableFuture<T> submit(Event event);
 
     <T extends Event> void register(Class<T> event, Consumer<T> consumer);
 
-    <T extends Event, R> CompletableFuture<R> register(Class<T> event, Function<T, R> consumer);
+    <T extends Event, R> void register(Class<T> event, Function<T, R> consumer);
 }

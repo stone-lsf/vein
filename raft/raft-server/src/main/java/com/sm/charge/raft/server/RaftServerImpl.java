@@ -3,6 +3,10 @@ package com.sm.charge.raft.server;
 import com.sm.charge.memory.DiscoveryService;
 import com.sm.charge.raft.client.Command;
 import com.sm.charge.raft.server.election.MasterListener;
+import com.sm.charge.raft.server.membership.JoinRequest;
+import com.sm.charge.raft.server.membership.JoinResponse;
+import com.sm.charge.raft.server.membership.LeaveRequest;
+import com.sm.charge.raft.server.membership.LeaveResponse;
 import com.sm.charge.raft.server.storage.LogEntry;
 import com.sm.finance.charge.common.AbstractService;
 
@@ -28,6 +32,11 @@ public class RaftServerImpl extends AbstractService implements RaftServer, Maste
         return 0;
     }
 
+    @Override
+    public void transition(RaftState state) {
+
+    }
+
     public CompletableFuture<Boolean> join() {
         CompletableFuture<Boolean> future = new CompletableFuture<>();
         discoveryService.join(cluster.name());
@@ -36,7 +45,17 @@ public class RaftServerImpl extends AbstractService implements RaftServer, Maste
     }
 
     @Override
+    public CompletableFuture<JoinResponse> handle(JoinRequest request) {
+        return null;
+    }
+
+    @Override
     public CompletableFuture<Boolean> leave() {
+        return null;
+    }
+
+    @Override
+    public CompletableFuture<LeaveResponse> handle(LeaveRequest request) {
         return null;
     }
 

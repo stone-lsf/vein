@@ -17,4 +17,20 @@ public class AppendResponse extends RaftMessage {
      * 当success=true时，忽略，否则表示follower最后一条日志的下一个index
      */
     private long nextIndex;
+
+    public boolean isSuccess() {
+        return success;
+    }
+
+    public void setSuccess(boolean success) {
+        this.success = success;
+    }
+
+    public long getNextIndex() {
+        return nextIndex;
+    }
+
+    public void setNextIndex(long nextIndex) {
+        this.nextIndex = nextIndex;
+    }
 }

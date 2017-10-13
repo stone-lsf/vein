@@ -8,5 +8,7 @@ import com.sm.charge.buffer.BufferOutputStream;
  */
 public interface SnapshotWriter extends BufferOutputStream<SnapshotWriter> {
 
+    SnapshotWriter position(long position);
+
     SnapshotWriter writeObject(Object object);
 }

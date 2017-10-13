@@ -14,9 +14,9 @@ public class InstallSnapshotResponse extends RaftMessage {
     private boolean accepted;
 
     /**
-     * 期望的下一个日志Index
+     * 期望的下一个偏移地址
      */
-    private long nextIndex;
+    private long nextOffset;
 
     public boolean isAccepted() {
         return accepted;
@@ -26,11 +26,11 @@ public class InstallSnapshotResponse extends RaftMessage {
         this.accepted = accepted;
     }
 
-    public long getNextIndex() {
-        return nextIndex;
+    public long getNextOffset() {
+        return nextOffset;
     }
 
-    public void setNextIndex(long nextIndex) {
-        this.nextIndex = nextIndex;
+    public void setNextOffset(long nextOffset) {
+        this.nextOffset = nextOffset;
     }
 }

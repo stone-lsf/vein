@@ -14,6 +14,11 @@ public class RaftMemberState {
     private volatile long term;
 
     /**
+     * 在当前获得选票的候选人的 Id
+     */
+    private volatile long votedFor;
+
+    /**
      * 下一个需要append的日志的index
      */
     private volatile long nextLogIndex = -1;
@@ -21,7 +26,7 @@ public class RaftMemberState {
     /**
      * 已经提交的日志的index
      */
-    private volatile long committedIndex = -1;
+    private volatile long commitIndex = -1;
 
     /**
      * 匹配上的index
@@ -70,6 +75,14 @@ public class RaftMemberState {
         this.term = term;
     }
 
+    public long getVotedFor() {
+        return votedFor;
+    }
+
+    public void setVotedFor(long votedFor) {
+        this.votedFor = votedFor;
+    }
+
     public long getNextLogIndex() {
         return nextLogIndex;
     }
@@ -78,12 +91,12 @@ public class RaftMemberState {
         this.nextLogIndex = nextLogIndex;
     }
 
-    public long getCommittedIndex() {
-        return committedIndex;
+    public long getCommitIndex() {
+        return commitIndex;
     }
 
-    public void setCommittedIndex(long committedIndex) {
-        this.committedIndex = committedIndex;
+    public void setCommitIndex(long commitIndex) {
+        this.commitIndex = commitIndex;
     }
 
     public long getMatchedIndex() {

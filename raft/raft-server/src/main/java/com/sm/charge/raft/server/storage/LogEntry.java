@@ -10,14 +10,14 @@ import com.sm.charge.raft.client.Command;
 public class LogEntry {
 
     private long index;
-    private long version;
+    private long term;
     private Command command;
 
     private int size;
 
-    public LogEntry(Command command, long version) {
+    public LogEntry(Command command, long term) {
         this.command = command;
-        this.version = version;
+        this.term = term;
     }
 
     public long getIndex() {
@@ -28,12 +28,12 @@ public class LogEntry {
         this.index = index;
     }
 
-    public long getVersion() {
-        return version;
+    public long getTerm() {
+        return term;
     }
 
-    public void setVersion(long version) {
-        this.version = version;
+    public void setTerm(long term) {
+        this.term = term;
     }
 
     public Command getCommand() {

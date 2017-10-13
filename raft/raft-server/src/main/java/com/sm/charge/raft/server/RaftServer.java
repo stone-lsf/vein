@@ -19,6 +19,13 @@ public interface RaftServer extends Startable, Closable {
     long getId();
 
     /**
+     * 过渡到新状态
+     *
+     * @param state 新状态
+     */
+    void transition(RaftState state);
+
+    /**
      * 加入集群
      *
      * @return 成功则返回true，否则返回false

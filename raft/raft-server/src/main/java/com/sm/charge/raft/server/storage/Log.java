@@ -10,6 +10,8 @@ public interface Log {
 
     long append(LogEntry entry);
 
+    Log skip(long entries);
+
     long firstIndex();
 
     long lastIndex();

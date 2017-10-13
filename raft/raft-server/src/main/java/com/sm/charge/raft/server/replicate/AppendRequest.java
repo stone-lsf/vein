@@ -26,7 +26,7 @@ public class AppendRequest extends RaftMessage {
     /**
      * 准备存储的日志条目（表示心跳时为空；一次性发送多个是为了提高效率）
      */
-    private LogEntry[] logEntries;
+    private LogEntry[] entries;
 
     public long getPrevLogIndex() {
         return prevLogIndex;
@@ -52,11 +52,11 @@ public class AppendRequest extends RaftMessage {
         this.leaderCommit = leaderCommit;
     }
 
-    public LogEntry[] getLogEntries() {
-        return logEntries;
+    public LogEntry[] getEntries() {
+        return entries;
     }
 
-    public void setLogEntries(LogEntry[] logEntries) {
-        this.logEntries = logEntries;
+    public void setEntries(LogEntry[] entries) {
+        this.entries = entries;
     }
 }
