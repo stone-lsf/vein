@@ -21,6 +21,12 @@ public class RaftConfig {
      */
     private String clusterName;
 
+    private int port;
+    private String transportType;
+
+
+    private String snapshotDrectory;
+    private String snapshotName;
 
     public int getReplicateTimeout() {
         return replicateTimeout;
@@ -44,5 +50,37 @@ public class RaftConfig {
 
     public void setClusterName(String clusterName) {
         this.clusterName = clusterName;
+    }
+
+    public String getTransportType() {
+        return transportType;
+    }
+
+    public void setTransportType(String transportType) {
+        this.transportType = transportType;
+    }
+
+    public int getPort() {
+        return port;
+    }
+
+    public void setPort(int port) {
+        this.port = port;
+    }
+
+    public String getSnapshotDrectory() {
+        return snapshotDrectory;
+    }
+
+    public void setSnapshotDrectory(String snapshotDrectory) {
+        this.snapshotDrectory = snapshotDrectory;
+    }
+
+    public String getSnapshotName() {
+        return snapshotName;
+    }
+
+    public void setSnapshotName(String snapshotName) {
+        this.snapshotName = snapshotName;
     }
 }

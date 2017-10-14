@@ -1,10 +1,10 @@
-package com.sm.charge.raft.server.storage.snapshot.file;
+package com.sm.charge.raft.server.storage.file;
 
 import com.google.common.collect.Lists;
 
-import com.sm.charge.raft.server.storage.snapshot.Snapshot;
-import com.sm.charge.raft.server.storage.snapshot.SnapshotDescriptor;
-import com.sm.charge.raft.server.storage.snapshot.SnapshotManager;
+import com.sm.charge.raft.server.storage.Snapshot;
+import com.sm.charge.raft.server.storage.SnapshotDescriptor;
+import com.sm.charge.raft.server.storage.SnapshotManager;
 import com.sm.finance.charge.common.AbstractService;
 import com.sm.finance.charge.common.FileUtil;
 
@@ -31,9 +31,10 @@ public class FileSnapshotManager extends AbstractService implements SnapshotMana
     private final ConcurrentNavigableMap<Long, Snapshot> snapshots = new ConcurrentSkipListMap<>();
     private Snapshot currentSnapshot;
 
-    public FileSnapshotManager(File directory, String name) {
-        this.directory = directory;
-        this.name = name;
+    public FileSnapshotManager(String directory, String snapshotName) {
+        this.directory = new File(directory);
+        //todo check directory
+        this.name = snapshotName;
     }
 
     @Override

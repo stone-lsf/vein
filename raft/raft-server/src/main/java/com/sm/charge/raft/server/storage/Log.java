@@ -7,7 +7,6 @@ package com.sm.charge.raft.server.storage;
  */
 public interface Log {
 
-
     long append(LogEntry entry);
 
     Log skip(long entries);

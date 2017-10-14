@@ -1,4 +1,4 @@
-package com.sm.charge.raft.server.storage.snapshot;
+package com.sm.charge.raft.server.storage;
 
 /**
  * @author shifeng.luo

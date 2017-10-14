@@ -34,6 +34,19 @@ public class Address {
         this.port = port;
     }
 
+
+    /**
+     * 返回ip port的long型数据
+     * 127.0.0.1:2001---> 1270012001
+     *
+     * @return long
+     */
+    public long ipPort() {
+        String ipPort = ip + port;
+        ipPort = ipPort.replace(".", "");
+        return Long.valueOf(ipPort);
+    }
+
     @Override
     public boolean equals(Object object) {
         if (object == null) {

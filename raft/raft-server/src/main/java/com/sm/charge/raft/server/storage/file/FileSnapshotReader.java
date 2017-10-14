@@ -1,7 +1,7 @@
-package com.sm.charge.raft.server.storage.snapshot.file;
+package com.sm.charge.raft.server.storage.file;
 
 
-import com.sm.charge.raft.server.storage.snapshot.SnapshotReader;
+import com.sm.charge.raft.server.storage.SnapshotReader;
 
 /**
  * @author shifeng.luo

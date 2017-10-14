@@ -2,10 +2,10 @@ package com.sm.charge.raft.server;
 
 import com.sm.charge.raft.server.storage.LogEntry;
 import com.sm.charge.raft.server.storage.Log;
-import com.sm.charge.raft.server.storage.snapshot.Snapshot;
-import com.sm.charge.raft.server.storage.snapshot.SnapshotManager;
-import com.sm.charge.raft.server.storage.snapshot.SnapshotReader;
-import com.sm.charge.raft.server.storage.snapshot.SnapshotWriter;
+import com.sm.charge.raft.server.storage.Snapshot;
+import com.sm.charge.raft.server.storage.SnapshotManager;
+import com.sm.charge.raft.server.storage.SnapshotReader;
+import com.sm.charge.raft.server.storage.SnapshotWriter;
 import com.sm.finance.charge.common.LogSupport;
 
 import java.util.concurrent.CompletableFuture;
@@ -19,13 +19,13 @@ public class ServerStateMachine extends LogSupport {
 
     private final Log log;
     private final RaftMember self;
-    private final StateMachine stateMachine;
+    private final LogStateMachine stateMachine;
     private final SnapshotManager snapshotManager;
     private final ExecutorService executorService;
 
     private volatile Snapshot pendingSnapshot;
 
-    public ServerStateMachine(Log log, RaftMember self, StateMachine stateMachine,
+    public ServerStateMachine(Log log, RaftMember self, LogStateMachine stateMachine,
                               SnapshotManager snapshotManager, ExecutorService executorService) {
         this.log = log;
         this.self = self;

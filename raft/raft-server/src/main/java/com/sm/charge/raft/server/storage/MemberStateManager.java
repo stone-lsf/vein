@@ -1,10 +1,12 @@
-package com.sm.charge.raft.server;
+package com.sm.charge.raft.server.storage;
+
+import com.sm.charge.raft.server.RaftMemberState;
 
 /**
  * @author shifeng.luo
- * @version created on 2017/10/13 下午10:54
+ * @version created on 2017/10/14 下午1:11
  */
-public interface RaftMemberStateManager {
+public interface MemberStateManager {
 
     /**
      * 持久化server state

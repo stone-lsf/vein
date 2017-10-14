@@ -1,15 +1,13 @@
 package com.sm.charge.raft.server.state;
 
-import com.sm.charge.raft.server.RaftMemberState;
-import com.sm.charge.raft.server.RaftMemberStateManager;
-import com.sm.charge.raft.server.RaftStateMachine;
-import com.sm.charge.raft.server.ServerStateMachine;
+import com.sm.charge.raft.server.RaftListener;
+import com.sm.charge.raft.server.RaftState;
+import com.sm.charge.raft.server.ServerContext;
 import com.sm.charge.raft.server.membership.InstallSnapshotRequest;
 import com.sm.charge.raft.server.membership.InstallSnapshotResponse;
-import com.sm.charge.raft.server.storage.Log;
-import com.sm.charge.raft.server.storage.snapshot.Snapshot;
-import com.sm.charge.raft.server.storage.snapshot.SnapshotManager;
-import com.sm.charge.raft.server.storage.snapshot.SnapshotWriter;
+import com.sm.charge.raft.server.storage.Snapshot;
+import com.sm.charge.raft.server.storage.SnapshotManager;
+import com.sm.charge.raft.server.storage.SnapshotWriter;
 
 /**
  * @author shifeng.luo
@@ -19,10 +17,26 @@ public class PassiveState extends AbstractState {
 
     private volatile Snapshot pendingSnapshot;
     private volatile long nextSnapshotOffset;
-    private SnapshotManager snapshotManager;
+    private final SnapshotManager snapshotManager;
 
-    public PassiveState(RaftMemberState memberState, RaftStateMachine stateMachine, Log log, RaftMemberStateManager stateManager, ServerStateMachine serverStateMachine) {
-        super(memberState, stateMachine, log, stateManager, serverStateMachine);
+    public PassiveState(RaftListener raftListener, ServerContext context) {
+        super(raftListener, context);
+        this.snapshotManager = context.getSnapshotManager();
+    }
+
+    @Override
+    public RaftState state() {
+        return RaftState.PASSIVE;
+    }
+
+    @Override
+    public void suspect() {
+
+    }
+
+    @Override
+    public void wakeup() {
+
     }
 
     @Override
@@ -73,7 +87,7 @@ public class PassiveState extends AbstractState {
 
         if (request.isComplete()) {
             pendingSnapshot.complete();
-            serverStateMachine.installSnapshot(pendingSnapshot);
+            context.getStateMachine().installSnapshot(pendingSnapshot);
             pendingSnapshot = null;
             nextSnapshotOffset = 0;
         } else {

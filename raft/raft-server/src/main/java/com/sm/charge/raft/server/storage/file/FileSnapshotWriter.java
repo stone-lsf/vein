@@ -1,4 +1,4 @@
-package com.sm.charge.raft.server.storage.snapshot.file;
+package com.sm.charge.raft.server.storage.file;
 
 import java.io.File;
 import java.io.FileOutputStream;

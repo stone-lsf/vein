@@ -2,7 +2,8 @@ package com.sm.charge.raft.server;
 
 
 import com.sm.charge.raft.server.storage.Log;
-import com.sm.charge.raft.server.storage.snapshot.SnapshotManager;
+import com.sm.charge.raft.server.storage.MemberStateManager;
+import com.sm.charge.raft.server.storage.SnapshotManager;
 
 /**
  * @author shifeng.luo
@@ -18,21 +19,24 @@ public class ServerContext {
 
     private final RaftMember self;
 
-    private final RaftClusterImpl cluster;
+    private final RaftCluster cluster;
 
     private final ServerStateMachine stateMachine;
 
+    private final MemberStateManager memberStateManager;
+
     private ServerContext(RaftConfig raftConfig, SnapshotManager snapshotManager, Log log,
-                          RaftMember self, RaftClusterImpl cluster, ServerStateMachine stateMachine) {
+                          RaftMember self, RaftCluster cluster, ServerStateMachine stateMachine, MemberStateManager memberStateManager) {
         this.raftConfig = raftConfig;
         this.snapshotManager = snapshotManager;
         this.log = log;
         this.self = self;
         this.cluster = cluster;
         this.stateMachine = stateMachine;
+        this.memberStateManager = memberStateManager;
     }
 
-    public RaftClusterImpl getCluster() {
+    public RaftCluster getCluster() {
         return cluster;
     }
 
@@ -60,6 +64,10 @@ public class ServerContext {
         return raftConfig;
     }
 
+    public MemberStateManager getMemberStateManager() {
+        return memberStateManager;
+    }
+
     public static Builder builder() {
         return new Builder();
     }
@@ -73,9 +81,11 @@ public class ServerContext {
 
         private RaftMember self;
 
-        private RaftClusterImpl cluster;
+        private RaftCluster cluster;
 
         private ServerStateMachine stateMachine;
+
+        private MemberStateManager memberStateManager;
 
         public Builder setRaftConfig(RaftConfig raftConfig) {
             this.raftConfig = raftConfig;
@@ -97,7 +107,7 @@ public class ServerContext {
             return this;
         }
 
-        public Builder setCluster(RaftClusterImpl cluster) {
+        public Builder setCluster(RaftCluster cluster) {
             this.cluster = cluster;
             return this;
         }
@@ -107,8 +117,14 @@ public class ServerContext {
             return this;
         }
 
+        public Builder setMemberStateManager(MemberStateManager memberStateManager) {
+            this.memberStateManager = memberStateManager;
+            return this;
+        }
+
+
         public ServerContext build() {
-            return new ServerContext(raftConfig, snapshotManager, log, self, cluster, stateMachine);
+            return new ServerContext(raftConfig, snapshotManager, log, self, cluster, stateMachine, memberStateManager);
         }
     }
 }

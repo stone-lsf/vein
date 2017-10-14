@@ -21,9 +21,9 @@ public interface RaftServer extends Startable, Closable {
     /**
      * 过渡到新状态
      *
-     * @param state 新状态
+     * @param newState 新状态
      */
-    void transition(RaftState state);
+    void transition(RaftState newState);
 
     /**
      * 加入集群

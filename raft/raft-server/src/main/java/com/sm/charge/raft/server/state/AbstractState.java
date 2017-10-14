@@ -1,10 +1,9 @@
 package com.sm.charge.raft.server.state;
 
+import com.sm.charge.raft.server.RaftListener;
 import com.sm.charge.raft.server.RaftMemberState;
-import com.sm.charge.raft.server.RaftMemberStateManager;
 import com.sm.charge.raft.server.RaftMessage;
-import com.sm.charge.raft.server.RaftStateMachine;
-import com.sm.charge.raft.server.ServerStateMachine;
+import com.sm.charge.raft.server.ServerContext;
 import com.sm.charge.raft.server.election.VoteRequest;
 import com.sm.charge.raft.server.election.VoteResponse;
 import com.sm.charge.raft.server.membership.ConfigurationRequest;
@@ -25,18 +24,14 @@ import org.apache.commons.lang.ArrayUtils;
  */
 public abstract class AbstractState extends LogSupport implements ServerState {
 
-    private final RaftMemberState memberState;
-    private final RaftStateMachine stateMachine;
-    private final Log log;
-    private final RaftMemberStateManager stateManager;
-    protected final ServerStateMachine serverStateMachine;
+    protected final RaftMemberState memberState;
+    protected final RaftListener raftListener;
+    protected final ServerContext context;
 
-    protected AbstractState(RaftMemberState memberState, RaftStateMachine stateMachine, Log log, RaftMemberStateManager stateManager, ServerStateMachine serverStateMachine) {
-        this.memberState = memberState;
-        this.stateMachine = stateMachine;
-        this.log = log;
-        this.stateManager = stateManager;
-        this.serverStateMachine = serverStateMachine;
+    protected AbstractState(RaftListener raftListener, ServerContext context) {
+        this.memberState = context.getSelf().getState();
+        this.raftListener = raftListener;
+        this.context = context;
     }
 
     @Override
@@ -71,7 +66,7 @@ public abstract class AbstractState extends LogSupport implements ServerState {
         }
 
         memberState.setVotedFor(request.getSource());
-        stateManager.persistState(memberState);
+        context.getMemberStateManager().persistState(memberState);
         response.setVoteGranted(true);
         return response;
     }
@@ -87,7 +82,7 @@ public abstract class AbstractState extends LogSupport implements ServerState {
         if (term < messageTerm) {
             memberState.setTerm(messageTerm);
             memberState.setVotedFor(-1);
-            stateMachine.onFallBehind();
+            raftListener.onFallBehind();
             return true;
         }
 
@@ -101,7 +96,7 @@ public abstract class AbstractState extends LogSupport implements ServerState {
      * @return 如果候选者更新，返回true，否则返回false
      */
     private boolean candidateLogNewer(long candidateLogIndex) {
-        LogEntry entry = log.lastEntry();
+        LogEntry entry = context.getLog().lastEntry();
         long lastLogIndex = entry == null ? 0 : entry.getIndex();
 
         return candidateLogIndex >= lastLogIndex;
@@ -132,7 +127,7 @@ public abstract class AbstractState extends LogSupport implements ServerState {
             }
         }
 
-        log.truncate(0);
+        context.getLog().truncate(0);
         logger.info("delete all logs,because receive prev log 0 from master[{}]", request.getSource());
         return appendEntries(request);
     }
@@ -145,8 +140,8 @@ public abstract class AbstractState extends LogSupport implements ServerState {
      * @return AppendResponse
      */
     private AppendResponse appendWithPrevLog(long prevLogIndex, AppendRequest request) {
-        LogEntry prevEntry = log.get(prevLogIndex);
-        LogEntry lastLogEntry = log.lastEntry();
+        LogEntry prevEntry = context.getLog().get(prevLogIndex);
+        LogEntry lastLogEntry = context.getLog().lastEntry();
         long source = request.getSource();
 
         if (prevEntry == null) {
@@ -169,7 +164,7 @@ public abstract class AbstractState extends LogSupport implements ServerState {
             return response;
         }
 
-        log.truncate(prevLogIndex);
+        context.getLog().truncate(prevLogIndex);
         logger.info("delete logs from index greater than {},because receive prev log from master[{}]", prevLogIndex, source);
         return appendEntries(request);
     }
@@ -183,6 +178,7 @@ public abstract class AbstractState extends LogSupport implements ServerState {
     private AppendResponse appendEntries(AppendRequest request) {
         long source = request.getSource();
         LogEntry[] entries = request.getEntries();
+        Log log = context.getLog();
         long lastIndex = log.lastIndex();
         if (ArrayUtils.isNotEmpty(entries)) {
             for (LogEntry entry : entries) {
@@ -194,7 +190,7 @@ public abstract class AbstractState extends LogSupport implements ServerState {
         }
 
         commit(request.getLeaderCommit());
-        serverStateMachine.apply(memberState.getCommitIndex());
+        context.getStateMachine().apply(memberState.getCommitIndex());
 
         AppendResponse response = new AppendResponse();
         fill(response, source);
@@ -209,11 +205,11 @@ public abstract class AbstractState extends LogSupport implements ServerState {
      * @param leaderCommit leader已经提交的日志
      */
     private void commit(long leaderCommit) {
-        long lastIndex = log.lastIndex();
+        long lastIndex = context.getLog().lastIndex();
         long commitIndex = Math.min(lastIndex, leaderCommit);
         long prevCommitIndex = memberState.getCommitIndex();
         if (commitIndex > prevCommitIndex) {
-            log.commit(commitIndex);
+            context.getLog().commit(commitIndex);
             memberState.setCommitIndex(commitIndex);
         }
     }
