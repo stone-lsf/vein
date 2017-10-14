@@ -3,6 +3,9 @@ package com.sm.charge.raft.server.state;
 import com.sm.charge.raft.server.RaftListener;
 import com.sm.charge.raft.server.RaftState;
 import com.sm.charge.raft.server.ServerContext;
+import com.sm.charge.raft.server.replicate.AppendRequest;
+import com.sm.charge.raft.server.replicate.AppendResponse;
+import com.sm.charge.raft.server.timer.HeartbeatTimeoutTimer;
 
 /**
  * @author shifeng.luo
@@ -10,9 +13,11 @@ import com.sm.charge.raft.server.ServerContext;
  */
 public class FollowerState extends AbstractState {
 
+    private final HeartbeatTimeoutTimer timer;
 
-    public FollowerState(RaftListener raftListener, ServerContext context) {
-        super(raftListener, context);
+    public FollowerState(RaftListener raftListener, ServerContext context, HeartbeatTimeoutTimer timer) {
+        super(raftListener, context, eventExecutor);
+        this.timer = timer;
     }
 
     @Override
@@ -21,13 +26,19 @@ public class FollowerState extends AbstractState {
     }
 
     @Override
-    public void suspect() {
+    protected AppendResponse doHandle(AppendRequest request) {
+        timer.reset();
+        return super.doHandle(request);
+    }
 
+    @Override
+    public void suspect() {
+        timer.stop();
     }
 
     @Override
     public void wakeup() {
-
+        timer.start();
     }
 
 }

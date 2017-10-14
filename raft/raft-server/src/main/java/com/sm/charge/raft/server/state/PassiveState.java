@@ -5,6 +5,8 @@ import com.sm.charge.raft.server.RaftState;
 import com.sm.charge.raft.server.ServerContext;
 import com.sm.charge.raft.server.membership.InstallSnapshotRequest;
 import com.sm.charge.raft.server.membership.InstallSnapshotResponse;
+import com.sm.charge.raft.server.replicate.AppendRequest;
+import com.sm.charge.raft.server.replicate.AppendResponse;
 import com.sm.charge.raft.server.storage.Snapshot;
 import com.sm.charge.raft.server.storage.SnapshotManager;
 import com.sm.charge.raft.server.storage.SnapshotWriter;
@@ -20,13 +22,23 @@ public class PassiveState extends AbstractState {
     private final SnapshotManager snapshotManager;
 
     public PassiveState(RaftListener raftListener, ServerContext context) {
-        super(raftListener, context);
+        super(raftListener, context, eventExecutor);
         this.snapshotManager = context.getSnapshotManager();
     }
 
     @Override
     public RaftState state() {
         return RaftState.PASSIVE;
+    }
+
+
+    @Override
+    protected AppendResponse doHandle(AppendRequest request) {
+        logger.error("passive state server should'nt receive append request from master:{}", request.getSource());
+        AppendResponse response = new AppendResponse();
+        fill(response, request.getSource());
+        response.setSuccess(false);
+        return response;
     }
 
     @Override

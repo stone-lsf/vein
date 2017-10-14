@@ -1,6 +1,9 @@
 package com.sm.charge.raft.server.membership;
 
+import com.sm.charge.raft.server.RaftMember;
 import com.sm.finance.charge.common.Address;
+
+import java.util.List;
 
 /**
  * @author shifeng.luo
@@ -8,11 +11,20 @@ import com.sm.finance.charge.common.Address;
  */
 public class JoinRequest {
 
-    private  long id;
+    private long id;
 
-    private  Address address;
+    private Address address;
 
-    private long nextLogIndex;
+    private List<RaftMember> members;
+
+    public JoinRequest() {
+    }
+
+    public JoinRequest(long id, Address address, List<RaftMember> members) {
+        this.id = id;
+        this.address = address;
+        this.members = members;
+    }
 
     public long getId() {
         return id;
@@ -30,11 +42,11 @@ public class JoinRequest {
         this.address = address;
     }
 
-    public long getNextLogIndex() {
-        return nextLogIndex;
+    public List<RaftMember> getMembers() {
+        return members;
     }
 
-    public void setNextLogIndex(long nextLogIndex) {
-        this.nextLogIndex = nextLogIndex;
+    public void setMembers(List<RaftMember> members) {
+        this.members = members;
     }
 }

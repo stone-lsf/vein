@@ -7,6 +7,8 @@ import com.sm.charge.raft.server.membership.ConfigurationRequest;
 import com.sm.charge.raft.server.membership.ConfigurationResponse;
 import com.sm.charge.raft.server.membership.InstallSnapshotRequest;
 import com.sm.charge.raft.server.membership.InstallSnapshotResponse;
+import com.sm.charge.raft.server.membership.JoinRequest;
+import com.sm.charge.raft.server.membership.JoinResponse;
 import com.sm.charge.raft.server.replicate.AppendRequest;
 import com.sm.charge.raft.server.replicate.AppendResponse;
 
@@ -35,6 +37,10 @@ public interface ServerState {
     AppendResponse handle(AppendRequest request);
 
     void handle(AppendResponse response);
+
+    JoinResponse handle(JoinRequest request);
+
+    void handle(JoinResponse response);
 
     ConfigurationResponse handle(ConfigurationRequest request);
 

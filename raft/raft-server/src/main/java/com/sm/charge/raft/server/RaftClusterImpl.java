@@ -24,6 +24,7 @@ public class RaftClusterImpl extends AbstractService implements RaftCluster {
     public RaftClusterImpl(String name, RaftMember self) {
         this.name = name;
         this.self = self;
+        members.put(self.getId(), self);
     }
 
     @Override

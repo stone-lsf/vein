@@ -30,7 +30,7 @@ public interface RaftServer extends Startable, Closable {
      *
      * @return 成功则返回true，否则返回false
      */
-    CompletableFuture<Boolean> join();
+    boolean join();
 
     CompletableFuture<JoinResponse> handle(JoinRequest request);
 

@@ -10,13 +10,18 @@ import com.sm.charge.raft.server.membership.ConfigurationRequest;
 import com.sm.charge.raft.server.membership.ConfigurationResponse;
 import com.sm.charge.raft.server.membership.InstallSnapshotRequest;
 import com.sm.charge.raft.server.membership.InstallSnapshotResponse;
+import com.sm.charge.raft.server.membership.JoinRequest;
+import com.sm.charge.raft.server.membership.JoinResponse;
 import com.sm.charge.raft.server.replicate.AppendRequest;
 import com.sm.charge.raft.server.replicate.AppendResponse;
 import com.sm.charge.raft.server.storage.Log;
 import com.sm.charge.raft.server.storage.LogEntry;
 import com.sm.finance.charge.common.LogSupport;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.ArrayUtils;
+
+import java.util.List;
 
 /**
  * @author shifeng.luo
@@ -27,11 +32,13 @@ public abstract class AbstractState extends LogSupport implements ServerState {
     protected final RaftMemberState memberState;
     protected final RaftListener raftListener;
     protected final ServerContext context;
+    protected final EventExecutor eventExecutor;
 
     protected AbstractState(RaftListener raftListener, ServerContext context) {
         this.memberState = context.getSelf().getState();
         this.raftListener = raftListener;
         this.context = context;
+        this.eventExecutor = context.getEventExecutor();
     }
 
     @Override
@@ -51,11 +58,11 @@ public abstract class AbstractState extends LogSupport implements ServerState {
         long currentTerm = memberState.getTerm();
         response.setTerm(currentTerm);
         if (requestTerm < currentTerm) {
-            response.setVoteGranted(true);
+            response.setVoteGranted(false);
             return response;
         }
 
-        if (memberState.getVotedFor() > 0) {
+        if (memberState.getVotedFor() > 0 && memberState.getVotedFor() != request.getSource()) {
             response.setVoteGranted(false);
             return response;
         }
@@ -119,6 +126,10 @@ public abstract class AbstractState extends LogSupport implements ServerState {
             return response;
         }
 
+        return doHandle(request);
+    }
+
+    protected AppendResponse doHandle(AppendRequest request) {
         long prevLogIndex = request.getPrevLogIndex();
         if (prevLogIndex > 0) {
             AppendResponse response = appendWithPrevLog(prevLogIndex, request);
@@ -139,7 +150,7 @@ public abstract class AbstractState extends LogSupport implements ServerState {
      * @param request      append请求
      * @return AppendResponse
      */
-    private AppendResponse appendWithPrevLog(long prevLogIndex, AppendRequest request) {
+    protected AppendResponse appendWithPrevLog(long prevLogIndex, AppendRequest request) {
         LogEntry prevEntry = context.getLog().get(prevLogIndex);
         LogEntry lastLogEntry = context.getLog().lastEntry();
         long source = request.getSource();
@@ -175,12 +186,12 @@ public abstract class AbstractState extends LogSupport implements ServerState {
      * @param request append request
      * @return AppendResponse
      */
-    private AppendResponse appendEntries(AppendRequest request) {
+    protected AppendResponse appendEntries(AppendRequest request) {
         long source = request.getSource();
-        LogEntry[] entries = request.getEntries();
+        List<LogEntry> entries = request.getEntries();
         Log log = context.getLog();
         long lastIndex = log.lastIndex();
-        if (ArrayUtils.isNotEmpty(entries)) {
+        if (CollectionUtils.isNotEmpty(entries)) {
             for (LogEntry entry : entries) {
                 long skipSize = entry.getIndex() - log.lastIndex() - 1;
                 log.skip(skipSize);
@@ -231,7 +242,20 @@ public abstract class AbstractState extends LogSupport implements ServerState {
     }
 
     @Override
+    public JoinResponse handle(JoinRequest request) {
+        return null;
+    }
+
+    @Override
+    public void handle(JoinResponse response) {
+
+    }
+
+    @Override
     public InstallSnapshotResponse handle(InstallSnapshotRequest request) {
+        long requestTerm = request.getTerm();
+        updateTerm(requestTerm);
+
         InstallSnapshotResponse response = new InstallSnapshotResponse();
         fill(response, request.getSource());
         response.setAccepted(false);

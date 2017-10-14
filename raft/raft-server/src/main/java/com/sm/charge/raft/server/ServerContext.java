@@ -1,6 +1,7 @@
 package com.sm.charge.raft.server;
 
 
+import com.sm.charge.raft.server.state.EventExecutor;
 import com.sm.charge.raft.server.storage.Log;
 import com.sm.charge.raft.server.storage.MemberStateManager;
 import com.sm.charge.raft.server.storage.SnapshotManager;
@@ -25,8 +26,10 @@ public class ServerContext {
 
     private final MemberStateManager memberStateManager;
 
+    private final EventExecutor eventExecutor;
+
     private ServerContext(RaftConfig raftConfig, SnapshotManager snapshotManager, Log log,
-                          RaftMember self, RaftCluster cluster, ServerStateMachine stateMachine, MemberStateManager memberStateManager) {
+                          RaftMember self, RaftCluster cluster, ServerStateMachine stateMachine, MemberStateManager memberStateManager, EventExecutor eventExecutor) {
         this.raftConfig = raftConfig;
         this.snapshotManager = snapshotManager;
         this.log = log;
@@ -34,6 +37,7 @@ public class ServerContext {
         this.cluster = cluster;
         this.stateMachine = stateMachine;
         this.memberStateManager = memberStateManager;
+        this.eventExecutor = eventExecutor;
     }
 
     public RaftCluster getCluster() {
@@ -68,6 +72,10 @@ public class ServerContext {
         return memberStateManager;
     }
 
+    public EventExecutor getEventExecutor() {
+        return eventExecutor;
+    }
+
     public static Builder builder() {
         return new Builder();
     }
@@ -86,6 +94,8 @@ public class ServerContext {
         private ServerStateMachine stateMachine;
 
         private MemberStateManager memberStateManager;
+
+        private EventExecutor eventExecutor;
 
         public Builder setRaftConfig(RaftConfig raftConfig) {
             this.raftConfig = raftConfig;
@@ -122,9 +132,13 @@ public class ServerContext {
             return this;
         }
 
+        public Builder setEventExecutor(EventExecutor eventExecutor) {
+            this.eventExecutor = eventExecutor;
+            return this;
+        }
 
         public ServerContext build() {
-            return new ServerContext(raftConfig, snapshotManager, log, self, cluster, stateMachine, memberStateManager);
+            return new ServerContext(raftConfig, snapshotManager, log, self, cluster, stateMachine, memberStateManager, eventExecutor);
         }
     }
 }

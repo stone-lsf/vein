@@ -1,18 +1,20 @@
 package com.sm.charge.raft.server;
 
 import com.sm.finance.charge.common.Address;
+import com.sm.finance.charge.common.LogSupport;
 import com.sm.finance.charge.transport.api.Connection;
 import com.sm.finance.charge.transport.api.TransportClient;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Future;
 
 /**
  * @author shifeng.luo
  * @version created on 2017/9/22 上午10:50
  */
-public class RaftMember {
+public class RaftMember extends LogSupport {
     private final TransportClient client;
 
     private final long id;
@@ -22,6 +24,8 @@ public class RaftMember {
     private final RaftMemberState state;
 
     private volatile Connection connection;
+
+    private volatile Future<?> appendFuture;
 
     private final ConcurrentMap<Long, CompletableFuture<Object>> commitFutures = new ConcurrentHashMap<>();
 
@@ -44,11 +48,19 @@ public class RaftMember {
         return state;
     }
 
-    public CompletableFuture<Connection> getConnection() {
-        if (connection == null) {
-            return client.connect(address);
+    public Connection getConnection() {
+        if (connection != null && !connection.closed()) {
+            return connection;
         }
-        return CompletableFuture.completedFuture(connection);
+
+        return client.connect(address).handle((connection, error) -> {
+            if (error != null) {
+                return connection;
+            }
+
+            logger.error("create connection to:{} caught exception", address, error);
+            return null;
+        }).join();
     }
 
 
@@ -63,5 +75,13 @@ public class RaftMember {
 
     public CompletableFuture<Object> removeCommitFuture(long logIndex) {
         return commitFutures.remove(logIndex);
+    }
+
+    public Future<?> getAppendFuture() {
+        return appendFuture;
+    }
+
+    public void setAppendFuture(Future<?> appendFuture) {
+        this.appendFuture = appendFuture;
     }
 }

@@ -1,5 +1,7 @@
 package com.sm.charge.raft.server;
 
+import java.util.concurrent.ScheduledExecutorService;
+
 /**
  * @author shifeng.luo
  * @version created on 2017/9/20 下午10:52
@@ -25,8 +27,18 @@ public class RaftConfig {
     private String transportType;
 
 
-    private String snapshotDrectory;
+    private String snapshotDirectory;
     private String snapshotName;
+
+    private int heartbeatTimeout;
+
+    private int maxElectTimeout;
+
+    private int minElectTimeout;
+
+    private String members;
+
+    private int joinRetryTimes;
 
     public int getReplicateTimeout() {
         return replicateTimeout;
@@ -68,12 +80,12 @@ public class RaftConfig {
         this.port = port;
     }
 
-    public String getSnapshotDrectory() {
-        return snapshotDrectory;
+    public String getSnapshotDirectory() {
+        return snapshotDirectory;
     }
 
-    public void setSnapshotDrectory(String snapshotDrectory) {
-        this.snapshotDrectory = snapshotDrectory;
+    public void setSnapshotDirectory(String snapshotDirectory) {
+        this.snapshotDirectory = snapshotDirectory;
     }
 
     public String getSnapshotName() {
@@ -82,5 +94,45 @@ public class RaftConfig {
 
     public void setSnapshotName(String snapshotName) {
         this.snapshotName = snapshotName;
+    }
+
+    public int getHeartbeatTimeout() {
+        return heartbeatTimeout;
+    }
+
+    public void setHeartbeatTimeout(int heartbeatTimeout) {
+        this.heartbeatTimeout = heartbeatTimeout;
+    }
+
+    public int getMaxElectTimeout() {
+        return maxElectTimeout;
+    }
+
+    public void setMaxElectTimeout(int maxElectTimeout) {
+        this.maxElectTimeout = maxElectTimeout;
+    }
+
+    public int getMinElectTimeout() {
+        return minElectTimeout;
+    }
+
+    public void setMinElectTimeout(int minElectTimeout) {
+        this.minElectTimeout = minElectTimeout;
+    }
+
+    public String getMembers() {
+        return members;
+    }
+
+    public void setMembers(String members) {
+        this.members = members;
+    }
+
+    public int getJoinRetryTimes() {
+        return joinRetryTimes;
+    }
+
+    public void setJoinRetryTimes(int joinRetryTimes) {
+        this.joinRetryTimes = joinRetryTimes;
     }
 }

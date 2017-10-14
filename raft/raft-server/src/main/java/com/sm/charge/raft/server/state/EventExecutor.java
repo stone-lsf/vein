@@ -12,6 +12,8 @@ public interface EventExecutor {
 
     <T> CompletableFuture<T> submit(Event event);
 
+    void execute(Event event);
+
     <T extends Event> void register(Class<T> event, Consumer<T> consumer);
 
     <T extends Event, R> void register(Class<T> event, Function<T, R> consumer);

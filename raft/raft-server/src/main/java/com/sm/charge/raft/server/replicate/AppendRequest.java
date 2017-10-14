@@ -3,6 +3,8 @@ package com.sm.charge.raft.server.replicate;
 import com.sm.charge.raft.server.RaftMessage;
 import com.sm.charge.raft.server.storage.LogEntry;
 
+import java.util.List;
+
 /**
  * @author shifeng.luo
  * @version created on 2017/10/10 下午10:49
@@ -26,7 +28,7 @@ public class AppendRequest extends RaftMessage {
     /**
      * 准备存储的日志条目（表示心跳时为空；一次性发送多个是为了提高效率）
      */
-    private LogEntry[] entries;
+    private List<LogEntry> entries;
 
     public long getPrevLogIndex() {
         return prevLogIndex;
@@ -52,11 +54,11 @@ public class AppendRequest extends RaftMessage {
         this.leaderCommit = leaderCommit;
     }
 
-    public LogEntry[] getEntries() {
+    public List<LogEntry> getEntries() {
         return entries;
     }
 
-    public void setEntries(LogEntry[] entries) {
+    public void setEntries(List<LogEntry> entries) {
         this.entries = entries;
     }
 }
