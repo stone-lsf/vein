@@ -40,6 +40,8 @@ public class RaftConfig {
 
     private int joinRetryTimes;
 
+    private int maxAppendSize;
+
     public int getReplicateTimeout() {
         return replicateTimeout;
     }
@@ -134,5 +136,13 @@ public class RaftConfig {
 
     public void setJoinRetryTimes(int joinRetryTimes) {
         this.joinRetryTimes = joinRetryTimes;
+    }
+
+    public int getMaxAppendSize() {
+        return maxAppendSize;
+    }
+
+    public void setMaxAppendSize(int maxAppendSize) {
+        this.maxAppendSize = maxAppendSize;
     }
 }

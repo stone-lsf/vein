@@ -1,6 +1,6 @@
 package com.sm.charge.raft.server.storage;
 
-import com.sm.charge.raft.server.RaftMemberState;
+import com.sm.charge.raft.server.RaftMember;
 
 /**
  * @author shifeng.luo
@@ -13,5 +13,5 @@ public interface MemberStateManager {
      *
      * @param memberState server state
      */
-    void persistState(RaftMemberState memberState);
+    void persistState(RaftMember memberState);
 }

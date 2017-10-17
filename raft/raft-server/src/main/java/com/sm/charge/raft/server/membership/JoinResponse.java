@@ -1,8 +1,7 @@
 package com.sm.charge.raft.server.membership;
 
+import com.sm.charge.raft.server.RaftMemberContext;
 import com.sm.charge.raft.server.RaftMember;
-import com.sm.charge.raft.server.RaftMemberState;
-import com.sm.finance.charge.common.Address;
 
 import java.util.List;
 
@@ -24,12 +23,12 @@ public class JoinResponse {
 
     private long term;
 
-    private RaftMember master;
+    private RaftMemberContext master;
 
     /**
      * 集群服务器列表
      */
-    private List<RaftMemberState> servers;
+    private List<RaftMember> servers;
 
     private boolean needInstallSnapshot;
 
@@ -62,19 +61,19 @@ public class JoinResponse {
         this.term = term;
     }
 
-    public RaftMember getMaster() {
+    public RaftMemberContext getMaster() {
         return master;
     }
 
-    public void setMaster(RaftMember master) {
+    public void setMaster(RaftMemberContext master) {
         this.master = master;
     }
 
-    public List<RaftMemberState> getServers() {
+    public List<RaftMember> getServers() {
         return servers;
     }
 
-    public void setServers(List<RaftMemberState> servers) {
+    public void setServers(List<RaftMember> servers) {
         this.servers = servers;
     }
 

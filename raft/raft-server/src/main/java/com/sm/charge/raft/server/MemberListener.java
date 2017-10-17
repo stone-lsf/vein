@@ -6,7 +6,7 @@ package com.sm.charge.raft.server;
  */
 public interface MemberListener {
 
-    void onJoin(RaftMember member);
+    void onJoin(RaftMemberContext member);
 
-    void onLeave(RaftMember member);
+    void onLeave(RaftMemberContext member);
 }

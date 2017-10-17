@@ -32,7 +32,7 @@ public interface RaftCluster extends Startable, Closable {
 
     void add(RaftMember member);
 
-    void remove(RaftMember member);
+    void remove(RaftMemberContext member);
 
     void addMemberListener(MemberListener listener);
 

@@ -35,9 +35,9 @@ public class ServerStateMachine extends LogSupport {
     }
 
     public void apply(long index) {
-        RaftMemberState state = self.getState();
 
-        long lastApplied = state.getLastApplied();
+
+        long lastApplied = self.getLastApplied();
         if (index < lastApplied + 1) {
             return;
         }
@@ -52,8 +52,9 @@ public class ServerStateMachine extends LogSupport {
     }
 
     private void apply(LogEntry entry) {
+        RaftMemberContext context = self.getContext();
         stateMachine.apply(entry.getCommand()).whenComplete((result, error) -> {
-            CompletableFuture<Object> future = self.removeCommitFuture(entry.getIndex());
+            CompletableFuture<Object> future = context.removeCommitFuture(entry.getIndex());
             if (future != null) {
                 if (error == null) {
                     future.complete(result);
@@ -65,9 +66,8 @@ public class ServerStateMachine extends LogSupport {
     }
 
     private void setLastApplied(long lastApplied) {
-        RaftMemberState selfState = self.getState();
-        if (lastApplied > selfState.getLastApplied()) {
-            selfState.setLastApplied(lastApplied);
+        if (lastApplied > self.getLastApplied()) {
+            self.setLastApplied(lastApplied);
 
             takeSnapshot(lastApplied);
         }
@@ -97,7 +97,7 @@ public class ServerStateMachine extends LogSupport {
             return;
         }
 
-        long lastApplied = self.getState().getLastApplied();
+        long lastApplied = self.getLastApplied();
         if (snapshot.index() <= lastApplied) {
             logger.error("to installed snapshot:{} less or equal to lastApplied:{}", snapshot.index(), lastApplied);
             return;

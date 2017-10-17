@@ -1,39 +1,75 @@
 package com.sm.charge.raft.server;
 
 import com.sm.finance.charge.common.Address;
-import com.sm.finance.charge.common.LogSupport;
-import com.sm.finance.charge.transport.api.Connection;
 import com.sm.finance.charge.transport.api.TransportClient;
-
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.Future;
 
 /**
  * @author shifeng.luo
- * @version created on 2017/9/22 上午10:50
+ * @version created on 2017/9/22 上午11:11
  */
-public class RaftMember extends LogSupport {
-    private final TransportClient client;
+public class RaftMember {
+
+    private final RaftMemberContext context;
 
     private final long id;
 
     private final Address address;
 
-    private final RaftMemberState state;
+    /**
+     * 自增版本号
+     */
+    private volatile long term;
 
-    private volatile Connection connection;
+    /**
+     * 在当前获得选票的候选人的 Id
+     */
+    private volatile long votedFor;
 
-    private volatile Future<?> appendFuture;
+    /**
+     * 下一个需要append的日志的index
+     */
+    private volatile long nextLogIndex = -1;
 
-    private final ConcurrentMap<Long, CompletableFuture<Object>> commitFutures = new ConcurrentHashMap<>();
+    /**
+     * 已经提交的日志的index
+     */
+    private volatile long commitIndex = -1;
+
+    /**
+     * 匹配上的index
+     */
+    private volatile long matchedIndex;
+
+    /**
+     * 成员的snapshot的index
+     */
+    private volatile long snapshotIndex;
+
+    /**
+     * 需要复制的下一个snapshot的index
+     */
+    private volatile long nextSnapshotIndex;
+
+    /**
+     * 需要复制的下一个snapshot的offset
+     */
+    private volatile long nextSnapshotOffset;
+
+    /**
+     * 最后被应用到状态机的日志条目索引值（初始化为 0，持续递增）
+     */
+    private volatile long lastApplied;
+
+    /**
+     * 复制数据失败次数
+     */
+    private volatile long replicateFailureCount;
+
 
     public RaftMember(TransportClient client, long id, Address address) {
-        this.client = client;
         this.id = id;
         this.address = address;
-        this.state = new RaftMemberState(this);
+        this.context = new RaftMemberContext(client, id, address);
     }
 
     public long getId() {
@@ -44,44 +80,91 @@ public class RaftMember extends LogSupport {
         return address;
     }
 
-    public RaftMemberState getState() {
-        return state;
+    public RaftMemberContext getContext() {
+        return context;
     }
 
-    public Connection getConnection() {
-        if (connection != null && !connection.closed()) {
-            return connection;
-        }
-
-        return client.connect(address).handle((connection, error) -> {
-            if (error != null) {
-                return connection;
-            }
-
-            logger.error("create connection to:{} caught exception", address, error);
-            return null;
-        }).join();
+    public long getTerm() {
+        return term;
     }
 
-
-    public void setConnection(Connection connection) {
-        this.connection = connection;
+    public void setTerm(long term) {
+        this.term = term;
     }
 
-    public void addCommitFuture(long logIndex, CompletableFuture<Object> future) {
-        commitFutures.put(logIndex, future);
+    public long getVotedFor() {
+        return votedFor;
     }
 
-
-    public CompletableFuture<Object> removeCommitFuture(long logIndex) {
-        return commitFutures.remove(logIndex);
+    public void setVotedFor(long votedFor) {
+        this.votedFor = votedFor;
     }
 
-    public Future<?> getAppendFuture() {
-        return appendFuture;
+    public long getNextLogIndex() {
+        return nextLogIndex;
     }
 
-    public void setAppendFuture(Future<?> appendFuture) {
-        this.appendFuture = appendFuture;
+    public void setNextLogIndex(long nextLogIndex) {
+        this.nextLogIndex = nextLogIndex;
+    }
+
+    public long getCommitIndex() {
+        return commitIndex;
+    }
+
+    public void setCommitIndex(long commitIndex) {
+        this.commitIndex = commitIndex;
+    }
+
+    public long getMatchedIndex() {
+        return matchedIndex;
+    }
+
+    public void setMatchedIndex(long matchedIndex) {
+        this.matchedIndex = matchedIndex;
+    }
+
+    public long getSnapshotIndex() {
+        return snapshotIndex;
+    }
+
+    public void setSnapshotIndex(long snapshotIndex) {
+        this.snapshotIndex = snapshotIndex;
+    }
+
+    public long getReplicateFailureCount() {
+        return replicateFailureCount;
+    }
+
+    public long incrementReplicateFailureCount() {
+        return ++replicateFailureCount;
+    }
+
+    public void resetReplicateFailureCount() {
+        replicateFailureCount = 0;
+    }
+
+    public long getLastApplied() {
+        return lastApplied;
+    }
+
+    public void setLastApplied(long lastApplied) {
+        this.lastApplied = lastApplied;
+    }
+
+    public long getNextSnapshotIndex() {
+        return nextSnapshotIndex;
+    }
+
+    public void setNextSnapshotIndex(long nextSnapshotIndex) {
+        this.nextSnapshotIndex = nextSnapshotIndex;
+    }
+
+    public long getNextSnapshotOffset() {
+        return nextSnapshotOffset;
+    }
+
+    public void setNextSnapshotOffset(long nextSnapshotOffset) {
+        this.nextSnapshotOffset = nextSnapshotOffset;
     }
 }

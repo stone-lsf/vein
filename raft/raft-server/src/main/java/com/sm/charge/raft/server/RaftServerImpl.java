@@ -115,6 +115,7 @@ public class RaftServerImpl extends AbstractService implements RaftServer, RaftL
 
         ElectTimeoutTimer electTimeoutTimer = new ElectTimeoutTimer(executor, raftConfig.getMaxElectTimeout(), raftConfig.getMinElectTimeout());
         CandidateState candidateState = new CandidateState(this, context, electTimeoutTimer);
+        int maxAppendSize = raftConfig.getMaxAppendSize();
         LeaderState leaderState = new LeaderState(this, context, maxAppendSize);
 
         serverStates.put(PASSIVE, catchUpState);
@@ -175,7 +176,7 @@ public class RaftServerImpl extends AbstractService implements RaftServer, RaftL
             member = members.get(index);
         }
 
-        Connection connection = member.getConnection();
+        Connection connection = member.getContext().getConnection();
         if (connection != null) {
             return doJoin(connection);
         }
@@ -188,7 +189,7 @@ public class RaftServerImpl extends AbstractService implements RaftServer, RaftL
         try {
             JoinResponse response = connection.syncRequest(request);
             serverStates.get(state).handle(response);
-            if (response.getTerm() < self.getState().getTerm()) {
+            if (response.getTerm() < self.getTerm()) {
                 return false;
             }
 
@@ -200,7 +201,7 @@ public class RaftServerImpl extends AbstractService implements RaftServer, RaftL
             if (response.needRedirect()) {
                 long masterId = response.getMaster().getId();
                 RaftMember master = cluster.member(masterId);
-                connection = master.getConnection();
+                connection = master.getContext().getConnection();
                 if (connection != null) {
                     return doJoin(connection);
                 }

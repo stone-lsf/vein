@@ -1,6 +1,6 @@
 package com.sm.charge.raft.server.storage.file;
 
-import com.sm.charge.raft.server.RaftMemberState;
+import com.sm.charge.raft.server.RaftMember;
 import com.sm.charge.raft.server.storage.MemberStateManager;
 
 /**
@@ -9,7 +9,7 @@ import com.sm.charge.raft.server.storage.MemberStateManager;
  */
 public class FileMemberStateManager implements MemberStateManager {
     @Override
-    public void persistState(RaftMemberState memberState) {
+    public void persistState(RaftMember memberState) {
 
     }
 }

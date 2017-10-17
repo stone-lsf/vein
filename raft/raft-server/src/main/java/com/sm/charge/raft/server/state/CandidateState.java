@@ -2,7 +2,6 @@ package com.sm.charge.raft.server.state;
 
 import com.sm.charge.raft.server.RaftListener;
 import com.sm.charge.raft.server.RaftMember;
-import com.sm.charge.raft.server.RaftMemberState;
 import com.sm.charge.raft.server.RaftState;
 import com.sm.charge.raft.server.ServerContext;
 import com.sm.charge.raft.server.election.VoteQuorum;
@@ -44,7 +43,7 @@ public class CandidateState extends AbstractState {
     @Override
     public void wakeup() {
         timer.start();
-        RaftMemberState state = context.getSelf().getState();
+        RaftMember state = context.getSelf();
         state.setTerm(state.getTerm() + 1);
         state.setVotedFor(context.getSelf().getId());
 
@@ -70,14 +69,14 @@ public class CandidateState extends AbstractState {
         request.setLastLogIndex(lastIndex);
         request.setLastLogTerm(lastTerm);
         request.setSource(context.getSelf().getId());
-        request.setTerm(context.getSelf().getState().getTerm());
+        request.setTerm(context.getSelf().getTerm());
 
         for (RaftMember member : members) {
             if (member.getId() == context.getSelf().getId()) {
                 continue;
             }
 
-            Connection connection = member.getConnection();
+            Connection connection = member.getContext().getConnection();
             if (connection == null) {
                 voteQuorum.mergeFailure();
                 continue;

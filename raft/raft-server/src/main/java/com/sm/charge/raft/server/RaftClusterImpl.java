@@ -72,7 +72,7 @@ public class RaftClusterImpl extends AbstractService implements RaftCluster {
     }
 
     @Override
-    public void remove(RaftMember member) {
+    public void remove(RaftMemberContext member) {
         members.remove(member.getId());
     }
 

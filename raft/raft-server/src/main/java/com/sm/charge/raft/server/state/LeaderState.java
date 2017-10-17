@@ -44,18 +44,18 @@ public class LeaderState extends AbstractState {
     protected AppendResponse doHandle(AppendRequest request) {
         logger.error("receive append request from another leader[{}] with same term, there must be a bug, server exits", request.getSource());
         System.exit(-1);
-        throw new IllegalStateException("more than one master has the same term:" + context.getSelf().getState().getTerm());
+        throw new IllegalStateException("more than one master has the same term:" + self.getTerm());
     }
 
     @Override
     public void suspect() {
         List<RaftMember> members = context.getCluster().members();
         for (RaftMember member : members) {
-            if (member.getId() == context.getSelf().getId()) {
+            if (member.getId() == self.getId()) {
                 continue;
             }
 
-            Future<?> future = member.getAppendFuture();
+            Future<?> future = member.getContext().getAppendFuture();
             if (future != null) {
                 future.cancel(false);
             }
@@ -70,25 +70,25 @@ public class LeaderState extends AbstractState {
         long nextLogIndex = entry == null ? 1 : entry.getIndex() + 1;
 
         for (RaftMember member : members) {
-            if (member.getId() == context.getSelf().getId()) {
+            if (member.getId() == self.getId()) {
                 continue;
             }
 
-            member.getState().setNextLogIndex(nextLogIndex);
+            member.setNextLogIndex(nextLogIndex);
             Future<?> future = executor.submit(() -> replicateEntries(member));
-            member.setAppendFuture(future);
+            member.getContext().setAppendFuture(future);
         }
     }
 
     private void replicateEntries(RaftMember member) {
         logger.info("leader append entry to member:[{}]", member.getId());
-        Connection connection = member.getConnection();
+        Connection connection = member.getContext().getConnection();
         if (connection == null) {
             return;
         }
 
         Snapshot snapshot = context.getSnapshotManager().currentSnapshot();
-        long nextLogIndex = member.getState().getNextLogIndex();
+        long nextLogIndex = member.getNextLogIndex();
 
         if (snapshot != null && nextLogIndex < snapshot.index()) {
             sendSnapshot(member);
@@ -98,7 +98,7 @@ public class LeaderState extends AbstractState {
         long prevLogIndex = 0;
         long prevLogTerm = 0;
         RaftMember leader = context.getSelf();
-        long leaderCommit = leader.getState().getCommitIndex();
+        long leaderCommit = leader.getCommitIndex();
         Log log = context.getLog();
         LogEntry entry = log.get(nextLogIndex - 1);
         if (entry != null) {
@@ -112,7 +112,7 @@ public class LeaderState extends AbstractState {
         AppendRequest request = new AppendRequest();
         request.setDestination(member.getId());
         request.setSource(leader.getId());
-        request.setTerm(leader.getState().getTerm());
+        request.setTerm(leader.getTerm());
         request.setPrevLogIndex(prevLogIndex);
         request.setPrevLogTerm(prevLogTerm);
         request.setLeaderCommit(leaderCommit);
