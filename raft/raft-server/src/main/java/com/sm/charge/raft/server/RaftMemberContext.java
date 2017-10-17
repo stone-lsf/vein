@@ -1,5 +1,6 @@
 package com.sm.charge.raft.server;
 
+import com.sm.charge.raft.server.election.VoteQuorum;
 import com.sm.finance.charge.common.Address;
 import com.sm.finance.charge.common.LogSupport;
 import com.sm.finance.charge.transport.api.Connection;
@@ -24,6 +25,8 @@ public class RaftMemberContext extends LogSupport {
     private volatile Connection connection;
 
     private volatile Future<?> appendFuture;
+
+    private volatile VoteQuorum voteQuorum;
 
     private final ConcurrentMap<Long, CompletableFuture<Object>> commitFutures = new ConcurrentHashMap<>();
 
@@ -76,5 +79,18 @@ public class RaftMemberContext extends LogSupport {
 
     public void setAppendFuture(Future<?> appendFuture) {
         this.appendFuture = appendFuture;
+    }
+
+    public VoteQuorum getVoteQuorum() {
+        return voteQuorum;
+    }
+
+    public void setVoteQuorum(VoteQuorum voteQuorum) {
+        this.voteQuorum = voteQuorum;
+    }
+
+    public void clearVoteQuorum() {
+        this.voteQuorum.cancel();
+        this.voteQuorum = null;
     }
 }

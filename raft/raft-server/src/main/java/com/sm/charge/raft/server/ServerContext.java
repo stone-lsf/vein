@@ -5,12 +5,15 @@ import com.sm.charge.raft.server.state.EventExecutor;
 import com.sm.charge.raft.server.storage.Log;
 import com.sm.charge.raft.server.storage.MemberStateManager;
 import com.sm.charge.raft.server.storage.SnapshotManager;
+import com.sm.finance.charge.transport.api.TransportClient;
 
 /**
  * @author shifeng.luo
  * @version created on 2017/9/22 下午11:00
  */
 public class ServerContext {
+
+    private final TransportClient client;
 
     private final RaftConfig raftConfig;
 
@@ -28,8 +31,10 @@ public class ServerContext {
 
     private final EventExecutor eventExecutor;
 
-    private ServerContext(RaftConfig raftConfig, SnapshotManager snapshotManager, Log log,
-                          RaftMember self, RaftCluster cluster, ServerStateMachine stateMachine, MemberStateManager memberStateManager, EventExecutor eventExecutor) {
+    private ServerContext(TransportClient client, RaftConfig raftConfig, SnapshotManager snapshotManager,
+                          Log log, RaftMember self, RaftCluster cluster, ServerStateMachine stateMachine,
+                          MemberStateManager memberStateManager, EventExecutor eventExecutor) {
+        this.client = client;
         this.raftConfig = raftConfig;
         this.snapshotManager = snapshotManager;
         this.log = log;
@@ -76,11 +81,18 @@ public class ServerContext {
         return eventExecutor;
     }
 
+    public TransportClient getClient() {
+        return client;
+    }
+
     public static Builder builder() {
         return new Builder();
     }
 
     public static class Builder {
+
+        private TransportClient client;
+
         private RaftConfig raftConfig;
 
         private SnapshotManager snapshotManager;
@@ -96,6 +108,11 @@ public class ServerContext {
         private MemberStateManager memberStateManager;
 
         private EventExecutor eventExecutor;
+
+        public Builder setClient(TransportClient client) {
+            this.client = client;
+            return this;
+        }
 
         public Builder setRaftConfig(RaftConfig raftConfig) {
             this.raftConfig = raftConfig;
@@ -138,7 +155,7 @@ public class ServerContext {
         }
 
         public ServerContext build() {
-            return new ServerContext(raftConfig, snapshotManager, log, self, cluster, stateMachine, memberStateManager, eventExecutor);
+            return new ServerContext(client, raftConfig, snapshotManager, log, self, cluster, stateMachine, memberStateManager, eventExecutor);
         }
     }
 }

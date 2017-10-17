@@ -6,21 +6,25 @@ import com.sm.charge.raft.server.RaftMessage;
 import com.sm.charge.raft.server.ServerContext;
 import com.sm.charge.raft.server.election.VoteRequest;
 import com.sm.charge.raft.server.election.VoteResponse;
-import com.sm.charge.raft.server.membership.ConfigurationRequest;
-import com.sm.charge.raft.server.membership.ConfigurationResponse;
 import com.sm.charge.raft.server.membership.InstallSnapshotRequest;
 import com.sm.charge.raft.server.membership.InstallSnapshotResponse;
 import com.sm.charge.raft.server.membership.JoinRequest;
 import com.sm.charge.raft.server.membership.JoinResponse;
+import com.sm.charge.raft.server.membership.LeaveRequest;
+import com.sm.charge.raft.server.membership.LeaveResponse;
 import com.sm.charge.raft.server.replicate.AppendRequest;
 import com.sm.charge.raft.server.replicate.AppendResponse;
 import com.sm.charge.raft.server.storage.Log;
 import com.sm.charge.raft.server.storage.LogEntry;
 import com.sm.finance.charge.common.LogSupport;
+import com.sm.finance.charge.transport.api.support.RequestContext;
 
 import org.apache.commons.collections.CollectionUtils;
 
 import java.util.List;
+
+import static com.sm.charge.raft.server.membership.JoinResponse.NO_LEADER;
+import static com.sm.charge.raft.server.membership.JoinResponse.REDIRECT;
 
 /**
  * @author shifeng.luo
@@ -110,7 +114,8 @@ public abstract class AbstractState extends LogSupport implements ServerState {
 
     @Override
     public void handle(VoteResponse response) {
-
+        long responseTerm = response.getTerm();
+        updateTerm(responseTerm);
     }
 
     @Override
@@ -214,7 +219,7 @@ public abstract class AbstractState extends LogSupport implements ServerState {
      *
      * @param leaderCommit leader已经提交的日志
      */
-    private void commit(long leaderCommit) {
+    protected void commit(long leaderCommit) {
         long lastIndex = context.getLog().lastIndex();
         long commitIndex = Math.min(lastIndex, leaderCommit);
         long prevCommitIndex = self.getCommitIndex();
@@ -226,27 +231,36 @@ public abstract class AbstractState extends LogSupport implements ServerState {
 
     @Override
     public void handle(AppendResponse response) {
-
+        long responseTerm = response.getTerm();
+        updateTerm(responseTerm);
     }
 
     @Override
-    public ConfigurationResponse handle(ConfigurationRequest request) {
+    public JoinResponse handle(JoinRequest request, RequestContext requestContext) {
+        RaftMember master = context.getCluster().master();
+        JoinResponse response = new JoinResponse();
+        if (master == null) {
+            response.setStatus(NO_LEADER);
+            return response;
+        }
 
-        return null;
-    }
-
-    @Override
-    public void handle(ConfigurationResponse response) {
-
-    }
-
-    @Override
-    public JoinResponse handle(JoinRequest request) {
-        return null;
+        response.setStatus(REDIRECT);
+        response.setMaster(master);
+        return response;
     }
 
     @Override
     public void handle(JoinResponse response) {
+
+    }
+
+    @Override
+    public LeaveResponse handle(LeaveRequest request) {
+        return null;
+    }
+
+    @Override
+    public void handle(LeaveResponse response) {
 
     }
 

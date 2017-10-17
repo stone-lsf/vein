@@ -15,9 +15,15 @@ public class VoteQuorum {
     private Counter successCounter;
     private Counter failureCounter;
 
+    private volatile boolean cancelled = false;
+
     public VoteQuorum(int quorum) {
         this.quorum = quorum;
 
+    }
+
+    public void cancel() {
+        cancelled = true;
     }
 
     public CompletableFuture<Boolean> getResult() {
@@ -38,10 +44,14 @@ public class VoteQuorum {
     }
 
     public void mergeSuccess() {
-        successCounter.increase();
+        if (!cancelled) {
+            successCounter.increase();
+        }
     }
 
     public void mergeFailure() {
-        failureCounter.increase();
+        if (!cancelled) {
+            failureCounter.increase();
+        }
     }
 }

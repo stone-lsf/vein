@@ -22,6 +22,15 @@ public class RaftMessage implements Event {
      */
     private long destination;
 
+    public RaftMessage() {
+    }
+
+    public RaftMessage(long term, long source, long destination) {
+        this.term = term;
+        this.source = source;
+        this.destination = destination;
+    }
+
     public long getTerm() {
         return term;
     }

@@ -185,7 +185,7 @@ public class RaftServerImpl extends AbstractService implements RaftServer, RaftL
     }
 
     private boolean doJoin(Connection connection) {
-        JoinRequest request = new JoinRequest(self.getId(), self.getAddress(), cluster.members());
+        JoinRequest request = new JoinRequest(self.getId(), self.getAddress());
         try {
             JoinResponse response = connection.syncRequest(request);
             serverStates.get(state).handle(response);

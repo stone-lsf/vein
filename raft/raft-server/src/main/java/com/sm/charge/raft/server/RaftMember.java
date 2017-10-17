@@ -41,29 +41,35 @@ public class RaftMember {
     private volatile long matchedIndex;
 
     /**
-     * 成员的snapshot的index
-     */
-    private volatile long snapshotIndex;
-
-    /**
-     * 需要复制的下一个snapshot的index
-     */
-    private volatile long nextSnapshotIndex;
-
-    /**
-     * 需要复制的下一个snapshot的offset
-     */
-    private volatile long nextSnapshotOffset;
-
-    /**
      * 最后被应用到状态机的日志条目索引值（初始化为 0，持续递增）
      */
     private volatile long lastApplied;
 
     /**
-     * 复制数据失败次数
+     * 是否配置中
      */
-    private volatile long replicateFailureCount;
+    private volatile long configuring;
+
+//    /**
+//     * 成员的snapshot的index
+//     */
+//    private volatile long snapshotIndex;
+//
+//    /**
+//     * 需要复制的下一个snapshot的index
+//     */
+//    private volatile long nextSnapshotIndex;
+//
+//    /**
+//     * 需要复制的下一个snapshot的offset
+//     */
+//    private volatile long nextSnapshotOffset;
+
+
+//    /**
+//     * 复制数据失败次数
+//     */
+//    private volatile long replicateFailureCount;
 
 
     public RaftMember(TransportClient client, long id, Address address) {
@@ -124,26 +130,6 @@ public class RaftMember {
         this.matchedIndex = matchedIndex;
     }
 
-    public long getSnapshotIndex() {
-        return snapshotIndex;
-    }
-
-    public void setSnapshotIndex(long snapshotIndex) {
-        this.snapshotIndex = snapshotIndex;
-    }
-
-    public long getReplicateFailureCount() {
-        return replicateFailureCount;
-    }
-
-    public long incrementReplicateFailureCount() {
-        return ++replicateFailureCount;
-    }
-
-    public void resetReplicateFailureCount() {
-        replicateFailureCount = 0;
-    }
-
     public long getLastApplied() {
         return lastApplied;
     }
@@ -152,19 +138,11 @@ public class RaftMember {
         this.lastApplied = lastApplied;
     }
 
-    public long getNextSnapshotIndex() {
-        return nextSnapshotIndex;
+    public long getConfiguring() {
+        return configuring;
     }
 
-    public void setNextSnapshotIndex(long nextSnapshotIndex) {
-        this.nextSnapshotIndex = nextSnapshotIndex;
-    }
-
-    public long getNextSnapshotOffset() {
-        return nextSnapshotOffset;
-    }
-
-    public void setNextSnapshotOffset(long nextSnapshotOffset) {
-        this.nextSnapshotOffset = nextSnapshotOffset;
+    public void setConfiguring(long configuring) {
+        this.configuring = configuring;
     }
 }

@@ -38,21 +38,23 @@ public class CandidateState extends AbstractState {
     @Override
     public void suspect() {
         timer.stop();
+        self.getContext().clearVoteQuorum();
     }
 
     @Override
     public void wakeup() {
         timer.start();
-        RaftMember state = context.getSelf();
-        state.setTerm(state.getTerm() + 1);
-        state.setVotedFor(context.getSelf().getId());
+
+        self.setTerm(self.getTerm() + 1);
+        self.setVotedFor(self.getId());
 
         int quorum = context.getCluster().getQuorum();
         VoteQuorum voteQuorum = new VoteQuorum(quorum);
         voteQuorum.mergeSuccess();
+        self.getContext().setVoteQuorum(voteQuorum);
 
         MemberStateManager manager = context.getMemberStateManager();
-        manager.persistState(state);
+        manager.persistState(self);
 
         requestVotes(voteQuorum);
     }
@@ -95,6 +97,22 @@ public class CandidateState extends AbstractState {
                     voteQuorum.mergeFailure();
                 }
             });
+        }
+    }
+
+    @Override
+    public void handle(VoteResponse response) {
+        long responseTerm = response.getTerm();
+        if (updateTerm(responseTerm)) {
+            return;
+        }
+
+        VoteQuorum quorum = self.getContext().getVoteQuorum();
+
+        if (response.isVoteGranted()) {
+            quorum.mergeSuccess();
+        } else {
+            quorum.mergeFailure();
         }
     }
 }

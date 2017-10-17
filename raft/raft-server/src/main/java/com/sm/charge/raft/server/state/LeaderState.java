@@ -1,9 +1,13 @@
 package com.sm.charge.raft.server.state;
 
+import com.sm.charge.raft.client.ConfigureCommand;
+import com.sm.charge.raft.server.RaftCluster;
 import com.sm.charge.raft.server.RaftListener;
 import com.sm.charge.raft.server.RaftMember;
 import com.sm.charge.raft.server.RaftState;
 import com.sm.charge.raft.server.ServerContext;
+import com.sm.charge.raft.server.membership.JoinRequest;
+import com.sm.charge.raft.server.membership.JoinResponse;
 import com.sm.charge.raft.server.replicate.AppendRequest;
 import com.sm.charge.raft.server.replicate.AppendResponse;
 import com.sm.charge.raft.server.storage.Log;
@@ -13,13 +17,20 @@ import com.sm.finance.charge.common.NamedThreadFactory;
 import com.sm.finance.charge.common.SystemConstants;
 import com.sm.finance.charge.transport.api.Connection;
 import com.sm.finance.charge.transport.api.handler.AbstractResponseHandler;
+import com.sm.finance.charge.transport.api.support.RequestContext;
 import com.sm.finance.charge.transport.api.support.ResponseContext;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+
+import static com.sm.charge.raft.server.membership.JoinResponse.INTERNAL_ERROR;
+import static com.sm.charge.raft.server.membership.JoinResponse.RECONFIGURING;
+import static com.sm.charge.raft.server.membership.JoinResponse.SUCCESS;
 
 /**
  * @author shifeng.luo
@@ -143,5 +154,93 @@ public class LeaderState extends AbstractState {
 
     private void sendSnapshot(RaftMember member) {
 
+    }
+
+
+    @Override
+    public void handle(AppendResponse response) {
+        long responseTerm = response.getTerm();
+        if (updateTerm(responseTerm)) {
+            return;
+        }
+
+        RaftMember member = context.getCluster().member(response.getSource());
+        if (response.isSuccess()) {
+            member.setNextLogIndex(response.getNextIndex());
+            member.setMatchedIndex(response.getNextIndex() - 1);
+
+            List<RaftMember> members = context.getCluster().members();
+            members.sort(Comparator.comparingLong(RaftMember::getMatchedIndex));
+            int quorum = context.getCluster().getQuorum();
+            if (members.size() < quorum) {
+                return;
+            }
+            RaftMember m = members.get(quorum - 1);
+            long commitIndex = m.getMatchedIndex();
+            commit(commitIndex);
+        } else {
+            member.setNextLogIndex(response.getNextIndex());
+        }
+    }
+
+    @Override
+    public JoinResponse handle(JoinRequest request, RequestContext requestContext) {
+        JoinResponse response = new JoinResponse();
+        if (self.getConfiguring() > 0) {
+            response.setStatus(RECONFIGURING);
+            return response;
+        }
+
+        RaftCluster cluster = context.getCluster();
+        List<RaftMember> members = cluster.members();
+        RaftMember member = cluster.member(request.getMemberId());
+        if (member != null) {
+            response.setStatus(SUCCESS);
+            response.setIndex(context.getLog().lastIndex());
+            response.setTerm(self.getTerm());
+            response.setMembers(members);
+            return response;
+        }
+
+        member = new RaftMember(context.getClient(), request.getMemberId(), request.getAddress());
+        members.add(member);
+
+        configure(members).whenComplete((index, error) -> {
+            try {
+                if (error != null) {
+                    response.setStatus(INTERNAL_ERROR);
+                    requestContext.sendResponse(response);
+                } else {
+                    response.setStatus(SUCCESS);
+                    response.setIndex(index);
+                    response.setTerm(self.getTerm());
+                    response.setMembers(members);
+                    requestContext.sendResponse(response);
+                }
+            } catch (Exception e) {
+                logger.error("send join response:{} failure", response, e);
+            }
+        });
+        return null;
+    }
+
+    private CompletableFuture<Long> configure(List<RaftMember> members) {
+        CompletableFuture<Long> future = new CompletableFuture<>();
+
+        ConfigureCommand command = new ConfigureCommand();
+        LogEntry entry = new LogEntry(command, self.getTerm());
+        Log log = context.getLog();
+        long index = log.append(entry);
+
+        CompletableFuture<Object> commitFuture = new CompletableFuture<>();
+        commitFuture.whenComplete((result, error) -> {
+            if (error == null) {
+                future.complete(index);
+            } else {
+                future.completeExceptionally(error);
+            }
+        });
+        self.getContext().addCommitFuture(index, commitFuture);
+        return future;
     }
 }

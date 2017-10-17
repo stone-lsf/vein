@@ -2,12 +2,19 @@ package com.sm.finance.charge.transport.api.support;
 
 import com.sm.finance.charge.common.Address;
 import com.sm.finance.charge.transport.api.Connection;
+import com.sm.finance.charge.transport.api.Response;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
 
 /**
  * @author shifeng.luo
  * @version created on 2017/9/11 下午2:34
  */
 public class RequestContext {
+    private static final Logger logger = LoggerFactory.getLogger(RequestContext.class);
 
     private int requestId;
 
@@ -20,6 +27,11 @@ public class RequestContext {
         this.requestId = requestId;
         this.connection = connection;
         this.remote = remote;
+    }
+
+    public void sendResponse(Object response) throws IOException {
+        Response rsp = new Response(requestId, response);
+        connection.send(rsp);
     }
 
     public int getRequestId() {

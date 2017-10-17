@@ -1,6 +1,5 @@
 package com.sm.charge.raft.server.membership;
 
-import com.sm.charge.raft.server.RaftMemberContext;
 import com.sm.charge.raft.server.RaftMember;
 
 import java.util.List;
@@ -14,28 +13,31 @@ public class JoinResponse {
     public static final int SUCCESS = 0;
     public static final int REDIRECT = 1;
     public static final int RECONFIGURING = 2;
-
+    public static final int NO_LEADER = 3;
+    public static final int INTERNAL_ERROR = 3;
 
     /**
      * 状态码
      */
     private int status;
 
+    private long index;
+
     private long term;
 
-    private RaftMemberContext master;
+    private long timestamp;
 
     /**
      * 集群服务器列表
      */
-    private List<RaftMember> servers;
+    private List<RaftMember> members;
 
-    private boolean needInstallSnapshot;
-
+    private RaftMember master;
 
     public boolean isSuccess() {
         return status == SUCCESS;
     }
+
 
     public boolean needRedirect() {
         return status == REDIRECT;
@@ -43,6 +45,10 @@ public class JoinResponse {
 
     public boolean reconfiguring() {
         return status == RECONFIGURING;
+    }
+
+    public boolean noLeader() {
+        return status == NO_LEADER;
     }
 
     public int getStatus() {
@@ -53,6 +59,14 @@ public class JoinResponse {
         this.status = status;
     }
 
+    public long getIndex() {
+        return index;
+    }
+
+    public void setIndex(long index) {
+        this.index = index;
+    }
+
     public long getTerm() {
         return term;
     }
@@ -61,27 +75,27 @@ public class JoinResponse {
         this.term = term;
     }
 
-    public RaftMemberContext getMaster() {
+    public long getTimestamp() {
+        return timestamp;
+    }
+
+    public void setTimestamp(long timestamp) {
+        this.timestamp = timestamp;
+    }
+
+    public List<RaftMember> getMembers() {
+        return members;
+    }
+
+    public void setMembers(List<RaftMember> members) {
+        this.members = members;
+    }
+
+    public RaftMember getMaster() {
         return master;
     }
 
-    public void setMaster(RaftMemberContext master) {
+    public void setMaster(RaftMember master) {
         this.master = master;
-    }
-
-    public List<RaftMember> getServers() {
-        return servers;
-    }
-
-    public void setServers(List<RaftMember> servers) {
-        this.servers = servers;
-    }
-
-    public boolean isNeedInstallSnapshot() {
-        return needInstallSnapshot;
-    }
-
-    public void setNeedInstallSnapshot(boolean needInstallSnapshot) {
-        this.needInstallSnapshot = needInstallSnapshot;
     }
 }

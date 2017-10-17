@@ -3,14 +3,15 @@ package com.sm.charge.raft.server.state;
 import com.sm.charge.raft.server.RaftState;
 import com.sm.charge.raft.server.election.VoteRequest;
 import com.sm.charge.raft.server.election.VoteResponse;
-import com.sm.charge.raft.server.membership.ConfigurationRequest;
-import com.sm.charge.raft.server.membership.ConfigurationResponse;
 import com.sm.charge.raft.server.membership.InstallSnapshotRequest;
 import com.sm.charge.raft.server.membership.InstallSnapshotResponse;
 import com.sm.charge.raft.server.membership.JoinRequest;
 import com.sm.charge.raft.server.membership.JoinResponse;
+import com.sm.charge.raft.server.membership.LeaveRequest;
+import com.sm.charge.raft.server.membership.LeaveResponse;
 import com.sm.charge.raft.server.replicate.AppendRequest;
 import com.sm.charge.raft.server.replicate.AppendResponse;
+import com.sm.finance.charge.transport.api.support.RequestContext;
 
 /**
  * @author shifeng.luo
@@ -38,13 +39,13 @@ public interface ServerState {
 
     void handle(AppendResponse response);
 
-    JoinResponse handle(JoinRequest request);
+    JoinResponse handle(JoinRequest request, RequestContext requestContext);
 
     void handle(JoinResponse response);
 
-    ConfigurationResponse handle(ConfigurationRequest request);
+    LeaveResponse handle(LeaveRequest request);
 
-    void handle(ConfigurationResponse response);
+    void handle(LeaveResponse response);
 
     InstallSnapshotResponse handle(InstallSnapshotRequest request);
 
