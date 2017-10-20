@@ -18,7 +18,9 @@ public interface RaftCluster extends Startable, Closable {
 
     void setMaster(RaftMember master);
 
-    RaftMember member(long id);
+    RaftMember member(long memberId);
+
+    boolean contain(long memberId);
 
     RaftMember local();
 
@@ -32,7 +34,7 @@ public interface RaftCluster extends Startable, Closable {
 
     void add(RaftMember member);
 
-    void remove(RaftMemberContext member);
+    void remove(RaftMember member);
 
     void addMemberListener(MemberListener listener);
 

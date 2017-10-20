@@ -1,6 +1,8 @@
 package com.sm.charge.raft.server;
 
 import com.sm.charge.raft.server.election.VoteQuorum;
+import com.sm.charge.raft.server.replicate.ReplicateTask;
+import com.sm.charge.raft.server.replicate.Replicator;
 import com.sm.finance.charge.common.Address;
 import com.sm.finance.charge.common.LogSupport;
 import com.sm.finance.charge.transport.api.Connection;
@@ -15,12 +17,12 @@ import java.util.concurrent.Future;
  * @author shifeng.luo
  * @version created on 2017/9/22 上午10:50
  */
-public class RaftMemberContext extends LogSupport {
+public class RaftMemberState extends LogSupport {
     private final TransportClient client;
 
-    private final long id;
+    private final RaftMember member;
 
-    private final Address address;
+    private final ReplicateTask replicateTask;
 
     private volatile Connection connection;
 
@@ -28,20 +30,27 @@ public class RaftMemberContext extends LogSupport {
 
     private volatile VoteQuorum voteQuorum;
 
+    /**
+     * 是否配置中
+     */
+    private volatile long configuring;
+
+    /**
+     * 需要复制的下一个snapshot的index
+     */
+    private volatile long nextSnapshotIndex;
+
+    /**
+     * 需要复制的下一个snapshot的offset
+     */
+    private volatile long nextSnapshotOffset;
+
     private final ConcurrentMap<Long, CompletableFuture<Object>> commitFutures = new ConcurrentHashMap<>();
 
-    public RaftMemberContext(TransportClient client, long id, Address address) {
+    public RaftMemberState(TransportClient client, RaftMember member, Replicator replicator) {
         this.client = client;
-        this.id = id;
-        this.address = address;
-    }
-
-    public long getId() {
-        return id;
-    }
-
-    public Address getAddress() {
-        return address;
+        this.member = member;
+        this.replicateTask = new ReplicateTask(member, replicator);
     }
 
     public Connection getConnection() {
@@ -49,6 +58,7 @@ public class RaftMemberContext extends LogSupport {
             return connection;
         }
 
+        Address address = member.getAddress();
         return client.connect(address).handle((connection, error) -> {
             if (error != null) {
                 return connection;
@@ -62,6 +72,14 @@ public class RaftMemberContext extends LogSupport {
 
     public void setConnection(Connection connection) {
         this.connection = connection;
+    }
+
+    public void startReplicate() {
+        replicateTask.start();
+    }
+
+    public void stopReplicate() {
+        replicateTask.stop();
     }
 
     public void addCommitFuture(long logIndex, CompletableFuture<Object> future) {
@@ -92,5 +110,29 @@ public class RaftMemberContext extends LogSupport {
     public void clearVoteQuorum() {
         this.voteQuorum.cancel();
         this.voteQuorum = null;
+    }
+
+    public long getConfiguring() {
+        return configuring;
+    }
+
+    public void setConfiguring(long configuring) {
+        this.configuring = configuring;
+    }
+
+    public long getNextSnapshotIndex() {
+        return nextSnapshotIndex;
+    }
+
+    public void setNextSnapshotIndex(long nextSnapshotIndex) {
+        this.nextSnapshotIndex = nextSnapshotIndex;
+    }
+
+    public long getNextSnapshotOffset() {
+        return nextSnapshotOffset;
+    }
+
+    public void setNextSnapshotOffset(long nextSnapshotOffset) {
+        this.nextSnapshotOffset = nextSnapshotOffset;
     }
 }

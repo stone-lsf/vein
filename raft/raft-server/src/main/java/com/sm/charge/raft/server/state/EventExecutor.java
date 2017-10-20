@@ -12,7 +12,7 @@ public interface EventExecutor {
 
     <T> CompletableFuture<T> submit(Event event);
 
-    void execute(Event event);
+    CompletableFuture<Void>  execute(Event event);
 
     <T extends Event> void register(Class<T> event, Consumer<T> consumer);
 

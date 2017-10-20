@@ -52,7 +52,7 @@ public class ServerStateMachine extends LogSupport {
     }
 
     private void apply(LogEntry entry) {
-        RaftMemberContext context = self.getContext();
+        RaftMemberState context = self.getState();
         stateMachine.apply(entry.getCommand()).whenComplete((result, error) -> {
             CompletableFuture<Object> future = context.removeCommitFuture(entry.getIndex());
             if (future != null) {

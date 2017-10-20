@@ -38,7 +38,7 @@ public class CandidateState extends AbstractState {
     @Override
     public void suspect() {
         timer.stop();
-        self.getContext().clearVoteQuorum();
+        self.getState().clearVoteQuorum();
     }
 
     @Override
@@ -51,7 +51,7 @@ public class CandidateState extends AbstractState {
         int quorum = context.getCluster().getQuorum();
         VoteQuorum voteQuorum = new VoteQuorum(quorum);
         voteQuorum.mergeSuccess();
-        self.getContext().setVoteQuorum(voteQuorum);
+        self.getState().setVoteQuorum(voteQuorum);
 
         MemberStateManager manager = context.getMemberStateManager();
         manager.persistState(self);
@@ -78,7 +78,7 @@ public class CandidateState extends AbstractState {
                 continue;
             }
 
-            Connection connection = member.getContext().getConnection();
+            Connection connection = member.getState().getConnection();
             if (connection == null) {
                 voteQuorum.mergeFailure();
                 continue;
@@ -107,7 +107,7 @@ public class CandidateState extends AbstractState {
             return;
         }
 
-        VoteQuorum quorum = self.getContext().getVoteQuorum();
+        VoteQuorum quorum = self.getState().getVoteQuorum();
 
         if (response.isVoteGranted()) {
             quorum.mergeSuccess();

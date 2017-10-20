@@ -11,4 +11,6 @@ public interface SnapshotReader extends AutoCloseable {
     SnapshotReader read(byte[] bytes);
 
     boolean hasRemaining();
+
+    SnapshotReader skip(long bytes);
 }

@@ -1,5 +1,6 @@
 package com.sm.charge.raft.server;
 
+import com.sm.charge.raft.server.replicate.Replicator;
 import com.sm.finance.charge.common.Address;
 import com.sm.finance.charge.transport.api.TransportClient;
 
@@ -9,7 +10,7 @@ import com.sm.finance.charge.transport.api.TransportClient;
  */
 public class RaftMember {
 
-    private final RaftMemberContext context;
+    private final RaftMemberState state;
 
     private final long id;
 
@@ -45,26 +46,11 @@ public class RaftMember {
      */
     private volatile long lastApplied;
 
-    /**
-     * 是否配置中
-     */
-    private volatile long configuring;
-
 //    /**
 //     * 成员的snapshot的index
 //     */
 //    private volatile long snapshotIndex;
 //
-//    /**
-//     * 需要复制的下一个snapshot的index
-//     */
-//    private volatile long nextSnapshotIndex;
-//
-//    /**
-//     * 需要复制的下一个snapshot的offset
-//     */
-//    private volatile long nextSnapshotOffset;
-
 
 //    /**
 //     * 复制数据失败次数
@@ -72,10 +58,10 @@ public class RaftMember {
 //    private volatile long replicateFailureCount;
 
 
-    public RaftMember(TransportClient client, long id, Address address) {
+    public RaftMember(TransportClient client, long id, Address address, Replicator replicator) {
         this.id = id;
         this.address = address;
-        this.context = new RaftMemberContext(client, id, address);
+        this.state = new RaftMemberState(client, this, replicator);
     }
 
     public long getId() {
@@ -86,8 +72,8 @@ public class RaftMember {
         return address;
     }
 
-    public RaftMemberContext getContext() {
-        return context;
+    public RaftMemberState getState() {
+        return state;
     }
 
     public long getTerm() {
@@ -136,13 +122,5 @@ public class RaftMember {
 
     public void setLastApplied(long lastApplied) {
         this.lastApplied = lastApplied;
-    }
-
-    public long getConfiguring() {
-        return configuring;
-    }
-
-    public void setConfiguring(long configuring) {
-        this.configuring = configuring;
     }
 }

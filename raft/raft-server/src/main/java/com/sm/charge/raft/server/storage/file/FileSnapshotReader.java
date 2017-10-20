@@ -24,6 +24,11 @@ public class FileSnapshotReader implements SnapshotReader {
     }
 
     @Override
+    public SnapshotReader skip(long bytes) {
+        return null;
+    }
+
+    @Override
     public void close() throws Exception {
 
     }

@@ -10,6 +10,7 @@ import com.sm.charge.raft.server.membership.JoinRequest;
 import com.sm.charge.raft.server.membership.JoinResponse;
 import com.sm.charge.raft.server.replicate.AppendRequest;
 import com.sm.charge.raft.server.replicate.AppendResponse;
+import com.sm.charge.raft.server.replicate.Replicator;
 import com.sm.charge.raft.server.storage.Log;
 import com.sm.charge.raft.server.storage.LogEntry;
 import com.sm.charge.raft.server.storage.Snapshot;
@@ -41,9 +42,12 @@ public class LeaderState extends AbstractState {
 
     private final int maxAppendSize;
 
-    public LeaderState(RaftListener raftListener, ServerContext context, int maxAppendSize) {
+    private final Replicator replicator;
+
+    public LeaderState(RaftListener raftListener, ServerContext context, int maxAppendSize, Replicator replicator) {
         super(raftListener, context);
         this.maxAppendSize = maxAppendSize;
+        this.replicator = replicator;
     }
 
     @Override
@@ -60,22 +64,20 @@ public class LeaderState extends AbstractState {
 
     @Override
     public void suspect() {
+        RaftMember self = context.getSelf();
         List<RaftMember> members = context.getCluster().members();
         for (RaftMember member : members) {
             if (member.getId() == self.getId()) {
                 continue;
             }
 
-            Future<?> future = member.getContext().getAppendFuture();
-            if (future != null) {
-                future.cancel(false);
-            }
+            member.getState().stopReplicate();
         }
     }
 
     @Override
     public void wakeup() {
-        context.getCluster().setMaster(context.getSelf());
+        RaftMember self = context.getSelf();
         List<RaftMember> members = context.getCluster().members();
         LogEntry entry = context.getLog().lastEntry();
         long nextLogIndex = entry == null ? 1 : entry.getIndex() + 1;
@@ -86,24 +88,22 @@ public class LeaderState extends AbstractState {
             }
 
             member.setNextLogIndex(nextLogIndex);
-            Future<?> future = executor.submit(() -> replicateEntries(member));
-            member.getContext().setAppendFuture(future);
+            member.getState().startReplicate();
         }
     }
 
-    private void replicateEntries(RaftMember member) {
+    private CompletableFuture<Void> replicateEntries(RaftMember member) {
         logger.info("leader append entry to member:[{}]", member.getId());
-        Connection connection = member.getContext().getConnection();
+        Connection connection = member.getState().getConnection();
         if (connection == null) {
-            return;
+            return CompletableFuture.completedFuture(null);
         }
 
         Snapshot snapshot = context.getSnapshotManager().currentSnapshot();
         long nextLogIndex = member.getNextLogIndex();
 
         if (snapshot != null && nextLogIndex < snapshot.index()) {
-            sendSnapshot(member);
-            return;
+            return sendSnapshot(member);
         }
 
         long prevLogIndex = 0;
@@ -139,21 +139,27 @@ public class LeaderState extends AbstractState {
 
         request.setEntries(entries);
 
+        CompletableFuture<Void> future = new CompletableFuture<>();
         connection.send(request, new AbstractResponseHandler<AppendResponse>() {
             @Override
             public void handle(AppendResponse response, Connection connection) {
-                context.getEventExecutor().execute(response);
+                context.getEventExecutor().execute(response).whenComplete((result, error) -> {
+                    future.complete(null);
+                });
             }
 
             @Override
             public void onException(Throwable e, ResponseContext context) {
                 logger.error("send append request to member:{} caught exception", member.getId(), e);
+                future.complete(null);
             }
         });
+        return future;
     }
 
-    private void sendSnapshot(RaftMember member) {
+    private CompletableFuture<Void> sendSnapshot(RaftMember member) {
 
+        return null;
     }
 
 
@@ -186,7 +192,7 @@ public class LeaderState extends AbstractState {
     @Override
     public JoinResponse handle(JoinRequest request, RequestContext requestContext) {
         JoinResponse response = new JoinResponse();
-        if (self.getConfiguring() > 0) {
+        if (self.getState().getConfiguring() > 0) {
             response.setStatus(RECONFIGURING);
             return response;
         }
@@ -202,7 +208,7 @@ public class LeaderState extends AbstractState {
             return response;
         }
 
-        member = new RaftMember(context.getClient(), request.getMemberId(), request.getAddress());
+        member = new RaftMember(context.getClient(), request.getMemberId(), request.getAddress(), replicator);
         members.add(member);
 
         configure(members).whenComplete((index, error) -> {
@@ -230,7 +236,19 @@ public class LeaderState extends AbstractState {
         ConfigureCommand command = new ConfigureCommand();
         LogEntry entry = new LogEntry(command, self.getTerm());
         Log log = context.getLog();
+        RaftCluster cluster = context.getCluster();
         long index = log.append(entry);
+        self.getState().setConfiguring(index);
+
+        for (RaftMember member : members) {
+            if (!cluster.contain(member.getId())) {
+                cluster.add(member);
+                member.setNextLogIndex(1);
+                Future<?> appendFuture = executor.submit(() -> replicateEntries(member));
+                member.getState().setAppendFuture(appendFuture);
+                logger.info("server[id:{};address:{}] is add to cluster,log index:{}", member.getId(), member.getAddress(), index);
+            }
+        }
 
         CompletableFuture<Object> commitFuture = new CompletableFuture<>();
         commitFuture.whenComplete((result, error) -> {
@@ -240,7 +258,7 @@ public class LeaderState extends AbstractState {
                 future.completeExceptionally(error);
             }
         });
-        self.getContext().addCommitFuture(index, commitFuture);
+        self.getState().addCommitFuture(index, commitFuture);
         return future;
     }
 }

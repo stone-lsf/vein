@@ -41,8 +41,13 @@ public class RaftClusterImpl extends AbstractService implements RaftCluster {
         this.master = master;
     }
 
-    public RaftMember member(long id) {
-        return members.get(id);
+    public RaftMember member(long memberId) {
+        return members.get(memberId);
+    }
+
+    @Override
+    public boolean contain(long memberId) {
+        return false;
     }
 
     public RaftMember local() {
@@ -72,7 +77,7 @@ public class RaftClusterImpl extends AbstractService implements RaftCluster {
     }
 
     @Override
-    public void remove(RaftMemberContext member) {
+    public void remove(RaftMember member) {
         members.remove(member.getId());
     }
 

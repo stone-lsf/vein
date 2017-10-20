@@ -48,7 +48,7 @@ public abstract class AbstractState extends LogSupport implements ServerState {
     public VoteResponse handle(VoteRequest request) {
         long requestTerm = request.getTerm();
         VoteResponse response = new VoteResponse();
-        response.setSource(self.getContext().getId());
+        response.setSource(self.getId());
         response.setDestination(request.getSource());
 
         if (updateTerm(requestTerm)) {
@@ -282,7 +282,7 @@ public abstract class AbstractState extends LogSupport implements ServerState {
 
 
     protected void fill(RaftMessage message, long destination) {
-        message.setSource(self.getContext().getId());
+        message.setSource(self.getId());
         message.setDestination(destination);
         message.setTerm(self.getTerm());
     }

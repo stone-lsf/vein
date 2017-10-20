@@ -6,6 +6,7 @@ import com.sm.charge.raft.server.membership.JoinRequest;
 import com.sm.charge.raft.server.membership.JoinResponse;
 import com.sm.charge.raft.server.membership.LeaveRequest;
 import com.sm.charge.raft.server.membership.LeaveResponse;
+import com.sm.charge.raft.server.replicate.Replicator;
 import com.sm.charge.raft.server.state.CandidateState;
 import com.sm.charge.raft.server.state.FollowerState;
 import com.sm.charge.raft.server.state.LeaderState;
@@ -66,6 +67,8 @@ public class RaftServerImpl extends AbstractService implements RaftServer, RaftL
     private final LogStateMachine logStateMachine;
     private final SnapshotManager snapshotManager;
     private final MemberStateManager memberStateManager;
+    private final ServerContext context;
+    private final Replicator replicator;
 
     private volatile RaftState state = CANDIDATE;
 
@@ -77,9 +80,10 @@ public class RaftServerImpl extends AbstractService implements RaftServer, RaftL
         Transport transport = TransportFactory.create(raftConfig.getTransportType());
         this.transportServer = transport.server();
         this.client = transport.client();
-        Address address = AddressUtil.getLocalAddress(raftConfig.getPort());
-        this.self = new RaftMember(client, address.ipPort(), address);
 
+
+        Address address = AddressUtil.getLocalAddress(raftConfig.getPort());
+        this.self = new RaftMember(client, address.ipPort(), address, null);
         this.cluster = new RaftClusterImpl(raftConfig.getClusterName(), self);
         this.log = new FileLog();
         this.snapshotManager = new FileSnapshotManager(raftConfig.getSnapshotDirectory(), raftConfig.getSnapshotName());
@@ -88,8 +92,12 @@ public class RaftServerImpl extends AbstractService implements RaftServer, RaftL
         ExecutorService executor = Executors.newSingleThreadExecutor(new NamedThreadFactory("LogApplyThread"));
         this.serverStateMachine = new ServerStateMachine(log, self, logStateMachine, snapshotManager, executor);
 
-        ServerContext context = initContext(raftConfig);
-        initStates(context);
+        this.context = initContext(raftConfig);
+        this.replicator = new Replicator(context, raftConfig.getMaxAppendSize());
+
+        initStates();
+
+
     }
 
 
@@ -106,7 +114,7 @@ public class RaftServerImpl extends AbstractService implements RaftServer, RaftL
         return builder.build();
     }
 
-    private void initStates(ServerContext context) {
+    private void initStates() {
         PassiveState catchUpState = new PassiveState(this, context);
 
         ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("RaftTimerPool"));
@@ -115,8 +123,9 @@ public class RaftServerImpl extends AbstractService implements RaftServer, RaftL
 
         ElectTimeoutTimer electTimeoutTimer = new ElectTimeoutTimer(executor, raftConfig.getMaxElectTimeout(), raftConfig.getMinElectTimeout());
         CandidateState candidateState = new CandidateState(this, context, electTimeoutTimer);
+
         int maxAppendSize = raftConfig.getMaxAppendSize();
-        LeaderState leaderState = new LeaderState(this, context, maxAppendSize);
+        LeaderState leaderState = new LeaderState(this, context, maxAppendSize, replicator);
 
         serverStates.put(PASSIVE, catchUpState);
         serverStates.put(FOLLOWER, followerState);
@@ -147,7 +156,7 @@ public class RaftServerImpl extends AbstractService implements RaftServer, RaftL
 
         Set<RaftMember> raftMembers = members.stream()
             .filter(m -> !m.equals(self.getAddress()))
-            .map(m -> new RaftMember(client, m.ipPort(), m))
+            .map(m -> new RaftMember(client, m.ipPort(), m, replicator))
             .collect(Collectors.toSet());
 
         raftMembers.forEach(cluster::add);
@@ -176,7 +185,7 @@ public class RaftServerImpl extends AbstractService implements RaftServer, RaftL
             member = members.get(index);
         }
 
-        Connection connection = member.getContext().getConnection();
+        Connection connection = member.getState().getConnection();
         if (connection != null) {
             return doJoin(connection);
         }
@@ -201,7 +210,7 @@ public class RaftServerImpl extends AbstractService implements RaftServer, RaftL
             if (response.needRedirect()) {
                 long masterId = response.getMaster().getId();
                 RaftMember master = cluster.member(masterId);
-                connection = master.getContext().getConnection();
+                connection = master.getState().getConnection();
                 if (connection != null) {
                     return doJoin(connection);
                 }
