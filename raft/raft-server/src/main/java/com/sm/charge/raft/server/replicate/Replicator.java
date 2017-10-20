@@ -44,12 +44,13 @@ public class Replicator extends LogSupport {
         long nextLogIndex = member.getNextLogIndex();
 
         RaftMemberState state = member.getState();
-        if (state.getNextSnapshotIndex() > 0) {
+        if (state.getInstallContext() != null) {
             return sendSnapshot(member);
         }
 
         if (snapshot != null && nextLogIndex < snapshot.index()) {
-            state.setNextSnapshotIndex(snapshot.index());
+            InstallContext installContext = new InstallContext(snapshot);
+            state.setInstallContext(installContext);
             return sendSnapshot(member);
         }
 
@@ -109,9 +110,8 @@ public class Replicator extends LogSupport {
 
     private CompletableFuture<Void> sendSnapshot(RaftMember member) {
         RaftMemberState state = member.getState();
-        long index = state.getNextSnapshotIndex();
-        Snapshot snapshot = context.getSnapshotManager().snapshot(index);
-        InstallSnapshotRequest request = buildSnapshotRequest(snapshot, state.getNextSnapshotOffset(), member);
+        InstallContext installContext = state.getInstallContext();
+        InstallSnapshotRequest request = buildSnapshotRequest(installContext, member);
 
         CompletableFuture<Void> future = new CompletableFuture<>();
         Connection connection = state.getConnection();
@@ -142,12 +142,15 @@ public class Replicator extends LogSupport {
     }
 
 
-    private InstallSnapshotRequest buildSnapshotRequest(Snapshot snapshot, long offset, RaftMember member) {
+    private InstallSnapshotRequest buildSnapshotRequest(InstallContext installContext, RaftMember member) {
+        Snapshot snapshot = installContext.getSnapshot();
+        long offset = installContext.getOffset();
         SnapshotReader reader = snapshot.reader();
         reader.skip(offset);
 
         byte[] data = new byte[Math.min(MAX_BATCH_SIZE, (int) reader.remaining())];
         reader.read(data);
+        installContext.setSize(data.length);
 
         InstallSnapshotRequest request = new InstallSnapshotRequest();
 
@@ -157,6 +160,7 @@ public class Replicator extends LogSupport {
         request.setOffset(offset);
         request.setData(data);
         request.setComplete(!reader.hasRemaining());
+        installContext.setComplete(!reader.hasRemaining());
 
         return request;
     }

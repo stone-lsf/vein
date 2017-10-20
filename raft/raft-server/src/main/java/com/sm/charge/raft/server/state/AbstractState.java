@@ -277,7 +277,8 @@ public abstract class AbstractState extends LogSupport implements ServerState {
 
     @Override
     public void handle(InstallSnapshotResponse response) {
-
+        long requestTerm = response.getTerm();
+        updateTerm(requestTerm);
     }
 
 

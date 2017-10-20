@@ -124,8 +124,7 @@ public class RaftServerImpl extends AbstractService implements RaftServer, RaftL
         ElectTimeoutTimer electTimeoutTimer = new ElectTimeoutTimer(executor, raftConfig.getMaxElectTimeout(), raftConfig.getMinElectTimeout());
         CandidateState candidateState = new CandidateState(this, context, electTimeoutTimer);
 
-        int maxAppendSize = raftConfig.getMaxAppendSize();
-        LeaderState leaderState = new LeaderState(this, context, maxAppendSize, replicator);
+        LeaderState leaderState = new LeaderState(this, context, replicator);
 
         serverStates.put(PASSIVE, catchUpState);
         serverStates.put(FOLLOWER, followerState);

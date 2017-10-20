@@ -22,7 +22,7 @@ public class PassiveState extends AbstractState {
     private final SnapshotManager snapshotManager;
 
     public PassiveState(RaftListener raftListener, ServerContext context) {
-        super(raftListener, context, eventExecutor);
+        super(raftListener, context);
         this.snapshotManager = context.getSnapshotManager();
     }
 
