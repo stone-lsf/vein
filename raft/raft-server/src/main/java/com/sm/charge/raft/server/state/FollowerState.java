@@ -16,7 +16,7 @@ public class FollowerState extends AbstractState {
     private final HeartbeatTimeoutTimer timer;
 
     public FollowerState(RaftListener raftListener, ServerContext context, HeartbeatTimeoutTimer timer) {
-        super(raftListener, context, eventExecutor);
+        super(raftListener, context);
         this.timer = timer;
     }
 

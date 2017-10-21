@@ -10,6 +10,8 @@ import com.sm.charge.raft.server.ServerContext;
 import com.sm.charge.raft.server.membership.InstallSnapshotResponse;
 import com.sm.charge.raft.server.membership.JoinRequest;
 import com.sm.charge.raft.server.membership.JoinResponse;
+import com.sm.charge.raft.server.membership.LeaveRequest;
+import com.sm.charge.raft.server.membership.LeaveResponse;
 import com.sm.charge.raft.server.replicate.AppendRequest;
 import com.sm.charge.raft.server.replicate.AppendResponse;
 import com.sm.charge.raft.server.replicate.InstallContext;
@@ -176,6 +178,41 @@ public class LeaderState extends AbstractState {
         });
         self.getState().addCommitFuture(index, commitFuture);
         return future;
+    }
+
+
+    @Override
+    public LeaveResponse handle(LeaveRequest request, RequestContext requestContext) {
+        LeaveResponse response = new LeaveResponse();
+        fill(response, request.getSource());
+        if (self.getState().getConfiguring() > 0) {
+            response.setStatus(RECONFIGURING);
+            return response;
+        }
+
+        RaftCluster cluster = context.getCluster();
+        List<RaftMember> members = cluster.members();
+        RaftMember member = cluster.member(request.getSource());
+        if (member == null) {
+            response.setStatus(SUCCESS);
+            return response;
+        }
+
+        members.remove(member);
+        configure(members).whenComplete((index, error) -> {
+            try {
+                if (error != null) {
+                    response.setStatus(LeaveResponse.INTERNAL_ERROR);
+                    requestContext.sendResponse(response);
+                } else {
+                    response.setStatus(LeaveResponse.SUCCESS);
+                    requestContext.sendResponse(response);
+                }
+            } catch (Exception e) {
+                logger.error("send join response:{} failure", response, e);
+            }
+        });
+        return null;
     }
 
     @Override

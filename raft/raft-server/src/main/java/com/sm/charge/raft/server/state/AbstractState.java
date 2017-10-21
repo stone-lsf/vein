@@ -25,6 +25,7 @@ import java.util.List;
 
 import static com.sm.charge.raft.server.membership.JoinResponse.NO_LEADER;
 import static com.sm.charge.raft.server.membership.JoinResponse.REDIRECT;
+import static com.sm.charge.raft.server.membership.LeaveResponse.LOWER_TERM;
 
 /**
  * @author shifeng.luo
@@ -144,7 +145,7 @@ public abstract class AbstractState extends LogSupport implements ServerState {
 
         context.getLog().truncate(0);
         logger.info("delete all logs,because receive prev log 0 from master[{}]", request.getSource());
-        return appendEntries(request);
+        return appendInitial(request);
     }
 
     /**
@@ -181,7 +182,7 @@ public abstract class AbstractState extends LogSupport implements ServerState {
 
         context.getLog().truncate(prevLogIndex);
         logger.info("delete logs from index greater than {},because receive prev log from master[{}]", prevLogIndex, source);
-        return appendEntries(request);
+        return appendInitial(request);
     }
 
     /**
@@ -190,14 +191,14 @@ public abstract class AbstractState extends LogSupport implements ServerState {
      * @param request append request
      * @return AppendResponse
      */
-    protected AppendResponse appendEntries(AppendRequest request) {
+    protected AppendResponse appendInitial(AppendRequest request) {
         long source = request.getSource();
         List<LogEntry> entries = request.getEntries();
         Log log = context.getLog();
-        long lastIndex = log.lastIndex();
+        long lastIndex = 0;
         if (CollectionUtils.isNotEmpty(entries)) {
             for (LogEntry entry : entries) {
-                long skipSize = entry.getIndex() - log.lastIndex() - 1;
+                long skipSize = entry.getIndex() - lastIndex - 1;
                 log.skip(skipSize);
                 log.append(entry);
                 lastIndex = entry.getIndex();
@@ -251,12 +252,30 @@ public abstract class AbstractState extends LogSupport implements ServerState {
 
     @Override
     public void handle(JoinResponse response) {
-
+        long responseTerm = response.getTerm();
+        updateTerm(responseTerm);
     }
 
     @Override
-    public LeaveResponse handle(LeaveRequest request) {
-        return null;
+    public LeaveResponse handle(LeaveRequest request, RequestContext requestContext) {
+        long requestTerm = request.getTerm();
+        LeaveResponse response = new LeaveResponse();
+        fill(response, request.getSource());
+
+        if (updateTerm(requestTerm)) {
+            response.setStatus(LOWER_TERM);
+            return response;
+        }
+
+        RaftMember master = context.getCluster().master();
+        if (master == null) {
+            response.setStatus(NO_LEADER);
+            return response;
+        }
+
+        response.setStatus(REDIRECT);
+        response.setMaster(master);
+        return response;
     }
 
     @Override
