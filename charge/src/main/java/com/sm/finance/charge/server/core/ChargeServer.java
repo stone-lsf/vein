@@ -23,7 +23,7 @@ public class ChargeServer implements InitializingBean {
 
     @Override
     public void afterPropertiesSet() throws Exception {
-        DiscoveryConfig discoveryConfig = new DiscoveryConfig();
+        DiscoveryConfig discoveryConfig = new DiscoveryConfig(configure);
         discoveryService = new DefaultDiscoveryService(discoveryConfig);
 
         RaftConfig raftConfig = new RaftConfig();

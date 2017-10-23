@@ -23,6 +23,16 @@ public class Configure {
         this.properties = properties;
     }
 
+    public byte getByte(String key) {
+        String value = check(key);
+        return Byte.parseByte(value);
+    }
+
+    public byte getByte(String key, byte defaultValue) {
+        String value = properties.getProperty(key);
+        return StringUtils.isBlank(value) ? defaultValue : Byte.parseByte(value);
+    }
+
     public int getInt(String key) {
         String value = check(key);
         return ExpressionUtil.getInt(value);

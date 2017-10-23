@@ -58,10 +58,10 @@ public class DefaultDiscoveryService extends AbstractService implements Discover
 
     public DefaultDiscoveryService(DiscoveryConfig config) {
         this.config = config;
-        Address address = AddressUtil.getLocalAddress(config.getPort());
+        Address address = AddressUtil.getLocalAddress(config.getBindPort());
 
         DiscoveryNodeState nodeState = new DiscoveryNodeState(config.getNodeId(), 0, DiscoveryNode.Status.ALIVE, new Date());
-        localNode = new DiscoveryNode(config.getNodeId(), address, nodeState, DiscoveryNode.Type.valueOf(config.getType()));
+        localNode = new DiscoveryNode(config.getNodeId(), address, nodeState, DiscoveryNode.Type.valueOf(config.getNodeType()));
 
         Transport transport = TransportFactory.create(config.getTransportType());
         TransportClient transportClient = transport.client();
@@ -103,7 +103,7 @@ public class DefaultDiscoveryService extends AbstractService implements Discover
 
     @Override
     protected void doStart() throws Exception {
-        int port = config.getPort();
+        int port = config.getBindPort();
         TransportServer transportServer;
         try {
             transportServer = localNode.getTransportServer();
