@@ -1,6 +1,6 @@
 package com.sm.finance.charge.serializer.api;
 
-import com.sm.finance.charge.common.ServiceLoader;
+import com.sm.finance.charge.common.base.ServiceLoader;
 
 /**
  * @author shifeng.luo

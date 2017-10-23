@@ -16,7 +16,7 @@ import com.sm.charge.raft.server.replicate.AppendRequest;
 import com.sm.charge.raft.server.replicate.AppendResponse;
 import com.sm.charge.raft.server.storage.Log;
 import com.sm.charge.raft.server.storage.LogEntry;
-import com.sm.finance.charge.common.LogSupport;
+import com.sm.finance.charge.common.base.LoggerSupport;
 import com.sm.finance.charge.transport.api.support.RequestContext;
 
 import org.apache.commons.collections.CollectionUtils;
@@ -31,7 +31,7 @@ import static com.sm.charge.raft.server.membership.LeaveResponse.LOWER_TERM;
  * @author shifeng.luo
  * @version created on 2017/10/13 下午4:25
  */
-public abstract class AbstractState extends LogSupport implements ServerState {
+public abstract class AbstractState extends LoggerSupport implements ServerState {
 
     protected final RaftMember self;
     protected final RaftListener raftListener;

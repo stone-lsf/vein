@@ -1,7 +1,7 @@
 package com.sm.finance.charge.cluster.discovery;
 
-import com.sm.finance.charge.common.Closable;
-import com.sm.finance.charge.common.Startable;
+import com.sm.finance.charge.common.base.Closable;
+import com.sm.finance.charge.common.base.Startable;
 
 /**
  * @author shifeng.luo

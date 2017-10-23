@@ -3,7 +3,7 @@ package com.sm.finance.charge.transport.api.support;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
-import com.sm.finance.charge.common.CloseListener;
+import com.sm.finance.charge.common.base.CloseListener;
 import com.sm.finance.charge.transport.api.Connection;
 import com.sm.finance.charge.transport.api.ConnectionManager;
 import com.sm.finance.charge.transport.api.handler.RequestHandler;

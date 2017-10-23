@@ -2,8 +2,8 @@ package com.sm.finance.charge.cluster.replicate;
 
 import com.sm.finance.charge.cluster.ClusterMember;
 import com.sm.finance.charge.cluster.storage.Entry;
-import com.sm.finance.charge.common.Closable;
-import com.sm.finance.charge.common.Startable;
+import com.sm.finance.charge.common.base.Closable;
+import com.sm.finance.charge.common.base.Startable;
 
 import java.util.concurrent.CompletableFuture;
 

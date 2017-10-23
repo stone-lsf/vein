@@ -1,4 +1,4 @@
-package com.sm.finance.charge.common;
+package com.sm.finance.charge.common.base;
 
 import com.google.common.base.Preconditions;
 
@@ -46,8 +46,8 @@ public class ServiceLoader {
     @SuppressWarnings("unchecked")
     private static Map<String, Object> loadService(Class service) {
         String fullName = PREFIX + service.getName();
-        Properties properties = ConfigureLoader.loader(fullName);
-        Map<String, String> allServiceImpl = getAllImpl(properties);
+        Configure configure = ConfigureLoader.loader(fullName);
+        Map<String, String> allServiceImpl = getAllImpl(configure.getProperties());
 
         Map<String, Object> map = new HashMap<>();
         try {

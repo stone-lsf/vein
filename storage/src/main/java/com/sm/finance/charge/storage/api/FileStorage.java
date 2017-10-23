@@ -1,6 +1,6 @@
 package com.sm.finance.charge.storage.api;
 
-import com.sm.finance.charge.common.Startable;
+import com.sm.finance.charge.common.base.Startable;
 
 import java.io.File;
 

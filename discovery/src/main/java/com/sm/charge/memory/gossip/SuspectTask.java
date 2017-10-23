@@ -4,7 +4,7 @@ import com.sm.charge.memory.DiscoveryNode;
 import com.sm.charge.memory.DiscoveryNodeState;
 import com.sm.charge.memory.DiscoveryNodes;
 import com.sm.charge.memory.gossip.messages.DeadMessage;
-import com.sm.finance.charge.common.LogSupport;
+import com.sm.finance.charge.common.base.LoggerSupport;
 
 import java.util.Date;
 import java.util.concurrent.ScheduledFuture;
@@ -13,7 +13,7 @@ import java.util.concurrent.ScheduledFuture;
  * @author shifeng.luo
  * @version created on 2017/9/19 下午1:22
  */
-public class SuspectTask extends LogSupport implements Runnable {
+public class SuspectTask extends LoggerSupport implements Runnable {
 
     /**
      * 被猜疑的节点

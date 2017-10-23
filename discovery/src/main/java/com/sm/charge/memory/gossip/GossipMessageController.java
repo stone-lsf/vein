@@ -9,7 +9,7 @@ import com.sm.charge.memory.gossip.messages.DeadMessage;
 import com.sm.charge.memory.gossip.messages.GossipMessage;
 import com.sm.charge.memory.gossip.messages.SuspectMessage;
 import com.sm.finance.charge.common.Address;
-import com.sm.finance.charge.common.LogSupport;
+import com.sm.finance.charge.common.base.LoggerSupport;
 import com.sm.finance.charge.transport.api.Connection;
 import com.sm.finance.charge.transport.api.TransportClient;
 
@@ -32,7 +32,7 @@ import static com.sm.charge.memory.gossip.messages.GossipMessage.USER;
  * @author shifeng.luo
  * @version created on 2017/9/11 下午11:23
  */
-public class GossipMessageController extends LogSupport implements GossipMessageService {
+public class GossipMessageController extends LoggerSupport implements GossipMessageService {
     private final CopyOnWriteArrayList<DiscoveryNodeListener> listeners = new CopyOnWriteArrayList<>();
     private final ConcurrentMap<String, SuspectTask> suspectTaskMap = new ConcurrentHashMap<>();
 

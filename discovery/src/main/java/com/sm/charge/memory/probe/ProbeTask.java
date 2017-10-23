@@ -5,13 +5,13 @@ import com.sm.charge.memory.DiscoveryNode;
 import com.sm.charge.memory.DiscoveryNodes;
 import com.sm.charge.memory.gossip.GossipMessageService;
 import com.sm.charge.memory.gossip.messages.SuspectMessage;
-import com.sm.finance.charge.common.LogSupport;
+import com.sm.finance.charge.common.base.LoggerSupport;
 
 /**
  * @author shifeng.luo
  * @version created on 2017/9/12 上午12:10
  */
-public class ProbeTask extends LogSupport implements Runnable {
+public class ProbeTask extends LoggerSupport implements Runnable {
     private final DiscoveryNodes nodes;
     private final ProbeService probeService;
     private volatile int probeIndex = 0;

@@ -1,7 +1,7 @@
 package com.sm.finance.charge.storage.sequential.segment;
 
 import com.sm.finance.charge.common.utils.IoUtil;
-import com.sm.finance.charge.common.LogSupport;
+import com.sm.finance.charge.common.base.LoggerSupport;
 import com.sm.finance.charge.storage.api.exceptions.ClosedException;
 import com.sm.finance.charge.storage.api.segment.Entry;
 import com.sm.finance.charge.storage.api.segment.EntryListener;
@@ -19,7 +19,7 @@ import java.util.concurrent.CompletableFuture;
  * @author shifeng.luo
  * @version created on 2017/9/25 下午11:54
  */
-public class SequentialSegmentAppender extends LogSupport implements SegmentAppender {
+public class SequentialSegmentAppender extends LoggerSupport implements SegmentAppender {
 
     private final Segment segment;
     private final FileChannel fileChannel;

@@ -1,4 +1,4 @@
-package com.sm.finance.charge.common;
+package com.sm.finance.charge.common.base;
 
 /**
  * @author shifeng.luo

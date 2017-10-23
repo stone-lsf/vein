@@ -3,7 +3,7 @@ package com.sm.charge.memory.probe;
 import com.sm.charge.memory.DiscoveryNode;
 import com.sm.charge.memory.DiscoveryNodes;
 import com.sm.charge.memory.NodeFilter;
-import com.sm.finance.charge.common.LogSupport;
+import com.sm.finance.charge.common.base.LoggerSupport;
 import com.sm.finance.charge.common.Merger;
 import com.sm.finance.charge.transport.api.Connection;
 import com.sm.finance.charge.transport.api.exceptions.RemoteException;
@@ -18,7 +18,7 @@ import java.util.concurrent.CompletableFuture;
  * @author shifeng.luo
  * @version created on 2017/9/18 下午2:50
  */
-public class ProbeController extends LogSupport implements ProbeService {
+public class ProbeController extends LoggerSupport implements ProbeService {
     private final DiscoveryNodes nodes;
     private final int indirectNodeNum;
 

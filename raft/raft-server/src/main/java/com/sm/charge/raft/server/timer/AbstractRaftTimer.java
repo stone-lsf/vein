@@ -1,6 +1,6 @@
 package com.sm.charge.raft.server.timer;
 
-import com.sm.finance.charge.common.LogSupport;
+import com.sm.finance.charge.common.base.LoggerSupport;
 
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -11,7 +11,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @author shifeng.luo
  * @version created on 2017/10/14 下午4:08
  */
-public abstract class AbstractRaftTimer extends LogSupport implements RaftTimer {
+public abstract class AbstractRaftTimer extends LoggerSupport implements RaftTimer {
 
 
     private final ScheduledExecutorService executor;

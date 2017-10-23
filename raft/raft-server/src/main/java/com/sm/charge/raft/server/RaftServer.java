@@ -5,8 +5,8 @@ import com.sm.charge.raft.server.membership.JoinRequest;
 import com.sm.charge.raft.server.membership.JoinResponse;
 import com.sm.charge.raft.server.membership.LeaveRequest;
 import com.sm.charge.raft.server.membership.LeaveResponse;
-import com.sm.finance.charge.common.Closable;
-import com.sm.finance.charge.common.Startable;
+import com.sm.finance.charge.common.base.Closable;
+import com.sm.finance.charge.common.base.Startable;
 
 import java.util.concurrent.CompletableFuture;
 

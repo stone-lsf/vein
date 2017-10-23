@@ -1,6 +1,6 @@
 package com.sm.finance.charge.transport.api.handler;
 
-import com.sm.finance.charge.common.LogSupport;
+import com.sm.finance.charge.common.base.LoggerSupport;
 import com.sm.finance.charge.common.NamedThreadFactory;
 import com.sm.finance.charge.transport.api.Connection;
 import com.sm.finance.charge.transport.api.Response;
@@ -18,7 +18,7 @@ import static com.sm.finance.charge.common.SystemConstants.PROCESSORS;
  * @author shifeng.luo
  * @version created on 2017/9/11 下午5:54
  */
-public class TimeoutResponseHandler<T> extends LogSupport implements ResponseHandler<T> {
+public class TimeoutResponseHandler<T> extends LoggerSupport implements ResponseHandler<T> {
 
     private static final ScheduledExecutorService SCHEDULED_EXECUTOR;
     private final ResponseHandler<T> handler;

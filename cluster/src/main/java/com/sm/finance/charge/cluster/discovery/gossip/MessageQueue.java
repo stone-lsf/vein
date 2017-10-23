@@ -3,7 +3,7 @@ package com.sm.finance.charge.cluster.discovery.gossip;
 import com.google.common.collect.Lists;
 
 import com.sm.finance.charge.cluster.discovery.gossip.messages.GossipMessage;
-import com.sm.finance.charge.common.LogSupport;
+import com.sm.finance.charge.common.base.LoggerSupport;
 
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
@@ -13,7 +13,7 @@ import java.util.concurrent.LinkedBlockingQueue;
  * @author shifeng.luo
  * @version created on 2017/9/19 下午1:02
  */
-public class MessageQueue extends LogSupport {
+public class MessageQueue extends LoggerSupport {
 
     private BlockingQueue<GossipMessage> messages;
 

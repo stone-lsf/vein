@@ -1,6 +1,6 @@
 package com.sm.finance.charge.storage.sequential.segment;
 
-import com.sm.finance.charge.common.LogSupport;
+import com.sm.finance.charge.common.base.LoggerSupport;
 import com.sm.finance.charge.storage.api.exceptions.BadDataException;
 import com.sm.finance.charge.storage.api.segment.Entry;
 import com.sm.finance.charge.storage.api.segment.Segment;
@@ -16,7 +16,7 @@ import java.nio.channels.FileChannel;
  * @author shifeng.luo
  * @version created on 2017/9/25 下午11:54
  */
-public class SequentialSegmentReader extends LogSupport implements SegmentReader {
+public class SequentialSegmentReader extends LoggerSupport implements SegmentReader {
     private final Segment segment;
     private final FileChannel fileChannel;
     private final ReadBuffer buffer;

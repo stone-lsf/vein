@@ -5,7 +5,7 @@ import com.sm.charge.raft.server.replicate.InstallContext;
 import com.sm.charge.raft.server.replicate.ReplicateTask;
 import com.sm.charge.raft.server.replicate.Replicator;
 import com.sm.finance.charge.common.Address;
-import com.sm.finance.charge.common.LogSupport;
+import com.sm.finance.charge.common.base.LoggerSupport;
 import com.sm.finance.charge.transport.api.Connection;
 import com.sm.finance.charge.transport.api.TransportClient;
 
@@ -18,7 +18,7 @@ import java.util.concurrent.Future;
  * @author shifeng.luo
  * @version created on 2017/9/22 上午10:50
  */
-public class RaftMemberState extends LogSupport {
+public class RaftMemberState extends LoggerSupport {
     private final TransportClient client;
 
     private final RaftMember member;

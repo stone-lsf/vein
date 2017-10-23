@@ -6,7 +6,7 @@ import com.sm.charge.raft.server.storage.Snapshot;
 import com.sm.charge.raft.server.storage.SnapshotManager;
 import com.sm.charge.raft.server.storage.SnapshotReader;
 import com.sm.charge.raft.server.storage.SnapshotWriter;
-import com.sm.finance.charge.common.LogSupport;
+import com.sm.finance.charge.common.base.LoggerSupport;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -15,7 +15,7 @@ import java.util.concurrent.ExecutorService;
  * @author shifeng.luo
  * @version created on 2017/9/23 下午10:46
  */
-public class ServerStateMachine extends LogSupport {
+public class ServerStateMachine extends LoggerSupport {
 
     private final Log log;
     private final RaftMember self;

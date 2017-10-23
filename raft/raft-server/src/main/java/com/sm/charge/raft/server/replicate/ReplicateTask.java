@@ -1,7 +1,7 @@
 package com.sm.charge.raft.server.replicate;
 
 import com.sm.charge.raft.server.RaftMember;
-import com.sm.finance.charge.common.LogSupport;
+import com.sm.finance.charge.common.base.LoggerSupport;
 import com.sm.finance.charge.common.NamedThreadFactory;
 import com.sm.finance.charge.common.SystemConstants;
 
@@ -12,7 +12,7 @@ import java.util.concurrent.Executors;
  * @author shifeng.luo
  * @version created on 2017/10/18 下午2:01
  */
-public class ReplicateTask extends LogSupport {
+public class ReplicateTask extends LoggerSupport {
     private static final ExecutorService EXECUTOR = Executors.newFixedThreadPool(SystemConstants.PROCESSORS, new NamedThreadFactory("AppendPoll"));
     private volatile boolean started = false;
     private final RaftMember target;

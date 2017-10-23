@@ -9,7 +9,7 @@ import com.sm.charge.raft.server.storage.Log;
 import com.sm.charge.raft.server.storage.LogEntry;
 import com.sm.charge.raft.server.storage.Snapshot;
 import com.sm.charge.raft.server.storage.SnapshotReader;
-import com.sm.finance.charge.common.LogSupport;
+import com.sm.finance.charge.common.base.LoggerSupport;
 import com.sm.finance.charge.transport.api.Connection;
 import com.sm.finance.charge.transport.api.handler.AbstractResponseHandler;
 import com.sm.finance.charge.transport.api.support.ResponseContext;
@@ -21,7 +21,7 @@ import java.util.concurrent.CompletableFuture;
  * @author shifeng.luo
  * @version created on 2017/10/19 下午1:21
  */
-public class Replicator extends LogSupport {
+public class Replicator extends LoggerSupport {
     private static final int MAX_BATCH_SIZE = 1024 * 32;
 
     private final ServerContext context;

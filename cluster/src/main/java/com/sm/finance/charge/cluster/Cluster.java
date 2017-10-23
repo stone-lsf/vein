@@ -1,8 +1,8 @@
 package com.sm.finance.charge.cluster;
 
 import com.sm.finance.charge.cluster.elect.MasterListener;
-import com.sm.finance.charge.common.Closable;
-import com.sm.finance.charge.common.Startable;
+import com.sm.finance.charge.common.base.Closable;
+import com.sm.finance.charge.common.base.Startable;
 
 import java.util.List;
 

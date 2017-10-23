@@ -5,7 +5,7 @@ import com.sm.charge.memory.DiscoveryNode;
 import com.sm.charge.memory.DiscoveryNodes;
 import com.sm.charge.memory.NodeFilter;
 import com.sm.charge.memory.gossip.messages.GossipMessage;
-import com.sm.finance.charge.common.LogSupport;
+import com.sm.finance.charge.common.base.LoggerSupport;
 import com.sm.finance.charge.transport.api.Connection;
 
 import org.apache.commons.collections.CollectionUtils;
@@ -16,7 +16,7 @@ import java.util.List;
  * @author shifeng.luo
  * @version created on 2017/9/12 上午12:10
  */
-public class GossipTask extends LogSupport implements Runnable {
+public class GossipTask extends LoggerSupport implements Runnable {
 
     private final DiscoveryNodes nodes;
     private final MessageQueue messageQueue;

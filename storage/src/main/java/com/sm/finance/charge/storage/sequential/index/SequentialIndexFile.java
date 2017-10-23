@@ -2,7 +2,7 @@ package com.sm.finance.charge.storage.sequential.index;
 
 import com.sm.finance.charge.common.utils.FileUtil;
 import com.sm.finance.charge.common.utils.IoUtil;
-import com.sm.finance.charge.common.LogSupport;
+import com.sm.finance.charge.common.base.LoggerSupport;
 import com.sm.finance.charge.storage.api.exceptions.ClosedException;
 import com.sm.finance.charge.storage.api.index.IndexFile;
 import com.sm.finance.charge.storage.api.index.OffsetIndex;
@@ -18,7 +18,7 @@ import java.nio.channels.FileChannel;
  * @author shifeng.luo
  * @version created on 2017/9/25 下午10:54
  */
-public class SequentialIndexFile extends LogSupport implements IndexFile {
+public class SequentialIndexFile extends LoggerSupport implements IndexFile {
     private final File file;
     private final long baseSequence;
     private final int indexInterval;

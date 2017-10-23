@@ -1,12 +1,14 @@
 package com.sm.finance.charge.common;
 
+import com.sm.finance.charge.common.base.LoggerSupport;
+
 import java.util.concurrent.CompletableFuture;
 
 /**
  * @author shifeng.luo
  * @version created on 2017/9/18 下午5:11
  */
-public class Merger extends LogSupport {
+public class Merger extends LoggerSupport {
 
     private final int capacity;
 

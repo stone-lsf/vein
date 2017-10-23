@@ -2,7 +2,7 @@ package com.sm.finance.charge.transport.api;
 
 import com.sm.finance.charge.common.AbstractService;
 import com.sm.finance.charge.common.Address;
-import com.sm.finance.charge.common.CloseListener;
+import com.sm.finance.charge.common.base.CloseListener;
 import com.sm.finance.charge.common.IntegerIdGenerator;
 import com.sm.finance.charge.common.utils.ReflectUtil;
 import com.sm.finance.charge.transport.api.exceptions.RemoteException;

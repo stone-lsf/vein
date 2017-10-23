@@ -1,5 +1,7 @@
 package com.sm.finance.charge.common;
 
+import com.sm.finance.charge.common.base.LoggerSupport;
+import com.sm.finance.charge.common.base.Startable;
 import com.sm.finance.charge.common.exceptions.NotStartedException;
 
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -8,7 +10,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @author shifeng.luo
  * @version created on 2017/9/11 下午3:45
  */
-public abstract class AbstractService extends LogSupport implements Startable, AutoCloseable {
+public abstract class AbstractService extends LoggerSupport implements Startable, AutoCloseable {
 
     protected AtomicBoolean started = new AtomicBoolean(false);
     protected AtomicBoolean closed = new AtomicBoolean(false);

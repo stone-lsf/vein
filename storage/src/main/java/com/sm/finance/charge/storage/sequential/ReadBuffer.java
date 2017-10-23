@@ -1,6 +1,6 @@
 package com.sm.finance.charge.storage.sequential;
 
-import com.sm.finance.charge.common.LogSupport;
+import com.sm.finance.charge.common.base.LoggerSupport;
 import com.sm.finance.charge.common.NamedThreadFactory;
 import com.sm.finance.charge.storage.api.exceptions.BadDataException;
 import com.sm.finance.charge.storage.api.segment.ReadWritable;
@@ -16,7 +16,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @author shifeng.luo
  * @version created on 2017/9/29 下午5:20
  */
-public class ReadBuffer extends LogSupport {
+public class ReadBuffer extends LoggerSupport {
     private final ExecutorService executorService = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("AppendPool"));
 
     private volatile ByteBufferWrapper implicit = new ByteBufferWrapper();

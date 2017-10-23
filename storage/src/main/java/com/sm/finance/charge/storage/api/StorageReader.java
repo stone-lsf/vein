@@ -1,9 +1,8 @@
 package com.sm.finance.charge.storage.api;
 
-import com.sm.finance.charge.common.Closable;
-import com.sm.finance.charge.common.Startable;
+import com.sm.finance.charge.common.base.Closable;
+import com.sm.finance.charge.common.base.Startable;
 import com.sm.finance.charge.storage.api.exceptions.BadDataException;
-import com.sm.finance.charge.storage.api.index.OffsetIndex;
 
 import java.io.IOException;
 import java.util.List;
