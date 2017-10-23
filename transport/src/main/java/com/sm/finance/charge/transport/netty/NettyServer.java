@@ -1,6 +1,8 @@
 package com.sm.finance.charge.transport.netty;
 
 import com.sm.finance.charge.common.AbstractService;
+import com.sm.finance.charge.common.Address;
+import com.sm.finance.charge.common.utils.AddressUtil;
 import com.sm.finance.charge.serializer.protostuff.ProtoStuffSerializer;
 import com.sm.finance.charge.transport.api.ConnectionListener;
 import com.sm.finance.charge.transport.api.ConnectionManager;
@@ -27,6 +29,7 @@ public class NettyServer extends AbstractService implements TransportServer {
     private final EventLoopGroup workerGroup;
     private final int defaultTimeout;
     private final ConnectionManager connectionManager = new DefaultConnectionManager();
+    private Address bindAddress;
 
     public NettyServer(EventLoopGroup workerGroup, int defaultTimeout) {
         this.defaultTimeout = defaultTimeout;
@@ -53,11 +56,17 @@ public class NettyServer extends AbstractService implements TransportServer {
                 }
             });
         try {
-            bootstrap.bind(port).sync();
+            this.bindAddress = AddressUtil.getLocalAddress(port);
+            bootstrap.bind(bindAddress.getIp(), bindAddress.getPort()).sync();
             logger.info("bind port:[{}] success!", port);
         } catch (InterruptedException e) {
             throw new BindException("bind port " + port + " failed", e);
         }
+    }
+
+    @Override
+    public Address getBindAddress() {
+        return bindAddress;
     }
 
     @Override

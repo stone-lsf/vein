@@ -17,7 +17,7 @@ import com.sm.charge.memory.pushpull.PushPullService;
 import com.sm.charge.memory.pushpull.PushPullTask;
 import com.sm.finance.charge.common.AbstractService;
 import com.sm.finance.charge.common.Address;
-import com.sm.finance.charge.common.AddressUtil;
+import com.sm.finance.charge.common.utils.AddressUtil;
 import com.sm.finance.charge.common.NamedThreadFactory;
 import com.sm.finance.charge.transport.api.ConnectionManager;
 import com.sm.finance.charge.transport.api.Transport;

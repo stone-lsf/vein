@@ -27,11 +27,4 @@ public interface TransportClient extends EndPoint {
      */
     CompletableFuture<Connection> connect(Address address, int retryTimes);
 
-
-    /**
-     * 获取本地地址
-     *
-     * @return 本地地址
-     */
-    Address getLocalAddress();
 }

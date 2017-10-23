@@ -125,11 +125,6 @@ public class NettyClient extends AbstractService implements TransportClient {
         return closed.get();
     }
 
-    @Override
-    public Address getLocalAddress() {
-        return null;
-    }
-
     private class ClientConnectionListener implements ConnectionListener {
 
         @Override

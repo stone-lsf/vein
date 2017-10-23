@@ -1,6 +1,6 @@
 package com.sm.finance.charge.storage.sequential.segment;
 
-import com.sm.finance.charge.common.IoUtil;
+import com.sm.finance.charge.common.utils.IoUtil;
 import com.sm.finance.charge.common.LogSupport;
 import com.sm.finance.charge.storage.api.exceptions.ClosedException;
 import com.sm.finance.charge.storage.api.segment.Entry;

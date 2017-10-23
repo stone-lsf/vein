@@ -1,7 +1,9 @@
-package com.sm.finance.charge.common;
+package com.sm.finance.charge.common.utils;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
+
+import com.sm.finance.charge.common.Address;
 
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;

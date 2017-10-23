@@ -1,4 +1,4 @@
-package com.sm.finance.charge.common;
+package com.sm.finance.charge.common.utils;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

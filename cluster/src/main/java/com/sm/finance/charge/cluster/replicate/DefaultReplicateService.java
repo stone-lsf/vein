@@ -11,7 +11,7 @@ import com.sm.finance.charge.cluster.storage.snapshot.SnapshotManager;
 import com.sm.finance.charge.cluster.storage.snapshot.SnapshotReader;
 import com.sm.finance.charge.cluster.storage.snapshot.SnapshotWriter;
 import com.sm.finance.charge.common.AbstractService;
-import com.sm.finance.charge.common.IoUtil;
+import com.sm.finance.charge.common.utils.IoUtil;
 import com.sm.finance.charge.common.NamedThreadFactory;
 
 import java.io.IOException;

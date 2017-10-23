@@ -6,7 +6,7 @@ import com.sm.finance.charge.cluster.storage.snapshot.Snapshot;
 import com.sm.finance.charge.cluster.storage.snapshot.SnapshotDescriptor;
 import com.sm.finance.charge.cluster.storage.snapshot.SnapshotManager;
 import com.sm.finance.charge.common.AbstractService;
-import com.sm.finance.charge.common.FileUtil;
+import com.sm.finance.charge.common.utils.FileUtil;
 
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;

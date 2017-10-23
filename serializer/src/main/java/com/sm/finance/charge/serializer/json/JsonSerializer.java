@@ -3,7 +3,7 @@ package com.sm.finance.charge.serializer.json;
 import com.google.common.collect.Maps;
 
 import com.fasterxml.jackson.databind.JavaType;
-import com.sm.finance.charge.common.JsonUtil;
+import com.sm.finance.charge.common.utils.JsonUtil;
 import com.sm.finance.charge.serializer.api.DataStructure;
 import com.sm.finance.charge.serializer.api.Serializer;
 

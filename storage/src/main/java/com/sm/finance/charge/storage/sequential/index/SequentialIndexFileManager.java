@@ -1,7 +1,7 @@
 package com.sm.finance.charge.storage.sequential.index;
 
 import com.sm.finance.charge.common.AbstractService;
-import com.sm.finance.charge.common.FileUtil;
+import com.sm.finance.charge.common.utils.FileUtil;
 import com.sm.finance.charge.storage.api.index.IndexFile;
 import com.sm.finance.charge.storage.api.index.IndexFileManager;
 

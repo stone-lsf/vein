@@ -1,6 +1,6 @@
 package com.sm.charge.raft.server.timer;
 
-import com.sm.finance.charge.common.RandomUtil;
+import com.sm.finance.charge.common.utils.RandomUtil;
 
 import java.util.concurrent.ScheduledExecutorService;
 

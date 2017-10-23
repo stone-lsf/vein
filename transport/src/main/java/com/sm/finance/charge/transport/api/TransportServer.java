@@ -1,5 +1,6 @@
 package com.sm.finance.charge.transport.api;
 
+import com.sm.finance.charge.common.Address;
 import com.sm.finance.charge.transport.api.exceptions.BindException;
 
 /**
@@ -16,4 +17,11 @@ public interface TransportServer extends EndPoint {
      * @throws BindException 当绑定端口失败时，抛出异常
      */
     void listen(int port, ConnectionListener listener) throws BindException;
+
+    /**
+     * 获取本地地址
+     *
+     * @return 本地地址
+     */
+    Address getBindAddress();
 }

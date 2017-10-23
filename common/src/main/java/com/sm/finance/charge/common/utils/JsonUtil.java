@@ -1,4 +1,4 @@
-package com.sm.finance.charge.common;
+package com.sm.finance.charge.common.utils;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.DeserializationFeature;

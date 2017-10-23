@@ -280,7 +280,8 @@ public abstract class AbstractState extends LogSupport implements ServerState {
 
     @Override
     public void handle(LeaveResponse response) {
-
+        long responseTerm = response.getTerm();
+        updateTerm(responseTerm);
     }
 
     @Override

@@ -5,7 +5,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
 import com.sm.charge.memory.pushpull.PushNodeState;
-import com.sm.finance.charge.common.RandomUtil;
+import com.sm.finance.charge.common.utils.RandomUtil;
 
 import java.util.List;
 import java.util.Map;
