@@ -39,6 +39,12 @@ public class MockConnection extends AbstractConnection {
         network.sendResponse(this, response);
     }
 
+    @Override
+    protected void doClose() throws Exception {
+        super.doClose();
+        network.removeConnection(this);
+    }
+
     void setNetwork(MockNetwork network) {
         this.network = network;
     }

@@ -148,6 +148,8 @@ public class GossipMessageServiceImpl extends LoggerSupport implements GossipMes
     @Override
     public void suspectNode(SuspectMessage message) {
         String toSuspectNode = message.getNodeId();
+        logger.info("node:{} suspect node:{}",nodes.getLocalNodeId(),toSuspectNode);
+
         DiscoveryNode node = nodes.get(toSuspectNode);
         if (node == null) {
             logger.warn("receive suspect message of node:{},but it isn't in nodes", toSuspectNode);

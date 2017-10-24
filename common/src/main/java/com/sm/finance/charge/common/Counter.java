@@ -18,7 +18,7 @@ public class Counter {
 
     public void increase() {
         int num = count.incrementAndGet();
-        listener.onIncrease(num);
+        listener.onCount(num);
     }
 
     public int getCount() {
@@ -26,9 +26,6 @@ public class Counter {
     }
 
     public interface Listener {
-        Listener empty = count -> {
-        };
-
-        void onIncrease(int count);
+        void onCount(int count);
     }
 }

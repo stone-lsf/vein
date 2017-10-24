@@ -5,6 +5,8 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
 import com.sm.charge.memory.pushpull.PushNodeState;
+import com.sm.finance.charge.common.base.LoggerSupport;
+import com.sm.finance.charge.common.utils.ListUtil;
 import com.sm.finance.charge.common.utils.RandomUtil;
 
 import java.util.List;
@@ -18,7 +20,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * @author shifeng.luo
  * @version created on 2017/9/11 下午8:57
  */
-public class DiscoveryNodes {
+public class DiscoveryNodes extends LoggerSupport {
 
     private List<String> nodeIds = Lists.newArrayList();
     private Map<String, DiscoveryNode> nodeMap = Maps.newHashMap();
@@ -61,12 +63,28 @@ public class DiscoveryNodes {
         }
     }
 
+    public List<DiscoveryNode> getAliveNodes() {
+        readLock.lock();
+        try {
+            return ListUtil.toList(aliveNodes);
+        } finally {
+            readLock.unlock();
+        }
+    }
+
+    public List<DiscoveryNode> getSuspectNodes() {
+        readLock.lock();
+        try {
+            return ListUtil.toList(suspectNodes);
+        } finally {
+            readLock.unlock();
+        }
+    }
+
     public List<DiscoveryNode> getAll() {
         readLock.lock();
         try {
-            List<DiscoveryNode> result = Lists.newArrayListWithCapacity(nodeMap.size());
-            result.addAll(nodeMap.values());
-            return result;
+            return ListUtil.toList(nodeMap);
         } finally {
             readLock.unlock();
         }
@@ -75,10 +93,8 @@ public class DiscoveryNodes {
     public void aliveNode(DiscoveryNode node) {
         writeLock.lock();
         try {
-            String nodeId = node.getNodeId();
-            aliveNodes.put(nodeId, node);
-
-            suspectNodes.remove(nodeId);
+            aliveNodes.put(node.getNodeId(), node);
+            suspectNodes.remove(node.getNodeId());
         } finally {
             writeLock.unlock();
         }
@@ -87,10 +103,8 @@ public class DiscoveryNodes {
     public void suspectNode(DiscoveryNode node) {
         writeLock.lock();
         try {
-            String nodeId = node.getNodeId();
-            suspectNodes.put(nodeId, node);
-
-            aliveNodes.remove(nodeId);
+            suspectNodes.put(node.getNodeId(), node);
+            aliveNodes.remove(node.getNodeId());
         } finally {
             writeLock.unlock();
         }
@@ -118,7 +132,7 @@ public class DiscoveryNodes {
             List<DiscoveryNode> nodes = Lists.newArrayList(nodeMap.values());
             int size = nodes.size();
 
-            for (int i = 0; i < expect && i < 3 * size; i++) {
+            for (int i = 0, count = 0; i < expect && count < 3 * size; count++) {
                 int index = RandomUtil.random(size);
                 DiscoveryNode node = nodes.get(index);
                 if (set.contains(node.getNodeId())) {
@@ -131,6 +145,7 @@ public class DiscoveryNodes {
 
                 result.add(node);
                 set.add(node.getNodeId());
+                i++;
             }
 
             return result;

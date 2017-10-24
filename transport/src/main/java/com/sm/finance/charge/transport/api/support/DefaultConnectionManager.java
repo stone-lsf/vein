@@ -8,6 +8,7 @@ import com.sm.finance.charge.transport.api.Connection;
 import com.sm.finance.charge.transport.api.ConnectionManager;
 import com.sm.finance.charge.transport.api.handler.RequestHandler;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -50,8 +51,8 @@ public class DefaultConnectionManager implements ConnectionManager {
 
     @Override
     public synchronized void closeAll() throws Exception {
-        for (String connectionId : connections.keySet()) {
-            Connection connection = connections.get(connectionId);
+        List<Connection> list = new ArrayList<>(connections.values());
+        for (Connection connection : list) {
             connection.close();
         }
     }

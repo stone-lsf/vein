@@ -67,16 +67,16 @@ public class DiscoveryServerContext extends LoggerSupport {
     }
 
     public Connection createConnection(Address address) {
-        return createConnection(address, 1);
+        return createConnection(address, 0);
     }
 
-    public Connection createConnection(Address address, int times) {
+    public Connection createConnection(Address address, int retryTimes) {
         Connection connection = remoteConnections.get(address);
         if (connection != null && !connection.closed()) {
             return connection;
         }
 
-        return client.connect(address, times).handle((con, error) -> {
+        return client.connect(address, retryTimes).handle((con, error) -> {
             if (error == null) {
                 Connection exist = remoteConnections.putIfAbsent(address, con);
                 if (exist == null) {

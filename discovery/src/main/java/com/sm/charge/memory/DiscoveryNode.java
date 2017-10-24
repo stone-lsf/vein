@@ -191,4 +191,16 @@ public class DiscoveryNode {
             throw new RuntimeException("unknown Type code:" + code);
         }
     }
+
+    @Override
+    public String toString() {
+        return "DiscoveryNode{" +
+            "nodeId='" + nodeId + '\'' +
+            ", address=" + address +
+            ", type=" + type +
+            ", incarnation=" + incarnation +
+            ", status=" + status +
+            ", statusChangeTime=" + statusChangeTime +
+            '}';
+    }
 }

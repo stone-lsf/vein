@@ -31,7 +31,7 @@ public abstract class AbstractService extends LoggerSupport implements Startable
         }
     }
 
-    protected abstract void doClose();
+    protected abstract void doClose() throws Exception;
 
     protected void checkStarted() {
         if (!started.get()) {

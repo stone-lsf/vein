@@ -300,6 +300,9 @@ public class DefaultReplicateService extends AbstractService implements Replicat
         CompletableFuture<T> future = new CompletableFuture<>();
         member.getConnection().whenComplete((connection, error) -> {
             if (error == null) {
+                if (connection == null){
+
+                }
                 connection.<T>request(request, timeout).whenComplete((response, e) -> {
                     if (e != null) {
                         future.completeExceptionally(e);

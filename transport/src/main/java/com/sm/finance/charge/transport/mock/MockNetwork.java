@@ -64,22 +64,32 @@ public class MockNetwork extends LoggerSupport {
         String id = connection.getConnectionId();
         String pairId = connectionIdPair.get(id);
         Connection connectionPair = connectionMap.get(pairId);
-        executorService.execute(() -> connectionPair.onMessage(request));
+        if (connectionPair != null) {
+            executorService.execute(() -> connectionPair.onMessage(request));
+        }
     }
 
     void sendResponse(MockConnection connection, Response response) {
         String id = connection.getConnectionId();
         String pairId = connectionIdPair.get(id);
         Connection connectionPair = connectionMap.get(pairId);
-        executorService.execute(() -> connectionPair.onMessage(response));
+        if (connectionPair != null) {
+            executorService.execute(() -> connectionPair.onMessage(response));
+        }
     }
 
-    void close(MockConnection connection) throws Exception {
+    void removeConnection(MockConnection connection) throws Exception {
         connectionMap.remove(connection.getConnectionId());
         String pairId = connectionIdPair.get(connection.getConnectionId());
         if (pairId != null) {
             Connection connectionPair = connectionMap.get(pairId);
-            connectionPair.close();
+            if (connectionPair != null) {
+                connectionPair.close();
+            }
         }
+    }
+
+    void removeServer(MockServer server) throws Exception {
+        serverMap.remove(server.getBindAddress());
     }
 }

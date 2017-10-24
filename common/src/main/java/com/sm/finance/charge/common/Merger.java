@@ -17,7 +17,6 @@ public class Merger extends LoggerSupport {
 
     public Merger(int capacity) {
         this.capacity = capacity;
-        this.failureCounter = new Counter(Counter.Listener.empty);
     }
 
 
@@ -34,7 +33,11 @@ public class Merger extends LoggerSupport {
         successCounter = new Counter(count -> {
             if (count >= num) {
                 future.complete(true);
-            } else if (count + failureCounter.getCount() >= capacity) {
+            }
+        });
+
+        failureCounter = new Counter(count -> {
+            if (count + successCounter.getCount() >= capacity) {
                 future.complete(false);
             }
         });
@@ -47,11 +50,14 @@ public class Merger extends LoggerSupport {
         successCounter = new Counter(count -> {
             if (count > num) {
                 future.complete(true);
-            } else if (count + failureCounter.getCount() >= capacity) {
-                future.complete(false);
             }
         });
 
+        failureCounter = new Counter(count -> {
+            if (count + successCounter.getCount() >= capacity) {
+                future.complete(false);
+            }
+        });
         return future;
     }
 

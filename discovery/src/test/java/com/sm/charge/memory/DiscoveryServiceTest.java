@@ -32,21 +32,21 @@ public class DiscoveryServiceTest {
         Configure configure3 = ConfigureLoader.loader("test/discovery3.properties");
         DiscoveryConfig config3 = new DiscoveryConfig(configure3);
         service3 = new DiscoveryServiceImpl(config3);
-
-        Configure configure4 = ConfigureLoader.loader("test/discovery4.properties");
-        DiscoveryConfig config4 = new DiscoveryConfig(configure4);
-        service4 = new DiscoveryServiceImpl(config4);
-
-        Configure configure5 = ConfigureLoader.loader("test/discovery5.properties");
-        DiscoveryConfig config5 = new DiscoveryConfig(configure5);
-        service5 = new DiscoveryServiceImpl(config5);
+//
+//        Configure configure4 = ConfigureLoader.loader("test/discovery4.properties");
+//        DiscoveryConfig config4 = new DiscoveryConfig(configure4);
+//        service4 = new DiscoveryServiceImpl(config4);
+//
+//        Configure configure5 = ConfigureLoader.loader("test/discovery5.properties");
+//        DiscoveryConfig config5 = new DiscoveryConfig(configure5);
+//        service5 = new DiscoveryServiceImpl(config5);
     }
 
     @Test
     public void join() throws Exception {
         service1.start();
         service2.start();
-//        service3.start();
+        service3.start();
 //        service4.start();
 //        service5.start();
 
@@ -58,10 +58,10 @@ public class DiscoveryServiceTest {
         if (success) {
             System.out.println("node2 join success");
         }
-//        success = service3.join("test");
-//        if (success) {
-//            System.out.println("node3 join success");
-//        }
+        success = service3.join("test");
+        if (success) {
+            System.out.println("node3 join success");
+        }
 //        success = service4.join("test");
 //        if (success) {
 //            System.out.println("node4 join success");
@@ -70,8 +70,17 @@ public class DiscoveryServiceTest {
 //        if (success) {
 //            System.out.println("node5 join success");
 //        }
+        int time = 0;
+        boolean closed = false;
         while (true) {
-            ThreadUtil.sleep(600000);
+            time += 6000;
+            if (time > 2 * 60 * 1000 && !closed) {
+                System.out.println("close");
+                service3.close();
+                closed = true;
+            } else {
+                ThreadUtil.sleep(6000);
+            }
         }
     }
 

@@ -168,7 +168,7 @@ public abstract class AbstractConnection extends AbstractService implements Conn
             RequestContext context = new RequestContext(requestId, this, remoteAddress);
             CompletableFuture<Object> responseFuture = handler.handle(requestMessage, context);
             if (responseFuture == null) {
-                logBuilder.append("").append("###");
+                logBuilder.append("").append("###").append(connectionId);
                 logger.info(logBuilder.toString());
                 return;
             }
@@ -176,17 +176,17 @@ public abstract class AbstractConnection extends AbstractService implements Conn
 
             responseFuture.whenComplete((response, error) -> {
                 if (error != null) {
-                    logBuilder.append(error.getMessage()).append("###");
+                    logBuilder.append(error.getMessage()).append("###").append(connectionId);
                     logger.info(logBuilder.toString());
                     handleRequestFailure(requestId, error, handler.getAllListeners());
                 } else {
-                    logBuilder.append(response.toString()).append("###");
+                    logBuilder.append(response.toString()).append("###").append(connectionId);
                     logger.info(logBuilder.toString());
                     handleRequestSuccess(requestId, response, handler.getAllListeners());
                 }
             });
         } catch (Throwable e) {
-            logBuilder.append(e.getMessage()).append("###");
+            logBuilder.append(e.getMessage()).append("###").append(connectionId);
             logger.info(logBuilder.toString());
             handleRequestFailure(requestId, e, handler.getAllListeners());
         }
@@ -245,7 +245,7 @@ public abstract class AbstractConnection extends AbstractService implements Conn
     }
 
     @Override
-    protected void doClose() {
+    protected void doClose() throws Exception {
         responseFutures.clear();
         for (CloseListener listener : listeners) {
             listener.onClose();

@@ -3,13 +3,15 @@ package com.sm.charge.memory.probe;
 import com.sm.charge.memory.DiscoveryNode;
 import com.sm.charge.memory.DiscoveryNodes;
 import com.sm.charge.memory.NodeFilter;
-import com.sm.finance.charge.common.base.LoggerSupport;
 import com.sm.finance.charge.common.Merger;
+import com.sm.finance.charge.common.base.LoggerSupport;
 import com.sm.finance.charge.transport.api.Connection;
 import com.sm.finance.charge.transport.api.exceptions.RemoteException;
 import com.sm.finance.charge.transport.api.exceptions.TimeoutException;
 import com.sm.finance.charge.transport.api.handler.AbstractExceptionsHandler;
 import com.sm.finance.charge.transport.api.support.ResponseContext;
+
+import org.apache.commons.collections.CollectionUtils;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -18,11 +20,11 @@ import java.util.concurrent.CompletableFuture;
  * @author shifeng.luo
  * @version created on 2017/9/18 下午2:50
  */
-public class ProbeController extends LoggerSupport implements ProbeService {
+public class ProbeServiceImpl extends LoggerSupport implements ProbeService {
     private final DiscoveryNodes nodes;
     private final int indirectNodeNum;
 
-    public ProbeController(DiscoveryNodes nodes, int indirectNodeNum) {
+    public ProbeServiceImpl(DiscoveryNodes nodes, int indirectNodeNum) {
         this.nodes = nodes;
         this.indirectNodeNum = indirectNodeNum;
     }
@@ -47,29 +49,35 @@ public class ProbeController extends LoggerSupport implements ProbeService {
 
     @Override
     public boolean redirectPing(DiscoveryNode node, int timeout) {
-        List<DiscoveryNode> randomNodes = nodes.randomNodes(indirectNodeNum, new Filter(node));
         String target = node.getNodeId();
-        RedirectPing ping = new RedirectPing(nodes.getLocalNodeId(), target);
+        List<DiscoveryNode> randomNodes = nodes.randomNodes(indirectNodeNum, new Filter(node));
+        if (CollectionUtils.isEmpty(randomNodes)){
+            logger.info("can't find node to redirect node:{}",target );
+            return false;
+        }
 
-        Merger merge = new Merger(indirectNodeNum);
+        RedirectPing ping = new RedirectPing(nodes.getLocalNodeId(), target);
+        Merger merge = new Merger(randomNodes.size());
+
         for (DiscoveryNode randomNode : randomNodes) {
             Connection connection = randomNode.getConnection();
             String nodeId = randomNode.getNodeId();
             if (connection == null) {
                 logger.error("node:{} hasn't connection", nodeId);
+                merge.mergeFailure();
                 throw new IllegalStateException("node:" + nodeId + " hasn't connection");
             }
 
             connection.send(ping, timeout, new AbstractExceptionsHandler<Ack>() {
                 @Override
                 protected void onRemoteException(RemoteException e, ResponseContext context) {
-                    logger.error("redirect ping to target:{} by node:{} caught exception:{}", target, node, e);
+                    logger.error("redirect ping to target:{} by node:{} caught exception:{}", target, randomNode.getNodeId(), e);
                     merge.mergeFailure();
                 }
 
                 @Override
                 protected void onTimeoutException(TimeoutException e, ResponseContext context) {
-                    logger.error("redirect ping to target:{} by node:{} timeout:{}", target, node, e.getTimeout());
+                    logger.error("redirect ping to target:{} by node:{} timeout:{}", target, randomNode.getNodeId(), e.getTimeout());
                     merge.mergeFailure();
                 }
 
@@ -90,7 +98,7 @@ public class ProbeController extends LoggerSupport implements ProbeService {
 
     @Override
     public CompletableFuture<Ack> handle(Ping ping) {
-        String nodeId = ping.getNodeId();
+        String nodeId = ping.getTo();
         if (!nodeId.equals(nodes.getLocalNodeId())) {
             logger.error("receive ping message from:{},but target is node:{}", ping.getFrom(), nodeId);
             //FIXME 此时应该返回错误信息

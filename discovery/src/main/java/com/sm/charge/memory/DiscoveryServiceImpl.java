@@ -8,7 +8,7 @@ import com.sm.charge.memory.handler.GossipMessagesHandler;
 import com.sm.charge.memory.handler.PingMessageHandler;
 import com.sm.charge.memory.handler.PushPullRequestHandler;
 import com.sm.charge.memory.handler.RedirectPingHandler;
-import com.sm.charge.memory.probe.ProbeController;
+import com.sm.charge.memory.probe.ProbeServiceImpl;
 import com.sm.charge.memory.probe.ProbeService;
 import com.sm.charge.memory.probe.ProbeTask;
 import com.sm.charge.memory.pushpull.PushPullService;
@@ -111,7 +111,7 @@ public class DiscoveryServiceImpl extends AbstractService implements DiscoverySe
 
         gossipMessageService = new GossipMessageServiceImpl(nodes, serverContext, messageQueue, config.getSuspectTimeout());
         pushPullService = new PushPullServiceImpl(nodes, serverContext, gossipMessageService);
-        probeService = new ProbeController(nodes, config.getIndirectNodeNum());
+        probeService = new ProbeServiceImpl(nodes, config.getIndirectNodeNum());
 
         ConnectionManager manager = transportServer.getConnectionManager();
         manager.registerMessageHandler(new PushPullRequestHandler(pushPullService));
@@ -143,9 +143,12 @@ public class DiscoveryServiceImpl extends AbstractService implements DiscoverySe
     }
 
     @Override
-    protected void doClose() {
+    protected void doClose() throws Exception {
 
         cancelFutures();
+
+        serverContext.getClient().close();
+        serverContext.getServer().close();
 
         joined = false;
     }

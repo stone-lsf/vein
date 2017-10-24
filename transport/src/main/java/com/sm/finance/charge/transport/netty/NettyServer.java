@@ -75,8 +75,8 @@ public class NettyServer extends AbstractService implements TransportServer {
     }
 
     @Override
-    protected void doClose() {
-
+    protected void doClose() throws Exception {
+        connectionManager.closeAll();
     }
 
     @Override
@@ -86,7 +86,7 @@ public class NettyServer extends AbstractService implements TransportServer {
 
     @Override
     public void close(int timeout) throws Exception {
-
+        connectionManager.closeAll();
     }
 
     @Override

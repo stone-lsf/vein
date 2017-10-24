@@ -1,13 +1,12 @@
 package com.sm.finance.charge.transport.netty;
 
-import com.sm.finance.charge.common.AbstractService;
 import com.sm.finance.charge.common.Address;
 import com.sm.finance.charge.serializer.protostuff.ProtoStuffSerializer;
 import com.sm.finance.charge.transport.api.Connection;
 import com.sm.finance.charge.transport.api.ConnectionListener;
 import com.sm.finance.charge.transport.api.ConnectionManager;
-import com.sm.finance.charge.transport.api.TransportClient;
 import com.sm.finance.charge.transport.api.exceptions.ConnectException;
+import com.sm.finance.charge.transport.api.support.AbstractClient;
 import com.sm.finance.charge.transport.api.support.DefaultConnectionManager;
 
 import java.net.InetSocketAddress;
@@ -27,7 +26,7 @@ import io.netty.handler.codec.LengthFieldPrepender;
  * @author shifeng.luo
  * @version created on 2017/9/11 下午5:31
  */
-public class NettyClient extends AbstractService implements TransportClient {
+public class NettyClient extends AbstractClient {
 
     private final ConnectionManager connectionManager = new DefaultConnectionManager();
     private final Bootstrap bootstrap;
@@ -68,32 +67,6 @@ public class NettyClient extends AbstractService implements TransportClient {
                 Throwable cause = channelFuture.cause();
                 logger.error("connect to address:[{}] failed,cased by exception:{}", address, cause);
                 result.completeExceptionally(new ConnectException(cause));
-            }
-        });
-
-        return result;
-    }
-
-    @Override
-    public CompletableFuture<Connection> connect(Address address, int retryTimes) {
-        CompletableFuture<Connection> result = new CompletableFuture<>();
-
-        connect(address).whenComplete((connection, error) -> {
-            if (error != null) {
-                logger.warn("connect to address:[{}] caught exception:{}", address, error);
-                if (retryTimes > 0) {
-                    connect(address, retryTimes - 1).whenComplete((conn, e) -> {
-                        if (e == null) {
-                            result.complete(conn);
-                        } else {
-                            result.completeExceptionally(e);
-                        }
-                    });
-                } else {
-                    result.complete(null);
-                }
-            } else {
-                result.complete(connection);
             }
         });
 

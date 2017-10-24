@@ -35,7 +35,7 @@ public class ProbeTask extends LoggerSupport implements Runnable {
         while (true) {
             int size = nodes.size();
             if (numCheck >= size) {
-                logger.info("can't find suitable node to com.sm.charge.memory.probe");
+                logger.info("can't find suitable node to probe，expect:{},total:{}", numCheck, size);
                 return;
             }
 
@@ -71,6 +71,7 @@ public class ProbeTask extends LoggerSupport implements Runnable {
         if (success) {
             return;
         }
+        logger.warn("node:{} can't suceess probe node:{} ", nodes.getLocalNode().getNodeId(), node.getNodeId());
 
         long incarnation = node.getIncarnation();
         SuspectMessage message = new SuspectMessage(node.getNodeId(), node.getAddress(), incarnation, nodes.getLocalNodeId());

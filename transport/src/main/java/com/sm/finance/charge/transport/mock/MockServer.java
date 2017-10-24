@@ -23,7 +23,8 @@ public class MockServer implements TransportServer {
 
     @Override
     public void close() throws Exception {
-
+        connectionManager.closeAll();
+        network.removeServer(this);
     }
 
     @Override
@@ -38,7 +39,7 @@ public class MockServer implements TransportServer {
 
     @Override
     public void close(int timeout) throws Exception {
-
+        connectionManager.closeAll();
     }
 
     @Override
