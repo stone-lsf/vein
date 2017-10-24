@@ -63,7 +63,7 @@ public class RaftMemberState extends LoggerSupport {
 
         Address address = member.getAddress();
         return client.connect(address).handle((connection, error) -> {
-            if (error != null) {
+            if (error == null) {
                 return connection;
             }
 

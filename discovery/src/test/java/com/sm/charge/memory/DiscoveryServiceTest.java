@@ -2,6 +2,7 @@ package com.sm.charge.memory;
 
 import com.sm.finance.charge.common.base.Configure;
 import com.sm.finance.charge.common.base.ConfigureLoader;
+import com.sm.finance.charge.common.utils.ThreadUtil;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -20,34 +21,58 @@ public class DiscoveryServiceTest {
 
     @Before
     public void setUp() throws Exception {
-        Configure configure = ConfigureLoader.loader("discovery1.properties");
+        Configure configure = ConfigureLoader.loader("test/discovery1.properties");
         DiscoveryConfig config1 = new DiscoveryConfig(configure);
-        service1 = new DefaultDiscoveryService(config1);
+        service1 = new DiscoveryServiceImpl(config1);
 
-        Configure configure2 = ConfigureLoader.loader("discovery2.properties");
+        Configure configure2 = ConfigureLoader.loader("test/discovery2.properties");
         DiscoveryConfig config2 = new DiscoveryConfig(configure2);
-        service2 = new DefaultDiscoveryService(config2);
+        service2 = new DiscoveryServiceImpl(config2);
 
-        Configure configure3 = ConfigureLoader.loader("discovery3.properties");
+        Configure configure3 = ConfigureLoader.loader("test/discovery3.properties");
         DiscoveryConfig config3 = new DiscoveryConfig(configure3);
-        service3 = new DefaultDiscoveryService(config3);
+        service3 = new DiscoveryServiceImpl(config3);
 
-        Configure configure4 = ConfigureLoader.loader("discovery4.properties");
+        Configure configure4 = ConfigureLoader.loader("test/discovery4.properties");
         DiscoveryConfig config4 = new DiscoveryConfig(configure4);
-        service4 = new DefaultDiscoveryService(config4);
+        service4 = new DiscoveryServiceImpl(config4);
 
-        Configure configure5 = ConfigureLoader.loader("discovery5.properties");
+        Configure configure5 = ConfigureLoader.loader("test/discovery5.properties");
         DiscoveryConfig config5 = new DiscoveryConfig(configure5);
-        service5 = new DefaultDiscoveryService(config5);
+        service5 = new DiscoveryServiceImpl(config5);
     }
 
     @Test
     public void join() throws Exception {
-        service1.join("");
-        service2.join("");
-        service3.join("");
-        service4.join("");
-        service5.join("");
+        service1.start();
+        service2.start();
+//        service3.start();
+//        service4.start();
+//        service5.start();
+
+        boolean success = service1.join("test");
+        if (success) {
+            System.out.println("node1 join success");
+        }
+        success = service2.join("test");
+        if (success) {
+            System.out.println("node2 join success");
+        }
+//        success = service3.join("test");
+//        if (success) {
+//            System.out.println("node3 join success");
+//        }
+//        success = service4.join("test");
+//        if (success) {
+//            System.out.println("node4 join success");
+//        }
+//        success = service5.join("test");
+//        if (success) {
+//            System.out.println("node5 join success");
+//        }
+        while (true) {
+            ThreadUtil.sleep(600000);
+        }
     }
 
     @Test

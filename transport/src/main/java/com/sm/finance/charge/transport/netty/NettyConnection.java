@@ -13,17 +13,10 @@ import io.netty.channel.Channel;
  */
 public class NettyConnection extends AbstractConnection {
     private final Channel channel;
-    private final String connectionId;
 
-    public NettyConnection(Address remoteAddress, Address localAddress, int defaultTimeout, Channel channel) {
+    NettyConnection(Address remoteAddress, Address localAddress, int defaultTimeout, Channel channel) {
         super(remoteAddress, localAddress, defaultTimeout);
         this.channel = channel;
-        this.connectionId = ChannelHelper.getChannelId(this.channel);
-    }
-
-    @Override
-    public String getConnectionId() {
-        return connectionId;
     }
 
     @Override
@@ -56,7 +49,7 @@ public class NettyConnection extends AbstractConnection {
     @Override
     public String toString() {
         return "NettyConnection{" +
-            "connectionId='" + connectionId + '\'' +
+            "connectionId='" + super.getConnectionId() + '\'' +
             '}';
     }
 }

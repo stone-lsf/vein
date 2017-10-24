@@ -11,24 +11,16 @@ import com.sm.finance.charge.transport.api.Response;
  */
 public class MockConnection extends AbstractConnection {
 
-    private final String id;
-
     private MockNetwork network;
 
     MockConnection(Address localAddress, Address remoteAddress) {
         super(remoteAddress, localAddress, 3000);
-        this.id = buildConnectionId(localAddress, remoteAddress);
     }
 
 
     @Override
     protected void doStart() throws Exception {
 
-    }
-
-    @Override
-    public String getConnectionId() {
-        return id;
     }
 
     @Override
@@ -47,15 +39,7 @@ public class MockConnection extends AbstractConnection {
         network.sendResponse(this, response);
     }
 
-    private String buildConnectionId(Address local, Address remote) {
-        return local.getIp() + ":" + local.getPort() + "/" + remote.getIp() + ":" + remote.getPort();
-    }
-
-    public MockNetwork getNetwork() {
-        return network;
-    }
-
-    public void setNetwork(MockNetwork network) {
+    void setNetwork(MockNetwork network) {
         this.network = network;
     }
 }

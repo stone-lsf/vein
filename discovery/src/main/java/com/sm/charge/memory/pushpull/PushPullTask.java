@@ -1,7 +1,6 @@
 package com.sm.charge.memory.pushpull;
 
 import com.sm.charge.memory.DiscoveryNode;
-import com.sm.charge.memory.DiscoveryNodeState;
 import com.sm.charge.memory.DiscoveryNodes;
 import com.sm.charge.memory.NodeFilter;
 import com.sm.finance.charge.common.base.LoggerSupport;
@@ -46,8 +45,7 @@ public class PushPullTask extends LoggerSupport implements Runnable {
 
         @Override
         public boolean apply(DiscoveryNode node) {
-            DiscoveryNodeState state = node.getState();
-            return nodes.isLocalNode(node.getNodeId()) || state.getStatus() != DiscoveryNode.Status.ALIVE;
+            return nodes.isLocalNode(node.getNodeId()) || node.getStatus() != DiscoveryNode.Status.ALIVE;
         }
     }
 }

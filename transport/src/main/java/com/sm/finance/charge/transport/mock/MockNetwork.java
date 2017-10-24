@@ -49,7 +49,7 @@ public class MockNetwork extends LoggerSupport {
         connection.setNetwork(this);
 
         MockConnection serverConnection = new MockConnection(serverAddress, clientAddress);
-        server.getConnectionManager().addConnection(connection);
+        server.getConnectionManager().addConnection(serverConnection);
         connectionMap.put(serverConnection.getConnectionId(), serverConnection);
         serverConnection.setNetwork(this);
 

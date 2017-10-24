@@ -1,11 +1,13 @@
 package com.sm.finance.charge.server.core;
 
-import com.sm.charge.memory.DefaultDiscoveryService;
+import com.sm.charge.memory.DiscoveryServiceImpl;
 import com.sm.charge.memory.DiscoveryConfig;
 import com.sm.charge.memory.DiscoveryService;
 import com.sm.charge.raft.server.RaftConfig;
 import com.sm.charge.raft.server.RaftServer;
 import com.sm.charge.raft.server.RaftServerImpl;
+import com.sm.finance.charge.common.base.Configure;
+import com.sm.finance.charge.common.base.ConfigureLoader;
 
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.stereotype.Component;
@@ -23,8 +25,9 @@ public class ChargeServer implements InitializingBean {
 
     @Override
     public void afterPropertiesSet() throws Exception {
+        Configure configure = ConfigureLoader.loader("discovery.properties");
         DiscoveryConfig discoveryConfig = new DiscoveryConfig(configure);
-        discoveryService = new DefaultDiscoveryService(discoveryConfig);
+        discoveryService = new DiscoveryServiceImpl(discoveryConfig);
 
         RaftConfig raftConfig = new RaftConfig();
         raftServer = new RaftServerImpl(raftConfig, new PrintLogStateMachine());

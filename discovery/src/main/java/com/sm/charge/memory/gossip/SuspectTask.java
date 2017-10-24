@@ -1,7 +1,6 @@
 package com.sm.charge.memory.gossip;
 
 import com.sm.charge.memory.DiscoveryNode;
-import com.sm.charge.memory.DiscoveryNodeState;
 import com.sm.charge.memory.DiscoveryNodes;
 import com.sm.charge.memory.gossip.messages.DeadMessage;
 import com.sm.finance.charge.common.base.LoggerSupport;
@@ -45,11 +44,10 @@ public class SuspectTask extends LoggerSupport implements Runnable {
             return;
         }
 
-        DiscoveryNodeState state = node.getState();
-        DiscoveryNode.Status status = state.getStatus();
-        if (status == DiscoveryNode.Status.SUSPECT && state.getStatusChangeTime().equals(createTime)) {
+        DiscoveryNode.Status status = node.getStatus();
+        if (status == DiscoveryNode.Status.SUSPECT && node.getStatusChangeTime().equals(createTime)) {
             logger.info("marking node [{}] as failed by suspect timeout happened", nodeId);
-            DeadMessage message = new DeadMessage(nodeId, state.getIncarnation(), nodes.getLocalNodeId());
+            DeadMessage message = new DeadMessage(nodeId, node.getIncarnation(), nodes.getLocalNodeId());
             messageService.deadNode(message);
         }
     }

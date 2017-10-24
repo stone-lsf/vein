@@ -9,7 +9,7 @@ import com.sm.finance.charge.transport.api.support.ResponseContext;
  * @author shifeng.luo
  * @version created on 2017/9/11 下午4:55
  */
-public abstract class AbstractExceptionResponseHandler<T> extends LoggerSupport implements ResponseHandler<T> {
+public abstract class AbstractExceptionsHandler<T> extends LoggerSupport implements ResponseHandler<T> {
 
     @Override
     public void onException(Throwable e, ResponseContext context) {

@@ -2,8 +2,8 @@ package com.sm.charge.memory.gossip;
 
 import com.sm.charge.memory.DiscoveryNode;
 import com.sm.charge.memory.DiscoveryNodeListener;
-import com.sm.charge.memory.DiscoveryNodeState;
 import com.sm.charge.memory.DiscoveryNodes;
+import com.sm.charge.memory.DiscoveryServerContext;
 import com.sm.charge.memory.gossip.messages.AliveMessage;
 import com.sm.charge.memory.gossip.messages.DeadMessage;
 import com.sm.charge.memory.gossip.messages.GossipMessage;
@@ -11,7 +11,6 @@ import com.sm.charge.memory.gossip.messages.SuspectMessage;
 import com.sm.finance.charge.common.Address;
 import com.sm.finance.charge.common.base.LoggerSupport;
 import com.sm.finance.charge.transport.api.Connection;
-import com.sm.finance.charge.transport.api.TransportClient;
 
 import java.util.Date;
 import java.util.List;
@@ -32,12 +31,12 @@ import static com.sm.charge.memory.gossip.messages.GossipMessage.USER;
  * @author shifeng.luo
  * @version created on 2017/9/11 下午11:23
  */
-public class GossipMessageController extends LoggerSupport implements GossipMessageService {
+public class GossipMessageServiceImpl extends LoggerSupport implements GossipMessageService {
     private final CopyOnWriteArrayList<DiscoveryNodeListener> listeners = new CopyOnWriteArrayList<>();
     private final ConcurrentMap<String, SuspectTask> suspectTaskMap = new ConcurrentHashMap<>();
 
     private final DiscoveryNodes nodes;
-    private final TransportClient client;
+    private final DiscoveryServerContext serverContext;
     private final MessageQueue messageQueue;
     private final int suspectTimeout;
 
@@ -45,20 +44,19 @@ public class GossipMessageController extends LoggerSupport implements GossipMess
 
     private GossipMessageNotifier messageNotifier;
 
-    public GossipMessageController(DiscoveryNodes nodes, TransportClient client, MessageQueue messageQueue, int suspectTimeout, ScheduledExecutorService executorService) {
+    public GossipMessageServiceImpl(DiscoveryNodes nodes, DiscoveryServerContext serverContext, MessageQueue messageQueue, int suspectTimeout) {
         this.nodes = nodes;
-        this.client = client;
+        this.serverContext = serverContext;
         this.messageQueue = messageQueue;
         this.suspectTimeout = suspectTimeout;
-        this.executorService = executorService;
+        this.executorService = serverContext.getExecutorService();
     }
 
     @Override
     public void aliveNode(AliveMessage message, boolean bootstrap) {
         String toAliveNode = message.getNodeId();
 
-        DiscoveryNodeState state = new DiscoveryNodeState(toAliveNode, DEAD, new Date());
-        DiscoveryNode node = new DiscoveryNode(message, state);
+        DiscoveryNode node = new DiscoveryNode(message, DEAD, new Date());
         DiscoveryNode existNode = nodes.addIfAbsent(node);
         if (existNode == null) {
             existNode = node;
@@ -77,7 +75,7 @@ public class GossipMessageController extends LoggerSupport implements GossipMess
                 existNode.setConnection(connection);
             }
 
-            long existIncarnation = existNode.getState().getIncarnation();
+            long existIncarnation = existNode.getIncarnation();
             long aliveIncarnation = message.getIncarnation();
             if (!isLocalNode && aliveIncarnation <= existIncarnation) {
                 return;
@@ -100,12 +98,11 @@ public class GossipMessageController extends LoggerSupport implements GossipMess
                 return;
             }
 
-            state = existNode.getState();
-            DiscoveryNode.Status oldStatus = state.getStatus();
+            DiscoveryNode.Status oldStatus = node.getStatus();
             if (oldStatus != ALIVE) {
-                state.setIncarnation(aliveIncarnation);
-                state.setStatus(ALIVE);
-                state.setStatusChangeTime(new Date());
+                node.setIncarnation(aliveIncarnation);
+                node.setStatus(ALIVE);
+                node.setStatusChangeTime(new Date());
             }
 
             nodes.aliveNode(existNode);
@@ -132,23 +129,20 @@ public class GossipMessageController extends LoggerSupport implements GossipMess
 
     private void refute(long incarnation) {
         DiscoveryNode localNode = nodes.getLocalNode();
-        DiscoveryNodeState state = localNode.getState();
 
         long newIncarnation = incarnation + 1;
-        state.setIncarnation(newIncarnation);
+        localNode.setIncarnation(newIncarnation);
 
         AliveMessage message = new AliveMessage(localNode.getNodeId(), localNode.getAddress(), newIncarnation, localNode.getType());
         messageQueue.enqueue(message);
     }
 
     private Connection createConnection(Address address) {
-        return client.connect(address).handle(((connection, throwable) -> {
-            if (throwable != null) {
-                logger.error("create connection to address:{} failure, caught exception:{}", address, throwable);
-                return null;
-            }
+        Connection connection = serverContext.getConnection(address);
+        if (connection != null) {
             return connection;
-        })).join();
+        }
+        return serverContext.createConnection(address);
     }
 
     @Override
@@ -163,15 +157,14 @@ public class GossipMessageController extends LoggerSupport implements GossipMess
         node.lock();
         try {
             long suspectIncarnation = message.getIncarnation();
-            DiscoveryNodeState state = node.getState();
-            long existIncarnation = state.getIncarnation();
+            long existIncarnation = node.getIncarnation();
 
             if (suspectIncarnation < existIncarnation) {
                 logger.warn("receive suspect message of node:{}, suspect incarnation:{} less than current:{}", toSuspectNode, suspectIncarnation, existIncarnation);
                 return;
             }
 
-            DiscoveryNode.Status oldStatus = state.getStatus();
+            DiscoveryNode.Status oldStatus = node.getStatus();
             if (oldStatus != ALIVE) {
                 logger.warn("receive suspect message of node:{}, current status is dead", oldStatus);
                 return;
@@ -185,10 +178,10 @@ public class GossipMessageController extends LoggerSupport implements GossipMess
 
             messageQueue.enqueue(message);
 
-            state.setIncarnation(suspectIncarnation);
-            state.setStatus(SUSPECT);
+            node.setIncarnation(suspectIncarnation);
+            node.setStatus(SUSPECT);
             Date now = new Date();
-            state.setStatusChangeTime(now);
+            node.setStatusChangeTime(now);
 
             nodes.suspectNode(node);
             createSuspectTask(toSuspectNode, now);
@@ -217,15 +210,14 @@ public class GossipMessageController extends LoggerSupport implements GossipMess
         node.lock();
         try {
             long deadIncarnation = message.getIncarnation();
-            DiscoveryNodeState state = node.getState();
-            long existIncarnation = state.getIncarnation();
+            long existIncarnation = node.getIncarnation();
 
             if (deadIncarnation < existIncarnation) {
                 logger.warn("receive dead message of node:{}, dead incarnation:{} less than current:{}", toDeadNode, deadIncarnation, existIncarnation);
                 return;
             }
 
-            DiscoveryNode.Status oldStatus = state.getStatus();
+            DiscoveryNode.Status oldStatus = node.getStatus();
             if (oldStatus == DEAD) {
                 logger.warn("receive dead message of node:{}, current status is dead", toDeadNode);
                 return;
@@ -238,9 +230,9 @@ public class GossipMessageController extends LoggerSupport implements GossipMess
             }
 
             messageQueue.enqueue(message);
-            state.setStatus(DEAD);
-            state.setIncarnation(deadIncarnation);
-            state.setStatusChangeTime(new Date());
+            node.setStatus(DEAD);
+            node.setIncarnation(deadIncarnation);
+            node.setStatusChangeTime(new Date());
 
             nodes.deadNode(node);
             for (DiscoveryNodeListener listener : listeners) {

@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+    <if condition='isNull("appname")'>
+        <then>
+            <property name="appname" value="discovery"/>
+        </then>
+    </if>
+
+    <if condition='isNull("LOG_HOME")'>
+        <then>
+            <if condition='!isNull("catalina.home")'>
+                <then>
+                    <property name="LOG_HOME" value="${catalina.home}/logs"/>
+                </then>
+                <else>
+                    <property name="LOG_HOME" value="/Users/shifengluo/logs"/>
+                </else>
+            </if>
+        </then>
+    </if>
+
+    <contextName>${appname}</contextName>
+
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %C{36}.%M:%L - %msg%n
+            </pattern>
+        </encoder>
+    </appender>
+
+    <appender name="defaultLogFile"
+              class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_HOME}/${appname}.log</file>
+
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_HOME}/${appname}.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <!--保留历史天数-->
+            <maxHistory>30</maxHistory>
+        </rollingPolicy>
+
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %C{36}.%M:%L - %msg%n
+            </pattern>
+        </encoder>
+    </appender>
+
+    <!-- 仅记录fatal日志 -->
+    <appender name="fatalLogFile"
+              class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_HOME}/${appname}.FATAL</file>
+
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>ERROR</level>
+            <onMatch>ACCEPT</onMatch>
+            <onMismatch>DENY</onMismatch>
+        </filter>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_HOME}/${appname}.FATAL.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <!-- 保留 30天数据，默认无限 -->
+            <maxHistory>30</maxHistory>
+        </rollingPolicy>
+
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %C{36}.%M:%L - %msg%n
+            </pattern>
+        </encoder>
+    </appender>
+
+    <!-- 调试日志 -->
+    <appender name="debugLogFile"
+              class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_HOME}/${appname}.DEBUG</file>
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>DEBUG</level>
+            <onMatch>ACCEPT</onMatch>
+            <onMismatch>DENY</onMismatch>
+        </filter>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_HOME}/${appname}.DEBUG.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>10</maxHistory>
+        </rollingPolicy>
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5marker %logger{36}[%L] - %msg%n
+            </pattern>
+        </encoder>
+    </appender>
+
+    <!--被过滤的chargelog日志-->
+    <appender name="filteredLogFile"
+              class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_HOME}/adLogFiltered.log</file>
+
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_HOME}/adLogFiltered.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <!--保留历史天数-->
+            <maxHistory>30</maxHistory>
+        </rollingPolicy>
+
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %C{36}.%M:%L - %msg%n
+            </pattern>
+        </encoder>
+    </appender>
+
+    <!--被过滤的chargelog日志-->
+    <appender name="adLogReceiverFile"
+              class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_HOME}/adLogReceiverFile.log</file>
+
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_HOME}/adLogReceiverFile.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <!--保留历史天数-->
+            <maxHistory>30</maxHistory>
+        </rollingPolicy>
+
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %C{36}.%M:%L - %msg%n
+            </pattern>
+        </encoder>
+    </appender>
+
+    <!--被过滤的chargelog日志-->
+    <appender name="mqClient"
+              class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_HOME}/mqLogFile.log</file>
+
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_HOME}/mqLogFile.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <!--保留历史天数-->
+            <maxHistory>30</maxHistory>
+        </rollingPolicy>
+
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %C{36}.%M:%L - %msg%n
+            </pattern>
+        </encoder>
+    </appender>
+
+
+
+    <!-- 根据环境判断要加载的logback，如果没有指定profile，或者profile为dev，则为开发环境 -->
+    <if condition='isNull("profile") || property("profile").equals("dev")'>
+        <then>
+            <root level="INFO">
+                <appender-ref ref="STDOUT"/>
+            </root>
+        </then>
+        <else>
+            <root level="INFO">
+                <appender-ref ref="defaultLogFile"/>
+                <appender-ref ref="fatalLogFile"/>
+            </root>
+        </else>
+    </if>
+
+    <logger name="adLogFilter" additivity="false" level="info">
+        <appender-ref ref="filteredLogFile"/>
+    </logger>
+
+    <logger name="adLogReceiver" additivity="false" level="info">
+        <appender-ref ref="adLogReceiverFile"/>
+    </logger>
+
+    <logger name="com.sm.mq.xclient" additivity="false" level="info">
+        <appender-ref ref="mqClient"/>
+    </logger>
+
+    <logger name="org.darwin"/>
+
+    <logger name="org.springframework"/>
+
+    <logger name="FACADE" level="DEBUG" additivity="false">
+        <appender-ref ref="debugLogFile"/>
+    </logger>
+</configuration>

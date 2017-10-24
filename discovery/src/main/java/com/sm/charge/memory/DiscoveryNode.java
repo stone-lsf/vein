@@ -4,9 +4,8 @@ import com.sm.charge.memory.gossip.messages.AliveMessage;
 import com.sm.charge.memory.pushpull.PushNodeState;
 import com.sm.finance.charge.common.Address;
 import com.sm.finance.charge.transport.api.Connection;
-import com.sm.finance.charge.transport.api.TransportClient;
-import com.sm.finance.charge.transport.api.TransportServer;
 
+import java.util.Date;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
@@ -26,11 +25,6 @@ public class DiscoveryNode {
     private final Address address;
 
     /**
-     * 节点当前状态
-     */
-    private final DiscoveryNodeState state;
-
-    /**
      * 节点类型
      */
     private final Type type;
@@ -41,29 +35,37 @@ public class DiscoveryNode {
     private volatile Connection connection;
 
     /**
-     * 连接客户端
+     * 自增的版本号
      */
-    private TransportClient transportClient;
+    private volatile long incarnation;
 
     /**
-     * 连接服务端
+     * 节点状态
      */
-    private TransportServer transportServer;
+    private volatile DiscoveryNode.Status status;
 
-    private ReentrantLock lock = new ReentrantLock();
+    /**
+     * 状态发生变化的时间
+     */
+    private volatile Date statusChangeTime;
 
-    public DiscoveryNode(AliveMessage message, DiscoveryNodeState state) {
+    private final ReentrantLock lock = new ReentrantLock();
+
+    public DiscoveryNode(AliveMessage message, DiscoveryNode.Status status, Date statusChangeTime) {
         this.nodeId = message.getNodeId();
         this.address = message.getAddress();
         this.type = message.getNodeType();
-        this.state = state;
+        this.status = status;
+        this.statusChangeTime = statusChangeTime;
     }
 
-    public DiscoveryNode(String nodeId, Address address, DiscoveryNodeState state, Type type) {
+    public DiscoveryNode(String nodeId, Address address, Type type, long incarnation, Date statusChangeTime, DiscoveryNode.Status status) {
         this.nodeId = nodeId;
         this.address = address;
-        this.state = state;
         this.type = type;
+        this.incarnation = incarnation;
+        this.statusChangeTime = statusChangeTime;
+        this.status = status;
     }
 
     PushNodeState toPushNodeState() {
@@ -71,8 +73,8 @@ public class DiscoveryNode {
 
         state.setAddress(this.address);
         state.setNodeId(this.nodeId);
-        state.setIncarnation(this.state.getIncarnation());
-        state.setNodeStatus(this.state.getStatus());
+        state.setIncarnation(this.incarnation);
+        state.setNodeStatus(this.status);
         state.setNodeType(this.type);
 
         return state;
@@ -94,10 +96,6 @@ public class DiscoveryNode {
         return address;
     }
 
-    public DiscoveryNodeState getState() {
-        return state;
-    }
-
     public Type getType() {
         return type;
     }
@@ -110,20 +108,37 @@ public class DiscoveryNode {
         this.connection = connection;
     }
 
-    public TransportClient getTransportClient() {
-        return transportClient;
+    public long nextIncarnation() {
+        lock.lock();
+        try {
+            return ++incarnation;
+        } finally {
+            lock.unlock();
+        }
     }
 
-    public void setTransportClient(TransportClient transportClient) {
-        this.transportClient = transportClient;
+    public long getIncarnation() {
+        return incarnation;
     }
 
-    public TransportServer getTransportServer() {
-        return transportServer;
+    public void setIncarnation(long incarnation) {
+        this.incarnation = incarnation;
     }
 
-    public void setTransportServer(TransportServer transportServer) {
-        this.transportServer = transportServer;
+    public Status getStatus() {
+        return status;
+    }
+
+    public void setStatus(Status status) {
+        this.status = status;
+    }
+
+    public Date getStatusChangeTime() {
+        return statusChangeTime;
+    }
+
+    public void setStatusChangeTime(Date statusChangeTime) {
+        this.statusChangeTime = statusChangeTime;
     }
 
     public enum Status {

@@ -24,4 +24,11 @@ public class PushPullResponse {
     public void setStates(List<PushNodeState> states) {
         this.states = states;
     }
+
+    @Override
+    public String toString() {
+        return "PushPullResponse{" +
+            "states=" + states +
+            '}';
+    }
 }

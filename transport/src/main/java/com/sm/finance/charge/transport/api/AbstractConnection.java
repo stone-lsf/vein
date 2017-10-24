@@ -2,8 +2,8 @@ package com.sm.finance.charge.transport.api;
 
 import com.sm.finance.charge.common.AbstractService;
 import com.sm.finance.charge.common.Address;
-import com.sm.finance.charge.common.base.CloseListener;
 import com.sm.finance.charge.common.IntegerIdGenerator;
+import com.sm.finance.charge.common.base.CloseListener;
 import com.sm.finance.charge.common.utils.ReflectUtil;
 import com.sm.finance.charge.transport.api.exceptions.RemoteException;
 import com.sm.finance.charge.transport.api.exceptions.TimeoutException;
@@ -27,22 +27,24 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * @version created on 2017/9/11 下午3:45
  */
 public abstract class AbstractConnection extends AbstractService implements Connection {
-    protected final Address remoteAddress;
-    protected final Address localAddress;
-    protected final int defaultTimeout;
+    private final Address remoteAddress;
+    private final Address localAddress;
+    private final String connectionId;
+    private final int defaultTimeout;
     protected final TimeoutScheduler timeoutScheduler;
 
-    protected final IntegerIdGenerator idGenerator = new IntegerIdGenerator();
-    protected final CopyOnWriteArrayList<CloseListener> listeners = new CopyOnWriteArrayList<>();
+    private final IntegerIdGenerator idGenerator = new IntegerIdGenerator();
+    private final CopyOnWriteArrayList<CloseListener> listeners = new CopyOnWriteArrayList<>();
 
-    protected final ConcurrentMap<Class, RequestHandler> requestHandlers = new ConcurrentHashMap<>();
-    protected final ConcurrentMap<Integer, CompletableFuture> responseFutures = new ConcurrentHashMap<>();
+    private final ConcurrentMap<Class, RequestHandler> requestHandlers = new ConcurrentHashMap<>();
+    private final ConcurrentMap<Integer, CompletableFuture> responseFutures = new ConcurrentHashMap<>();
 
     public AbstractConnection(Address remoteAddress, Address localAddress, int defaultTimeout) {
         this.remoteAddress = remoteAddress;
         this.localAddress = localAddress;
         this.defaultTimeout = defaultTimeout;
         this.timeoutScheduler = new TimeoutScheduler(this);
+        this.connectionId = buildConnectionId();
     }
 
     @Override
@@ -151,7 +153,6 @@ public abstract class AbstractConnection extends AbstractService implements Conn
 
     @SuppressWarnings("unchecked")
     private void handRequest(Request request) {
-        logger.info("receive request:{}", request);
         Object requestMessage = request.getMessage();
         RequestHandler handler = requestHandlers.get(requestMessage.getClass());
         if (handler == null) {
@@ -159,23 +160,34 @@ public abstract class AbstractConnection extends AbstractService implements Conn
             return;
         }
 
+        StringBuilder logBuilder = new StringBuilder();
         int requestId = request.getId();
+        logBuilder.append("###").append(requestId).append("###");
         try {
+            logBuilder.append(requestMessage.toString()).append("###");
             RequestContext context = new RequestContext(requestId, this, remoteAddress);
             CompletableFuture<Object> responseFuture = handler.handle(requestMessage, context);
             if (responseFuture == null) {
+                logBuilder.append("").append("###");
+                logger.info(logBuilder.toString());
                 return;
             }
 
 
             responseFuture.whenComplete((response, error) -> {
                 if (error != null) {
+                    logBuilder.append(error.getMessage()).append("###");
+                    logger.info(logBuilder.toString());
                     handleRequestFailure(requestId, error, handler.getAllListeners());
                 } else {
+                    logBuilder.append(response.toString()).append("###");
+                    logger.info(logBuilder.toString());
                     handleRequestSuccess(requestId, response, handler.getAllListeners());
                 }
             });
         } catch (Throwable e) {
+            logBuilder.append(e.getMessage()).append("###");
+            logger.info(logBuilder.toString());
             handleRequestFailure(requestId, e, handler.getAllListeners());
         }
     }
@@ -213,8 +225,6 @@ public abstract class AbstractConnection extends AbstractService implements Conn
 
     @SuppressWarnings("unchecked")
     private void handResponse(Response response) {
-        logger.info("receive response:{}", response);
-
         CompletableFuture future = responseFutures.remove(response.getId());
         if (future == null) {
             logger.info("received timeout response:[{}],connection:{}", response, getConnectionId());
@@ -242,6 +252,10 @@ public abstract class AbstractConnection extends AbstractService implements Conn
         }
     }
 
+    @Override
+    public String getConnectionId() {
+        return connectionId;
+    }
 
     @Override
     public boolean closed() {
@@ -256,5 +270,9 @@ public abstract class AbstractConnection extends AbstractService implements Conn
     @Override
     public Address remoteAddress() {
         return remoteAddress;
+    }
+
+    private String buildConnectionId() {
+        return localAddress.getIp() + ":" + localAddress.getPort() + "/" + remoteAddress.getIp() + ":" + remoteAddress.getPort();
     }
 }

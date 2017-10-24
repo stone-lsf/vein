@@ -1,7 +1,7 @@
 package com.sm.finance.charge.cluster;
 
+import com.sm.charge.memory.DiscoveryService;
 import com.sm.finance.charge.cluster.client.Command;
-import com.sm.finance.charge.cluster.discovery.DiscoveryService;
 import com.sm.finance.charge.cluster.elect.MasterListener;
 import com.sm.finance.charge.cluster.replicate.DefaultReplicateService;
 import com.sm.finance.charge.cluster.replicate.ReplicateService;

@@ -1,34 +1,30 @@
-package com.sm.finance.charge.cluster.discovery.pushpull;
+package com.sm.charge.memory.pushpull;
 
-import com.sm.finance.charge.cluster.discovery.DiscoveryNodes;
-import com.sm.finance.charge.cluster.discovery.gossip.GossipMessageService;
-import com.sm.finance.charge.cluster.discovery.gossip.messages.AliveMessage;
-import com.sm.finance.charge.cluster.discovery.gossip.messages.SuspectMessage;
+import com.sm.charge.memory.DiscoveryNodes;
+import com.sm.charge.memory.DiscoveryServerContext;
+import com.sm.charge.memory.gossip.GossipMessageService;
+import com.sm.charge.memory.gossip.messages.AliveMessage;
+import com.sm.charge.memory.gossip.messages.SuspectMessage;
 import com.sm.finance.charge.common.Address;
 import com.sm.finance.charge.common.base.LoggerSupport;
 import com.sm.finance.charge.transport.api.Connection;
-import com.sm.finance.charge.transport.api.TransportClient;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 /**
  * @author shifeng.luo
  * @version created on 2017/9/11 下午10:27
  */
-public class PushPullController extends LoggerSupport implements PushPullService {
+public class PushPullServiceImpl extends LoggerSupport implements PushPullService {
 
     private final DiscoveryNodes nodes;
-    private final TransportClient transportClient;
+    private final DiscoveryServerContext serverContext;
     private final GossipMessageService gossipMessageService;
-    private ConcurrentMap<Address, Connection> connectionMap = new ConcurrentHashMap<>();
 
-    public PushPullController(DiscoveryNodes nodes, TransportClient transportClient, GossipMessageService gossipMessageService) {
+    public PushPullServiceImpl(DiscoveryNodes nodes, DiscoveryServerContext serverContext, GossipMessageService gossipMessageService) {
         this.nodes = nodes;
-        this.transportClient = transportClient;
+        this.serverContext = serverContext;
         this.gossipMessageService = gossipMessageService;
     }
 
@@ -42,31 +38,17 @@ public class PushPullController extends LoggerSupport implements PushPullService
         List<PushNodeState> states = nodes.buildPushNodeStates();
 
         PushPullRequest request = new PushPullRequest(nodes.getLocalNodeId(), states);
-        Connection connection = connectionMap.get(nodeAddress);
+        Connection connection = serverContext.getConnection(nodeAddress);
         if (connection == null) {
-            connection = transportClient.connect(nodeAddress, 3).handle((conn, error) -> {
-                if (error != null) {
-                    return null;
-                }
-                return conn;
-            }).join();
-
+            connection = serverContext.createConnection(nodeAddress, 3);
             if (connection == null) {
-                return Collections.emptyList();
-            }
-
-            Connection existConnection = connectionMap.putIfAbsent(nodeAddress, connection);
-            if (existConnection != null) {
-                try {
-                    existConnection.close();
-                } catch (Exception e) {
-                    logger.warn("close connection:{} caught exception:{}", existConnection, e);
-                }
-                connection = existConnection;
+                logger.error("create connection to {} failed", nodeAddress);
+                throw new RuntimeException("can't connect to:" + nodeAddress);
             }
         }
 
-        return connection.syncRequest(request);
+        PushPullResponse response = connection.syncRequest(request);
+        return response.getStates();
     }
 
     private void mergeRemoteState(List<PushNodeState> states) {

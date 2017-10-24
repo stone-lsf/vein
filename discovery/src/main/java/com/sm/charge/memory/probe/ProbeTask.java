@@ -72,7 +72,7 @@ public class ProbeTask extends LoggerSupport implements Runnable {
             return;
         }
 
-        long incarnation = node.getState().getIncarnation();
+        long incarnation = node.getIncarnation();
         SuspectMessage message = new SuspectMessage(node.getNodeId(), node.getAddress(), incarnation, nodes.getLocalNodeId());
         messageService.suspectNode(message);
     }

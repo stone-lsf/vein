@@ -8,7 +8,7 @@ import com.sm.finance.charge.common.Merger;
 import com.sm.finance.charge.transport.api.Connection;
 import com.sm.finance.charge.transport.api.exceptions.RemoteException;
 import com.sm.finance.charge.transport.api.exceptions.TimeoutException;
-import com.sm.finance.charge.transport.api.handler.AbstractExceptionResponseHandler;
+import com.sm.finance.charge.transport.api.handler.AbstractExceptionsHandler;
 import com.sm.finance.charge.transport.api.support.ResponseContext;
 
 import java.util.List;
@@ -60,7 +60,7 @@ public class ProbeController extends LoggerSupport implements ProbeService {
                 throw new IllegalStateException("node:" + nodeId + " hasn't connection");
             }
 
-            connection.send(ping, timeout, new AbstractExceptionResponseHandler<Ack>() {
+            connection.send(ping, timeout, new AbstractExceptionsHandler<Ack>() {
                 @Override
                 protected void onRemoteException(RemoteException e, ResponseContext context) {
                     logger.error("redirect ping to target:{} by node:{} caught exception:{}", target, node, e);
