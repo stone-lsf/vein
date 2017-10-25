@@ -1,7 +1,7 @@
 package com.sm.charge.memory.pushpull;
 
-import com.sm.charge.memory.DiscoveryNodes;
-import com.sm.charge.memory.DiscoveryServerContext;
+import com.sm.charge.memory.Nodes;
+import com.sm.charge.memory.ServerContext;
 import com.sm.charge.memory.gossip.GossipMessageService;
 import com.sm.charge.memory.gossip.messages.AliveMessage;
 import com.sm.charge.memory.gossip.messages.SuspectMessage;
@@ -18,11 +18,11 @@ import java.util.concurrent.CompletableFuture;
  */
 public class PushPullServiceImpl extends LoggerSupport implements PushPullService {
 
-    private final DiscoveryNodes nodes;
-    private final DiscoveryServerContext serverContext;
+    private final Nodes nodes;
+    private final ServerContext serverContext;
     private final GossipMessageService gossipMessageService;
 
-    public PushPullServiceImpl(DiscoveryNodes nodes, DiscoveryServerContext serverContext, GossipMessageService gossipMessageService) {
+    public PushPullServiceImpl(Nodes nodes, ServerContext serverContext, GossipMessageService gossipMessageService) {
         this.nodes = nodes;
         this.serverContext = serverContext;
         this.gossipMessageService = gossipMessageService;
@@ -37,7 +37,7 @@ public class PushPullServiceImpl extends LoggerSupport implements PushPullServic
     private List<PushNodeState> sendLocalState(Address nodeAddress) throws Exception {
         List<PushNodeState> states = nodes.buildPushNodeStates();
 
-        PushPullRequest request = new PushPullRequest(nodes.getLocalNodeId(), states);
+        PushPullRequest request = new PushPullRequest(nodes.getSelf(), states);
         Connection connection = serverContext.getConnection(nodeAddress);
         if (connection == null) {
             connection = serverContext.createConnection(nodeAddress, 3);
@@ -53,14 +53,14 @@ public class PushPullServiceImpl extends LoggerSupport implements PushPullServic
 
     private void mergeRemoteState(List<PushNodeState> states) {
         for (PushNodeState state : states) {
-            switch (state.getNodeStatus()) {
+            switch (state.getStatus()) {
                 case ALIVE:
                     AliveMessage aliveMessage = new AliveMessage(state);
                     gossipMessageService.aliveNode(aliveMessage, false);
                     break;
                 case SUSPECT:
                 case DEAD:
-                    SuspectMessage suspectMessage = new SuspectMessage(state, nodes.getLocalNodeId());
+                    SuspectMessage suspectMessage = new SuspectMessage(state, nodes.getSelf());
                     gossipMessageService.suspectNode(suspectMessage);
                     break;
             }

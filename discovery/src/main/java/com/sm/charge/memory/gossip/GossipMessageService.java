@@ -1,7 +1,7 @@
 package com.sm.charge.memory.gossip;
 
 
-import com.sm.charge.memory.DiscoveryNodeListener;
+import com.sm.charge.memory.NodeListener;
 import com.sm.charge.memory.gossip.messages.AliveMessage;
 import com.sm.charge.memory.gossip.messages.DeadMessage;
 import com.sm.charge.memory.gossip.messages.SuspectMessage;
@@ -37,9 +37,9 @@ public interface GossipMessageService {
     /**
      * 添加节点监听器
      *
-     * @param listener 监听器{@link DiscoveryNodeListener}
+     * @param listener 监听器{@link NodeListener}
      */
-    void addListener(DiscoveryNodeListener listener);
+    void addListener(NodeListener listener);
 
     /**
      * 设置gossip消息通知器

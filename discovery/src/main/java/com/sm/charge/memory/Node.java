@@ -12,7 +12,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * @author shifeng.luo
  * @version created on 2017/9/11 下午8:35
  */
-public class DiscoveryNode {
+public class Node {
 
     /**
      * 节点唯一标识符
@@ -27,7 +27,7 @@ public class DiscoveryNode {
     /**
      * 节点类型
      */
-    private final Type type;
+    private final NodeType type;
 
     /**
      * 节点连接
@@ -42,7 +42,7 @@ public class DiscoveryNode {
     /**
      * 节点状态
      */
-    private volatile DiscoveryNode.Status status;
+    private volatile NodeStatus status;
 
     /**
      * 状态发生变化的时间
@@ -51,7 +51,7 @@ public class DiscoveryNode {
 
     private final ReentrantLock lock = new ReentrantLock();
 
-    public DiscoveryNode(AliveMessage message, DiscoveryNode.Status status, Date statusChangeTime) {
+    public Node(AliveMessage message, NodeStatus status, Date statusChangeTime) {
         this.nodeId = message.getNodeId();
         this.address = message.getAddress();
         this.type = message.getNodeType();
@@ -59,7 +59,7 @@ public class DiscoveryNode {
         this.statusChangeTime = statusChangeTime;
     }
 
-    public DiscoveryNode(String nodeId, Address address, Type type, long incarnation, Date statusChangeTime, DiscoveryNode.Status status) {
+    public Node(String nodeId, Address address, NodeType type, long incarnation, Date statusChangeTime, NodeStatus status) {
         this.nodeId = nodeId;
         this.address = address;
         this.type = type;
@@ -74,8 +74,8 @@ public class DiscoveryNode {
         state.setAddress(this.address);
         state.setNodeId(this.nodeId);
         state.setIncarnation(this.incarnation);
-        state.setNodeStatus(this.status);
-        state.setNodeType(this.type);
+        state.setStatus(this.status);
+        state.setType(this.type);
 
         return state;
     }
@@ -96,7 +96,7 @@ public class DiscoveryNode {
         return address;
     }
 
-    public Type getType() {
+    public NodeType getType() {
         return type;
     }
 
@@ -125,11 +125,11 @@ public class DiscoveryNode {
         this.incarnation = incarnation;
     }
 
-    public Status getStatus() {
+    public NodeStatus getStatus() {
         return status;
     }
 
-    public void setStatus(Status status) {
+    public void setStatus(NodeStatus status) {
         this.status = status;
     }
 
@@ -139,57 +139,6 @@ public class DiscoveryNode {
 
     public void setStatusChangeTime(Date statusChangeTime) {
         this.statusChangeTime = statusChangeTime;
-    }
-
-    public enum Status {
-        ALIVE((byte) 1, "alive"),
-        SUSPECT((byte) 2, "suspect"),
-        DEAD((byte) 3, "dead");
-
-        public final byte code;
-
-        public final String desc;
-
-        Status(byte code, String desc) {
-            this.code = code;
-            this.desc = desc;
-        }
-
-        public static Status valueOf(byte code) {
-            Status[] statuses = Status.values();
-            for (Status status : statuses) {
-                if (status.code == code) {
-                    return status;
-                }
-            }
-
-            throw new RuntimeException("unknown Status code:" + code);
-        }
-    }
-
-    public enum Type {
-        DATA(1, "数据节点"),
-        CANDIDATE(2, "候选节点");
-
-        public final int code;
-
-        public final String desc;
-
-        Type(int code, String desc) {
-            this.code = code;
-            this.desc = desc;
-        }
-
-        public static Type valueOf(byte code) {
-            Type[] types = Type.values();
-            for (Type type : types) {
-                if (type.code == code) {
-                    return type;
-                }
-            }
-
-            throw new RuntimeException("unknown Type code:" + code);
-        }
     }
 
     @Override

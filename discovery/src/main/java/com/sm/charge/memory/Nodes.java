@@ -20,36 +20,37 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * @author shifeng.luo
  * @version created on 2017/9/11 下午8:57
  */
-public class DiscoveryNodes extends LoggerSupport {
+public class Nodes extends LoggerSupport {
 
     private List<String> nodeIds = Lists.newArrayList();
-    private Map<String, DiscoveryNode> nodeMap = Maps.newHashMap();
-    private Map<String, DiscoveryNode> aliveNodes = Maps.newHashMap();
-    private Map<String, DiscoveryNode> suspectNodes = Maps.newHashMap();
+    private Map<String, Node> nodeMap = Maps.newHashMap();
+    private Map<String, Node> aliveNodes = Maps.newHashMap();
+    private Map<String, Node> suspectNodes = Maps.newHashMap();
+    private Map<String, Node> deadNodes = Maps.newHashMap();
 
-    private final String localNodeId;
+    private final String self;
 
     private final Lock readLock;
     private final Lock writeLock;
 
-    public DiscoveryNodes(String localNodeId) {
-        this.localNodeId = localNodeId;
+    public Nodes(String self) {
+        this.self = self;
 
         ReadWriteLock lock = new ReentrantReadWriteLock();
         readLock = lock.readLock();
         writeLock = lock.writeLock();
     }
 
-    public String getLocalNodeId() {
-        return localNodeId;
+    public String getSelf() {
+        return self;
     }
 
-    public DiscoveryNode getLocalNode() {
-        return nodeMap.get(localNodeId);
+    public Node getLocalNode() {
+        return nodeMap.get(self);
     }
 
     public boolean isLocalNode(String nodeId) {
-        return localNodeId.equals(nodeId);
+        return self.equals(nodeId);
     }
 
     public List<PushNodeState> buildPushNodeStates() {
@@ -63,7 +64,7 @@ public class DiscoveryNodes extends LoggerSupport {
         }
     }
 
-    public List<DiscoveryNode> getAliveNodes() {
+    public List<Node> getAliveNodes() {
         readLock.lock();
         try {
             return ListUtil.toList(aliveNodes);
@@ -72,7 +73,7 @@ public class DiscoveryNodes extends LoggerSupport {
         }
     }
 
-    public List<DiscoveryNode> getSuspectNodes() {
+    public List<Node> getSuspectNodes() {
         readLock.lock();
         try {
             return ListUtil.toList(suspectNodes);
@@ -81,7 +82,17 @@ public class DiscoveryNodes extends LoggerSupport {
         }
     }
 
-    public List<DiscoveryNode> getAll() {
+    public List<Node> getDeadNodes() {
+        readLock.lock();
+        try {
+            return ListUtil.toList(deadNodes);
+        } finally {
+            readLock.unlock();
+        }
+    }
+
+
+    public List<Node> getAll() {
         readLock.lock();
         try {
             return ListUtil.toList(nodeMap);
@@ -90,51 +101,70 @@ public class DiscoveryNodes extends LoggerSupport {
         }
     }
 
-    public void aliveNode(DiscoveryNode node) {
-        writeLock.lock();
-        try {
-            aliveNodes.put(node.getNodeId(), node);
-            suspectNodes.remove(node.getNodeId());
-        } finally {
-            writeLock.unlock();
-        }
-    }
-
-    public void suspectNode(DiscoveryNode node) {
-        writeLock.lock();
-        try {
-            suspectNodes.put(node.getNodeId(), node);
-            aliveNodes.remove(node.getNodeId());
-        } finally {
-            writeLock.unlock();
-        }
-    }
-
-    public void deadNode(DiscoveryNode node) {
+    public void aliveNode(Node node) {
         writeLock.lock();
         try {
             String nodeId = node.getNodeId();
-            nodeMap.remove(nodeId);
-            nodeIds.remove(nodeId);
-            aliveNodes.remove(nodeId);
+            aliveNodes.put(nodeId, node);
+
             suspectNodes.remove(nodeId);
+            deadNodes.remove(nodeId);
         } finally {
             writeLock.unlock();
         }
     }
 
-    public List<DiscoveryNode> randomNodes(int expect, NodeFilter filter) {
+    public void suspectNode(Node node) {
+        writeLock.lock();
+        try {
+            String nodeId = node.getNodeId();
+            suspectNodes.put(nodeId, node);
+
+            deadNodes.remove(nodeId);
+            aliveNodes.remove(nodeId);
+        } finally {
+            writeLock.unlock();
+        }
+    }
+
+    public void deadNode(Node node) {
+        writeLock.lock();
+        try {
+            String nodeId = node.getNodeId();
+            aliveNodes.remove(nodeId);
+            suspectNodes.remove(nodeId);
+
+            deadNodes.put(nodeId, node);
+        } finally {
+            writeLock.unlock();
+        }
+    }
+
+    public void removeDeadNodes() {
+        writeLock.lock();
+        try {
+            for (String nodeId : deadNodes.keySet()) {
+                nodeMap.remove(nodeId);
+            }
+
+            deadNodes.clear();
+        } finally {
+            writeLock.unlock();
+        }
+    }
+
+    public List<Node> randomNodes(int expect, NodeFilter filter) {
         readLock.lock();
         try {
-            List<DiscoveryNode> result = Lists.newArrayListWithCapacity(expect);
+            List<Node> result = Lists.newArrayListWithCapacity(expect);
             Set<String> set = Sets.newHashSetWithExpectedSize(expect);
 
-            List<DiscoveryNode> nodes = Lists.newArrayList(nodeMap.values());
+            List<Node> nodes = Lists.newArrayList(nodeMap.values());
             int size = nodes.size();
 
             for (int i = 0, count = 0; i < expect && count < 3 * size; count++) {
                 int index = RandomUtil.random(size);
-                DiscoveryNode node = nodes.get(index);
+                Node node = nodes.get(index);
                 if (set.contains(node.getNodeId())) {
                     continue;
                 }
@@ -154,7 +184,7 @@ public class DiscoveryNodes extends LoggerSupport {
         }
     }
 
-    public DiscoveryNode get(String nodeId) {
+    public Node get(String nodeId) {
         readLock.lock();
         try {
             return nodeMap.get(nodeId);
@@ -163,7 +193,7 @@ public class DiscoveryNodes extends LoggerSupport {
         }
     }
 
-    public DiscoveryNode get(int index) {
+    public Node get(int index) {
         readLock.lock();
         try {
             if (index >= nodeIds.size()) {
@@ -176,11 +206,11 @@ public class DiscoveryNodes extends LoggerSupport {
         }
     }
 
-    public DiscoveryNode addIfAbsent(DiscoveryNode node) {
+    public Node addIfAbsent(Node node) {
         writeLock.lock();
         try {
             String nodeId = node.getNodeId();
-            DiscoveryNode existNode = nodeMap.get(nodeId);
+            Node existNode = nodeMap.get(nodeId);
             if (existNode != null) {
                 return existNode;
             }
@@ -202,4 +232,6 @@ public class DiscoveryNodes extends LoggerSupport {
             readLock.unlock();
         }
     }
+
+
 }

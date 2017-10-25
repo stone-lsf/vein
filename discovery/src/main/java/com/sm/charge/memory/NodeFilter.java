@@ -12,5 +12,5 @@ public interface NodeFilter {
      * @param node 节点
      * @return 如果需要过滤，返回true，否则返回false
      */
-    boolean apply(DiscoveryNode node);
+    boolean apply(Node node);
 }

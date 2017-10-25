@@ -1,9 +1,10 @@
 package com.sm.charge.memory.gossip;
 
-import com.sm.charge.memory.DiscoveryNode;
-import com.sm.charge.memory.DiscoveryNodeListener;
-import com.sm.charge.memory.DiscoveryNodes;
-import com.sm.charge.memory.DiscoveryServerContext;
+import com.sm.charge.memory.Node;
+import com.sm.charge.memory.NodeListener;
+import com.sm.charge.memory.NodeStatus;
+import com.sm.charge.memory.Nodes;
+import com.sm.charge.memory.ServerContext;
 import com.sm.charge.memory.gossip.messages.AliveMessage;
 import com.sm.charge.memory.gossip.messages.DeadMessage;
 import com.sm.charge.memory.gossip.messages.GossipMessage;
@@ -21,9 +22,9 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
-import static com.sm.charge.memory.DiscoveryNode.Status.ALIVE;
-import static com.sm.charge.memory.DiscoveryNode.Status.DEAD;
-import static com.sm.charge.memory.DiscoveryNode.Status.SUSPECT;
+import static com.sm.charge.memory.NodeStatus.ALIVE;
+import static com.sm.charge.memory.NodeStatus.DEAD;
+import static com.sm.charge.memory.NodeStatus.SUSPECT;
 import static com.sm.charge.memory.gossip.messages.GossipMessage.USER;
 
 
@@ -32,11 +33,11 @@ import static com.sm.charge.memory.gossip.messages.GossipMessage.USER;
  * @version created on 2017/9/11 下午11:23
  */
 public class GossipMessageServiceImpl extends LoggerSupport implements GossipMessageService {
-    private final CopyOnWriteArrayList<DiscoveryNodeListener> listeners = new CopyOnWriteArrayList<>();
+    private final CopyOnWriteArrayList<NodeListener> listeners = new CopyOnWriteArrayList<>();
     private final ConcurrentMap<String, SuspectTask> suspectTaskMap = new ConcurrentHashMap<>();
 
-    private final DiscoveryNodes nodes;
-    private final DiscoveryServerContext serverContext;
+    private final Nodes nodes;
+    private final ServerContext serverContext;
     private final MessageQueue messageQueue;
     private final int suspectTimeout;
 
@@ -44,7 +45,7 @@ public class GossipMessageServiceImpl extends LoggerSupport implements GossipMes
 
     private GossipMessageNotifier messageNotifier;
 
-    public GossipMessageServiceImpl(DiscoveryNodes nodes, DiscoveryServerContext serverContext, MessageQueue messageQueue, int suspectTimeout) {
+    public GossipMessageServiceImpl(Nodes nodes, ServerContext serverContext, MessageQueue messageQueue, int suspectTimeout) {
         this.nodes = nodes;
         this.serverContext = serverContext;
         this.messageQueue = messageQueue;
@@ -55,9 +56,10 @@ public class GossipMessageServiceImpl extends LoggerSupport implements GossipMes
     @Override
     public void aliveNode(AliveMessage message, boolean bootstrap) {
         String toAliveNode = message.getNodeId();
+        logger.info("node:{} receive alive message to node:{} ,bootstrap:{}", nodes.getSelf(), toAliveNode, bootstrap);
 
-        DiscoveryNode node = new DiscoveryNode(message, DEAD, new Date());
-        DiscoveryNode existNode = nodes.addIfAbsent(node);
+        Node node = new Node(message, DEAD, new Date());
+        Node existNode = nodes.addIfAbsent(node);
         if (existNode == null) {
             existNode = node;
         }
@@ -98,7 +100,7 @@ public class GossipMessageServiceImpl extends LoggerSupport implements GossipMes
                 return;
             }
 
-            DiscoveryNode.Status oldStatus = node.getStatus();
+            NodeStatus oldStatus = node.getStatus();
             if (oldStatus != ALIVE) {
                 node.setIncarnation(aliveIncarnation);
                 node.setStatus(ALIVE);
@@ -108,7 +110,7 @@ public class GossipMessageServiceImpl extends LoggerSupport implements GossipMes
             nodes.aliveNode(existNode);
             messageQueue.enqueue(message);
 
-            for (DiscoveryNodeListener listener : listeners) {
+            for (NodeListener listener : listeners) {
                 if (oldStatus == DEAD) {
                     listener.onJoin(existNode);
                 } else {
@@ -128,7 +130,7 @@ public class GossipMessageServiceImpl extends LoggerSupport implements GossipMes
     }
 
     private void refute(long incarnation) {
-        DiscoveryNode localNode = nodes.getLocalNode();
+        Node localNode = nodes.getLocalNode();
 
         long newIncarnation = incarnation + 1;
         localNode.setIncarnation(newIncarnation);
@@ -148,9 +150,9 @@ public class GossipMessageServiceImpl extends LoggerSupport implements GossipMes
     @Override
     public void suspectNode(SuspectMessage message) {
         String toSuspectNode = message.getNodeId();
-        logger.info("node:{} suspect node:{}",nodes.getLocalNodeId(),toSuspectNode);
+        logger.info("node:{} receive suspect message to node:{}", nodes.getSelf(), toSuspectNode);
 
-        DiscoveryNode node = nodes.get(toSuspectNode);
+        Node node = nodes.get(toSuspectNode);
         if (node == null) {
             logger.warn("receive suspect message of node:{},but it isn't in nodes", toSuspectNode);
             return;
@@ -166,9 +168,9 @@ public class GossipMessageServiceImpl extends LoggerSupport implements GossipMes
                 return;
             }
 
-            DiscoveryNode.Status oldStatus = node.getStatus();
+            NodeStatus oldStatus = node.getStatus();
             if (oldStatus != ALIVE) {
-                logger.warn("receive suspect message of node:{}, current status is dead", oldStatus);
+                logger.warn("receive suspect message of node:{}, current status is {}", toSuspectNode, oldStatus);
                 return;
             }
 
@@ -203,7 +205,9 @@ public class GossipMessageServiceImpl extends LoggerSupport implements GossipMes
     @Override
     public void deadNode(DeadMessage message) {
         String toDeadNode = message.getNodeId();
-        DiscoveryNode node = nodes.get(toDeadNode);
+        logger.info("node:{} receive dead message to node:{}", nodes.getSelf(), toDeadNode);
+
+        Node node = nodes.get(toDeadNode);
         if (node == null) {
             logger.warn("receive dead message of node:{},but it isn't in nodes", toDeadNode);
             return;
@@ -219,7 +223,7 @@ public class GossipMessageServiceImpl extends LoggerSupport implements GossipMes
                 return;
             }
 
-            DiscoveryNode.Status oldStatus = node.getStatus();
+            NodeStatus oldStatus = node.getStatus();
             if (oldStatus == DEAD) {
                 logger.warn("receive dead message of node:{}, current status is dead", toDeadNode);
                 return;
@@ -231,13 +235,14 @@ public class GossipMessageServiceImpl extends LoggerSupport implements GossipMes
                 return;
             }
 
+            logger.info("equeue dead message:{}", message);
             messageQueue.enqueue(message);
             node.setStatus(DEAD);
             node.setIncarnation(deadIncarnation);
             node.setStatusChangeTime(new Date());
 
             nodes.deadNode(node);
-            for (DiscoveryNodeListener listener : listeners) {
+            for (NodeListener listener : listeners) {
                 listener.onLeave(node);
             }
         } finally {
@@ -246,7 +251,7 @@ public class GossipMessageServiceImpl extends LoggerSupport implements GossipMes
     }
 
     @Override
-    public void addListener(DiscoveryNodeListener listener) {
+    public void addListener(NodeListener listener) {
         listeners.add(listener);
     }
 

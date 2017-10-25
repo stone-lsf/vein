@@ -1,6 +1,7 @@
 package com.sm.charge.memory.pushpull;
 
-import com.sm.charge.memory.DiscoveryNode;
+import com.sm.charge.memory.NodeStatus;
+import com.sm.charge.memory.NodeType;
 import com.sm.finance.charge.common.Address;
 
 
@@ -12,8 +13,8 @@ public class PushNodeState {
     private String nodeId;
     private Address address;
     private long incarnation;
-    private DiscoveryNode.Status nodeStatus;
-    private DiscoveryNode.Type nodeType;
+    private NodeStatus status;
+    private NodeType type;
 
     public String getNodeId() {
         return nodeId;
@@ -39,20 +40,20 @@ public class PushNodeState {
         this.incarnation = incarnation;
     }
 
-    public DiscoveryNode.Status getNodeStatus() {
-        return nodeStatus;
+    public NodeStatus getStatus() {
+        return status;
     }
 
-    public void setNodeStatus(DiscoveryNode.Status nodeStatus) {
-        this.nodeStatus = nodeStatus;
+    public void setStatus(NodeStatus status) {
+        this.status = status;
     }
 
-    public DiscoveryNode.Type getNodeType() {
-        return nodeType;
+    public NodeType getType() {
+        return type;
     }
 
-    public void setNodeType(DiscoveryNode.Type nodeType) {
-        this.nodeType = nodeType;
+    public void setType(NodeType type) {
+        this.type = type;
     }
 
     @Override
@@ -61,8 +62,8 @@ public class PushNodeState {
             "nodeId='" + nodeId + '\'' +
             ", address=" + address +
             ", incarnation=" + incarnation +
-            ", nodeStatus=" + nodeStatus +
-            ", nodeType=" + nodeType +
+            ", status=" + status +
+            ", type=" + type +
             '}';
     }
 }

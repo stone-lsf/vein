@@ -18,7 +18,7 @@ import static com.sm.finance.charge.common.SystemConstants.PROCESSORS;
  * @author shifeng.luo
  * @version created on 2017/9/11 下午8:44
  */
-public class DiscoveryServerContext extends LoggerSupport {
+public class ServerContext extends LoggerSupport {
 
     /**
      * 节点唯一标识符
@@ -39,7 +39,7 @@ public class DiscoveryServerContext extends LoggerSupport {
 
     private final ConcurrentMap<Address, Connection> remoteConnections = new ConcurrentHashMap<>();
 
-    DiscoveryServerContext(String nodeId, TransportClient client, TransportServer server) {
+    ServerContext(String nodeId, TransportClient client, TransportServer server) {
         this.nodeId = nodeId;
         this.client = client;
         this.server = server;

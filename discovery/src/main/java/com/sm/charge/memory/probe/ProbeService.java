@@ -1,7 +1,7 @@
 package com.sm.charge.memory.probe;
 
 
-import com.sm.charge.memory.DiscoveryNode;
+import com.sm.charge.memory.Node;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -18,7 +18,7 @@ public interface ProbeService {
      * @param timeout 超时时间，单位毫秒
      * @return ack {@link Ack}
      */
-    Ack ping(DiscoveryNode node, int timeout);
+    Ack ping(Node node, int timeout);
 
     /**
      * 间接ping节点
@@ -27,7 +27,7 @@ public interface ProbeService {
      * @param timeout 超时时间，单位毫秒
      * @return 是否间接ping通
      */
-    boolean redirectPing(DiscoveryNode node, int timeout);
+    boolean redirectPing(Node node, int timeout);
 
     CompletableFuture<Ack> handle(Ping ping);
 

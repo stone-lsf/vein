@@ -18,5 +18,5 @@ public interface DiscoveryService extends Startable, Closable {
     boolean join(String cluster);
 
 
-    DiscoveryNodes getNodes();
+    Nodes getNodes();
 }

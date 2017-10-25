@@ -1,8 +1,8 @@
 package com.sm.charge.memory.probe;
 
-import com.sm.charge.memory.DiscoveryNode;
-import com.sm.charge.memory.DiscoveryNodes;
+import com.sm.charge.memory.Node;
 import com.sm.charge.memory.NodeFilter;
+import com.sm.charge.memory.Nodes;
 import com.sm.finance.charge.common.Merger;
 import com.sm.finance.charge.common.base.LoggerSupport;
 import com.sm.finance.charge.transport.api.Connection;
@@ -16,21 +16,23 @@ import org.apache.commons.collections.CollectionUtils;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
+import static com.sm.charge.memory.NodeStatus.DEAD;
+
 /**
  * @author shifeng.luo
  * @version created on 2017/9/18 下午2:50
  */
 public class ProbeServiceImpl extends LoggerSupport implements ProbeService {
-    private final DiscoveryNodes nodes;
+    private final Nodes nodes;
     private final int indirectNodeNum;
 
-    public ProbeServiceImpl(DiscoveryNodes nodes, int indirectNodeNum) {
+    public ProbeServiceImpl(Nodes nodes, int indirectNodeNum) {
         this.nodes = nodes;
         this.indirectNodeNum = indirectNodeNum;
     }
 
     @Override
-    public Ack ping(DiscoveryNode node, int timeout) {
+    public Ack ping(Node node, int timeout) {
         Connection connection = node.getConnection();
         String target = node.getNodeId();
         if (connection == null) {
@@ -38,7 +40,7 @@ public class ProbeServiceImpl extends LoggerSupport implements ProbeService {
             throw new IllegalStateException("node:" + target + " hasn't connection");
         }
 
-        Ping ping = new Ping(nodes.getLocalNodeId(), target);
+        Ping ping = new Ping(nodes.getSelf(), target);
         try {
             return connection.syncRequest(ping, timeout);
         } catch (Exception e) {
@@ -48,18 +50,18 @@ public class ProbeServiceImpl extends LoggerSupport implements ProbeService {
     }
 
     @Override
-    public boolean redirectPing(DiscoveryNode node, int timeout) {
+    public boolean redirectPing(Node node, int timeout) {
         String target = node.getNodeId();
-        List<DiscoveryNode> randomNodes = nodes.randomNodes(indirectNodeNum, new Filter(node));
-        if (CollectionUtils.isEmpty(randomNodes)){
-            logger.info("can't find node to redirect node:{}",target );
+        List<Node> randomNodes = nodes.randomNodes(indirectNodeNum, new Filter(node));
+        if (CollectionUtils.isEmpty(randomNodes)) {
+            logger.info("can't find node to redirect node:{}", target);
             return false;
         }
 
-        RedirectPing ping = new RedirectPing(nodes.getLocalNodeId(), target);
+        RedirectPing ping = new RedirectPing(nodes.getSelf(), target);
         Merger merge = new Merger(randomNodes.size());
 
-        for (DiscoveryNode randomNode : randomNodes) {
+        for (Node randomNode : randomNodes) {
             Connection connection = randomNode.getConnection();
             String nodeId = randomNode.getNodeId();
             if (connection == null) {
@@ -99,20 +101,20 @@ public class ProbeServiceImpl extends LoggerSupport implements ProbeService {
     @Override
     public CompletableFuture<Ack> handle(Ping ping) {
         String nodeId = ping.getTo();
-        if (!nodeId.equals(nodes.getLocalNodeId())) {
+        if (!nodeId.equals(nodes.getSelf())) {
             logger.error("receive ping message from:{},but target is node:{}", ping.getFrom(), nodeId);
             //FIXME 此时应该返回错误信息
 
             return CompletableFuture.completedFuture(null);
         }
-        return CompletableFuture.completedFuture(new Ack(nodes.getLocalNodeId()));
+        return CompletableFuture.completedFuture(new Ack(nodes.getSelf()));
     }
 
     @Override
     public CompletableFuture<Ack> handle(RedirectPing redirectPing) {
         return CompletableFuture.supplyAsync(() -> {
             String target = redirectPing.getTarget();
-            DiscoveryNode node = nodes.get(target);
+            Node node = nodes.get(target);
             if (node == null) {
                 logger.warn("receive redirect ping to node:{}, but current cluster state don't contain node", target);
                 //FIXME 此时应该返回错误信息
@@ -125,7 +127,7 @@ public class ProbeServiceImpl extends LoggerSupport implements ProbeService {
                 throw new IllegalStateException("node:" + target + " don't have connection");
             }
 
-            Ping ping = new Ping(nodes.getLocalNodeId(), target);
+            Ping ping = new Ping(nodes.getSelf(), target);
             try {
                 return connection.syncRequest(ping);
             } catch (Exception e) {
@@ -139,16 +141,16 @@ public class ProbeServiceImpl extends LoggerSupport implements ProbeService {
 
     private class Filter implements NodeFilter {
 
-        private final DiscoveryNode target;
+        private final Node target;
 
-        private Filter(DiscoveryNode target) {
+        private Filter(Node target) {
             this.target = target;
         }
 
         @Override
-        public boolean apply(DiscoveryNode node) {
+        public boolean apply(Node node) {
             String nodeId = node.getNodeId();
-            return nodes.isLocalNode(nodeId) || target.getNodeId().equals(nodeId);
+            return nodes.isLocalNode(nodeId) || target.getNodeId().equals(nodeId) || node.getStatus() == DEAD;
 
         }
     }

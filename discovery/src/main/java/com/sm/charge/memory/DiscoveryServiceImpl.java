@@ -2,6 +2,7 @@ package com.sm.charge.memory;
 
 import com.sm.charge.memory.gossip.GossipMessageService;
 import com.sm.charge.memory.gossip.GossipMessageServiceImpl;
+import com.sm.charge.memory.gossip.GossipTask;
 import com.sm.charge.memory.gossip.MessageQueue;
 import com.sm.charge.memory.gossip.messages.AliveMessage;
 import com.sm.charge.memory.handler.GossipMessagesHandler;
@@ -30,16 +31,18 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
+import static com.sm.charge.memory.NodeStatus.ALIVE;
+
 /**
  * @author shifeng.luo
  * @version created on 2017/9/11 下午9:00
  */
 public class DiscoveryServiceImpl extends AbstractService implements DiscoveryService {
 
-    private final DiscoveryNode localNode;
-    private final DiscoveryServerContext serverContext;
+    private final Node localNode;
+    private final ServerContext serverContext;
     private final DiscoveryConfig config;
-    private final DiscoveryNodes nodes;
+    private final Nodes nodes;
 
     private final MessageQueue messageQueue;
     private volatile boolean joined = false;
@@ -56,16 +59,16 @@ public class DiscoveryServiceImpl extends AbstractService implements DiscoverySe
         this.config = config;
         Address address = AddressUtil.getLocalAddress(config.getBindPort());
 
-        DiscoveryNode.Type type = DiscoveryNode.Type.valueOf(config.getNodeType());
-        localNode = new DiscoveryNode(config.getNodeId(), address, type, 0, new Date(), DiscoveryNode.Status.ALIVE);
+        NodeType type = NodeType.valueOf(config.getNodeType());
+        localNode = new Node(config.getNodeId(), address, type, 0, new Date(), ALIVE);
 
         Transport transport = TransportFactory.create(config.getTransportType());
         TransportClient client = transport.client();
         TransportServer server = transport.server();
 
-        this.serverContext = new DiscoveryServerContext(localNode.getNodeId(), client, server);
+        this.serverContext = new ServerContext(localNode.getNodeId(), client, server);
 
-        nodes = new DiscoveryNodes(config.getNodeId());
+        nodes = new Nodes(config.getNodeId());
         messageQueue = new MessageQueue(config.getGossipQueueSize());
     }
 
@@ -93,7 +96,7 @@ public class DiscoveryServiceImpl extends AbstractService implements DiscoverySe
     }
 
     @Override
-    public DiscoveryNodes getNodes() {
+    public Nodes getNodes() {
         return nodes;
     }
 
@@ -133,9 +136,9 @@ public class DiscoveryServiceImpl extends AbstractService implements DiscoverySe
         probeFuture = executorService.scheduleWithFixedDelay(probeTask, probeInterval, probeInterval, TimeUnit.MILLISECONDS);
 
 
-//        GossipTask gossipTask = new GossipTask(nodes, messageQueue, config);
-//        int gossipInterval = config.getGossipInterval();
-//        gossipFuture = executorService.scheduleWithFixedDelay(gossipTask, gossipInterval, gossipInterval, TimeUnit.MILLISECONDS);
+        GossipTask gossipTask = new GossipTask(nodes, messageQueue, config);
+        int gossipInterval = config.getGossipInterval();
+        gossipFuture = executorService.scheduleWithFixedDelay(gossipTask, gossipInterval, gossipInterval, TimeUnit.MILLISECONDS);
 
         PushPullTask pushPullTask = new PushPullTask(nodes, pushPullService);
         int pushPullInterval = config.getPushPullInterval();

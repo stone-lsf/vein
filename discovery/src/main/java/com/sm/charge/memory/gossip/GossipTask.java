@@ -1,8 +1,8 @@
 package com.sm.charge.memory.gossip;
 
 import com.sm.charge.memory.DiscoveryConfig;
-import com.sm.charge.memory.DiscoveryNode;
-import com.sm.charge.memory.DiscoveryNodes;
+import com.sm.charge.memory.Node;
+import com.sm.charge.memory.Nodes;
 import com.sm.charge.memory.NodeFilter;
 import com.sm.charge.memory.gossip.messages.GossipMessage;
 import com.sm.finance.charge.common.base.LoggerSupport;
@@ -18,14 +18,14 @@ import java.util.List;
  */
 public class GossipTask extends LoggerSupport implements Runnable {
 
-    private final DiscoveryNodes nodes;
+    private final Nodes nodes;
     private final MessageQueue messageQueue;
     private final NodeFilter filter = new GossipTask.Filter();
     private final int gossipNodes;
     private final int maxGossipCount;
 
 
-    public GossipTask(DiscoveryNodes nodes, MessageQueue messageQueue, DiscoveryConfig config) {
+    public GossipTask(Nodes nodes, MessageQueue messageQueue, DiscoveryConfig config) {
         this.nodes = nodes;
         this.messageQueue = messageQueue;
         this.gossipNodes = config.getNodesPerGossip();
@@ -35,14 +35,14 @@ public class GossipTask extends LoggerSupport implements Runnable {
 
     @Override
     public void run() {
-        List<DiscoveryNode> randomNodes = nodes.randomNodes(gossipNodes, filter);
+        List<Node> randomNodes = nodes.randomNodes(gossipNodes, filter);
         if (CollectionUtils.isEmpty(randomNodes)) {
             return;
         }
 
         List<GossipMessage> messages = messageQueue.dequeue(maxGossipCount);
 
-        for (DiscoveryNode node : randomNodes) {
+        for (Node node : randomNodes) {
             Connection connection = node.getConnection();
             if (connection == null) {
                 logger.error("node:{} don't have connection", node.getNodeId());
@@ -61,7 +61,7 @@ public class GossipTask extends LoggerSupport implements Runnable {
     private class Filter implements NodeFilter {
 
         @Override
-        public boolean apply(DiscoveryNode node) {
+        public boolean apply(Node node) {
             return nodes.isLocalNode(node.getNodeId());
         }
     }

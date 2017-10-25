@@ -1,12 +1,15 @@
 package com.sm.charge.memory.gossip;
 
-import com.sm.charge.memory.DiscoveryNode;
-import com.sm.charge.memory.DiscoveryNodes;
+import com.sm.charge.memory.Node;
+import com.sm.charge.memory.NodeStatus;
+import com.sm.charge.memory.Nodes;
 import com.sm.charge.memory.gossip.messages.DeadMessage;
 import com.sm.finance.charge.common.base.LoggerSupport;
 
 import java.util.Date;
 import java.util.concurrent.ScheduledFuture;
+
+import static com.sm.charge.memory.NodeStatus.SUSPECT;
 
 /**
  * @author shifeng.luo
@@ -19,7 +22,7 @@ public class SuspectTask extends LoggerSupport implements Runnable {
      */
     private final String nodeId;
 
-    private final DiscoveryNodes nodes;
+    private final Nodes nodes;
 
     private final GossipMessageService messageService;
 
@@ -27,7 +30,7 @@ public class SuspectTask extends LoggerSupport implements Runnable {
 
     private volatile ScheduledFuture future;
 
-    public SuspectTask(String nodeId, DiscoveryNodes nodes, GossipMessageService messageService, Date createTime) {
+    public SuspectTask(String nodeId, Nodes nodes, GossipMessageService messageService, Date createTime) {
         this.nodeId = nodeId;
         this.nodes = nodes;
         this.messageService = messageService;
@@ -38,16 +41,16 @@ public class SuspectTask extends LoggerSupport implements Runnable {
     @Override
     public void run() {
         logger.info("handle node[{}] suspect time out", nodeId);
-        DiscoveryNode node = nodes.get(nodeId);
+        Node node = nodes.get(nodeId);
         if (node == null) {
             logger.warn("handle node:{} suspect timeout,but it's not in nodes", nodeId);
             return;
         }
 
-        DiscoveryNode.Status status = node.getStatus();
-        if (status == DiscoveryNode.Status.SUSPECT && node.getStatusChangeTime().equals(createTime)) {
+        NodeStatus status = node.getStatus();
+        if (status == SUSPECT && node.getStatusChangeTime().equals(createTime)) {
             logger.info("marking node [{}] as failed by suspect timeout happened", nodeId);
-            DeadMessage message = new DeadMessage(nodeId, node.getIncarnation(), nodes.getLocalNodeId());
+            DeadMessage message = new DeadMessage(nodeId, node.getIncarnation(), nodes.getSelf());
             messageService.deadNode(message);
         }
     }

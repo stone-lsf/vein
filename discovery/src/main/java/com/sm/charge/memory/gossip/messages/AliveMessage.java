@@ -1,6 +1,6 @@
 package com.sm.charge.memory.gossip.messages;
 
-import com.sm.charge.memory.DiscoveryNode;
+import com.sm.charge.memory.NodeType;
 import com.sm.charge.memory.pushpull.PushNodeState;
 import com.sm.finance.charge.common.Address;
 
@@ -13,12 +13,12 @@ public class AliveMessage extends DeclareMessage {
     private String nodeId;
     private Address address;
     private long incarnation;
-    private DiscoveryNode.Type nodeType;
+    private NodeType nodeType;
 
     public AliveMessage() {
     }
 
-    public AliveMessage(String nodeId, Address address, long incarnation, DiscoveryNode.Type nodeType) {
+    public AliveMessage(String nodeId, Address address, long incarnation, NodeType nodeType) {
         this.nodeId = nodeId;
         this.address = address;
         this.incarnation = incarnation;
@@ -29,7 +29,7 @@ public class AliveMessage extends DeclareMessage {
         this.nodeId = state.getNodeId();
         this.address = state.getAddress();
         this.incarnation = state.getIncarnation();
-        this.nodeType = state.getNodeType();
+        this.nodeType = state.getType();
     }
 
 
@@ -62,11 +62,11 @@ public class AliveMessage extends DeclareMessage {
         this.incarnation = incarnation;
     }
 
-    public DiscoveryNode.Type getNodeType() {
+    public NodeType getNodeType() {
         return nodeType;
     }
 
-    public void setNodeType(DiscoveryNode.Type nodeType) {
+    public void setNodeType(NodeType nodeType) {
         this.nodeType = nodeType;
     }
 
