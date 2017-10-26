@@ -2,6 +2,7 @@ package com.sm.charge.memory.gossip;
 
 
 import com.sm.charge.memory.gossip.messages.GossipMessage;
+import com.sm.charge.memory.gossip.messages.MessageWrapper;
 
 import java.util.List;
 

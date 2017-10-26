@@ -180,7 +180,10 @@ public abstract class AbstractConnection extends AbstractService implements Conn
                     logger.info(logBuilder.toString());
                     handleRequestFailure(requestId, error, handler.getAllListeners());
                 } else {
-                    logBuilder.append(response.toString()).append("###").append(connectionId);
+                    if (response != null){
+                        logBuilder.append(response.toString());
+                    }
+                    logBuilder.append("###").append(connectionId);
                     logger.info(logBuilder.toString());
                     handleRequestSuccess(requestId, response, handler.getAllListeners());
                 }

@@ -8,7 +8,7 @@ import com.sm.finance.charge.common.Address;
  * @author shifeng.luo
  * @version created on 2017/9/11 下午11:24
  */
-public class AliveMessage extends DeclareMessage {
+public class AliveMessage implements GossipMessage{
 
     private String nodeId;
     private Address address;

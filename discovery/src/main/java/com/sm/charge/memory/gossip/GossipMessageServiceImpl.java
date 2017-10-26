@@ -8,6 +8,7 @@ import com.sm.charge.memory.ServerContext;
 import com.sm.charge.memory.gossip.messages.AliveMessage;
 import com.sm.charge.memory.gossip.messages.DeadMessage;
 import com.sm.charge.memory.gossip.messages.GossipMessage;
+import com.sm.charge.memory.gossip.messages.MemberWrapper;
 import com.sm.charge.memory.gossip.messages.SuspectMessage;
 import com.sm.finance.charge.common.Address;
 import com.sm.finance.charge.common.base.LoggerSupport;
@@ -108,7 +109,7 @@ public class GossipMessageServiceImpl extends LoggerSupport implements GossipMes
             }
 
             nodes.aliveNode(existNode);
-            messageQueue.enqueue(message);
+            enqueue(message);
 
             for (NodeListener listener : listeners) {
                 if (oldStatus == DEAD) {
@@ -136,7 +137,7 @@ public class GossipMessageServiceImpl extends LoggerSupport implements GossipMes
         localNode.setIncarnation(newIncarnation);
 
         AliveMessage message = new AliveMessage(localNode.getNodeId(), localNode.getAddress(), newIncarnation, localNode.getType());
-        messageQueue.enqueue(message);
+        enqueue(message);
     }
 
     private Connection createConnection(Address address) {
@@ -180,7 +181,7 @@ public class GossipMessageServiceImpl extends LoggerSupport implements GossipMes
                 return;
             }
 
-            messageQueue.enqueue(message);
+            enqueue(message);
 
             node.setIncarnation(suspectIncarnation);
             node.setStatus(SUSPECT);
@@ -236,7 +237,7 @@ public class GossipMessageServiceImpl extends LoggerSupport implements GossipMes
             }
 
             logger.info("equeue dead message:{}", message);
-            messageQueue.enqueue(message);
+            enqueue(message);
             node.setStatus(DEAD);
             node.setIncarnation(deadIncarnation);
             node.setStatusChangeTime(new Date());
@@ -248,6 +249,11 @@ public class GossipMessageServiceImpl extends LoggerSupport implements GossipMes
         } finally {
             node.unlock();
         }
+    }
+
+    private void enqueue(GossipMessage message) {
+        MemberWrapper wrapper = new MemberWrapper(message);
+        messageQueue.enqueue(wrapper);
     }
 
     @Override

@@ -11,11 +11,11 @@ import java.util.concurrent.CompletableFuture;
  * @author shifeng.luo
  * @version created on 2017/9/19 下午11:43
  */
-public class GossipMessagesHandler extends AbstractRequestHandler<GossipRequest> {
+public class GossipRequestHandler extends AbstractRequestHandler<GossipRequest> {
 
     private final GossipMessageService messageService;
 
-    public GossipMessagesHandler(GossipMessageService messageService) {
+    public GossipRequestHandler(GossipMessageService messageService) {
         this.messageService = messageService;
     }
 

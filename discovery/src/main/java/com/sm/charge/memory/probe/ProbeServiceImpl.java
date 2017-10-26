@@ -85,7 +85,11 @@ public class ProbeServiceImpl extends LoggerSupport implements ProbeService {
 
                 @Override
                 public void handle(Ack ack, Connection connection) {
-                    merge.mergeSuccess();
+                    if (ack != null) {
+                        merge.mergeSuccess();
+                    } else {
+                        merge.mergeFailure();
+                    }
                 }
             });
         }
@@ -117,8 +121,7 @@ public class ProbeServiceImpl extends LoggerSupport implements ProbeService {
             Node node = nodes.get(target);
             if (node == null) {
                 logger.warn("receive redirect ping to node:{}, but current cluster state don't contain node", target);
-                //FIXME 此时应该返回错误信息
-                return null;
+                throw new RuntimeException("node:" + target + " don't exist");
             }
 
             Connection connection = node.getConnection();
@@ -132,8 +135,7 @@ public class ProbeServiceImpl extends LoggerSupport implements ProbeService {
                 return connection.syncRequest(ping);
             } catch (Exception e) {
                 logger.error("send ping to node[{}] for redirect ping caught exception:{}", target, e);
-                //FIXME 此时应该返回错误信息
-                return null;
+                throw new RuntimeException(e);
             }
         });
     }

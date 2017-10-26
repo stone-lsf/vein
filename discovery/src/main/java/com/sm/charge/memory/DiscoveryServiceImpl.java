@@ -5,7 +5,7 @@ import com.sm.charge.memory.gossip.GossipMessageServiceImpl;
 import com.sm.charge.memory.gossip.GossipTask;
 import com.sm.charge.memory.gossip.MessageQueue;
 import com.sm.charge.memory.gossip.messages.AliveMessage;
-import com.sm.charge.memory.handler.GossipMessagesHandler;
+import com.sm.charge.memory.handler.GossipRequestHandler;
 import com.sm.charge.memory.handler.PingMessageHandler;
 import com.sm.charge.memory.handler.PushPullRequestHandler;
 import com.sm.charge.memory.handler.RedirectPingHandler;
@@ -120,7 +120,7 @@ public class DiscoveryServiceImpl extends AbstractService implements DiscoverySe
         manager.registerMessageHandler(new PushPullRequestHandler(pushPullService));
         manager.registerMessageHandler(new PingMessageHandler(probeService));
         manager.registerMessageHandler(new RedirectPingHandler(probeService));
-        manager.registerMessageHandler(new GossipMessagesHandler(gossipMessageService));
+        manager.registerMessageHandler(new GossipRequestHandler(gossipMessageService));
 
         AliveMessage message = new AliveMessage(localNode.getNodeId(), localNode.getAddress(), localNode.nextIncarnation(), localNode.getType());
         gossipMessageService.aliveNode(message, true);

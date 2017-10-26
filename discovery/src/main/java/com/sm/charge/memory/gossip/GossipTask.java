@@ -2,9 +2,10 @@ package com.sm.charge.memory.gossip;
 
 import com.sm.charge.memory.DiscoveryConfig;
 import com.sm.charge.memory.Node;
-import com.sm.charge.memory.Nodes;
 import com.sm.charge.memory.NodeFilter;
+import com.sm.charge.memory.Nodes;
 import com.sm.charge.memory.gossip.messages.GossipMessage;
+import com.sm.charge.memory.gossip.messages.MessageWrapper;
 import com.sm.finance.charge.common.base.LoggerSupport;
 import com.sm.finance.charge.transport.api.Connection;
 
@@ -37,10 +38,16 @@ public class GossipTask extends LoggerSupport implements Runnable {
     public void run() {
         List<Node> randomNodes = nodes.randomNodes(gossipNodes, filter);
         if (CollectionUtils.isEmpty(randomNodes)) {
+            logger.info("node:{} can't find target to gossip", nodes.getSelf());
             return;
         }
 
         List<GossipMessage> messages = messageQueue.dequeue(maxGossipCount);
+        logger.info("node:{} trying to gossip {} messages", nodes.getSelf(), messages.size());
+        if (CollectionUtils.isEmpty(messages)) {
+            return;
+        }
+
 
         for (Node node : randomNodes) {
             Connection connection = node.getConnection();
@@ -53,7 +60,7 @@ public class GossipTask extends LoggerSupport implements Runnable {
                 GossipRequest request = new GossipRequest(messages);
                 connection.send(request);
             } catch (Exception e) {
-                logger.error("com.sm.charge.memory.gossip message to node:{} caught exception:{}", node.getNodeId(), e);
+                logger.error("gossip message to node:{} caught exception:{}", node.getNodeId(), e);
             }
         }
     }
