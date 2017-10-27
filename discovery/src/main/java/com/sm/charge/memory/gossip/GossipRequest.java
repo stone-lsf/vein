@@ -10,27 +10,27 @@ import java.util.List;
  * @version created on 2017/9/18 下午11:22
  */
 public class GossipRequest {
-    private List<GossipContent> messages;
+    private List<GossipContent> contents;
 
     public GossipRequest() {
     }
 
-    public GossipRequest(List<GossipContent> messages) {
-        this.messages = messages;
+    public GossipRequest(List<GossipContent> contents) {
+        this.contents = contents;
     }
 
-    public List<GossipContent> getMessages() {
-        return messages;
+    public List<GossipContent> getContents() {
+        return contents;
     }
 
-    public void setMessages(List<GossipContent> messages) {
-        this.messages = messages;
+    public void setContents(List<GossipContent> contents) {
+        this.contents = contents;
     }
 
     @Override
     public String toString() {
         return "GossipRequest{" +
-            "messages=" + messages +
+            "messages=" + contents +
             '}';
     }
 }
