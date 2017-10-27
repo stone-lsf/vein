@@ -90,14 +90,20 @@ public class DiscoveryConfig {
     /**
      * 每次gossip的节点数
      */
-    private static final String NODES_PER_GOSSIP = "discovery.gossip.nodes";
-    private static final int DEFAULT_NODES_PER_GOSSIP = 1;
+    private static final String GOSSIP_NODES = "discovery.gossip.nodes";
+    private static final int DEFAULT_GOSSIP_NODES = 1;
 
     /**
      * 每次gossip的最大消息数
      */
     private static final String MAX_GOSSIP_MESSAGE_COUNT = "discovery.gossip.message.count.max";
     private static final int DEFAULT_MAX_GOSSIP_MESSAGE_COUNT = 200;
+
+    /**
+     * gossip消息的最大次数
+     */
+    private static final String MESSAGE_MAX_GOSSIP_TIMES = "discovery.gossip.message.transmit.max";
+    private static final int DEFAULT_MESSAGE_MAX_GOSSIP_TIMES = 2;
 
     /**
      * 间接探测节点数
@@ -171,8 +177,8 @@ public class DiscoveryConfig {
     }
 
 
-    public int getNodesPerGossip() {
-        return configure.getInt(NODES_PER_GOSSIP, DEFAULT_NODES_PER_GOSSIP);
+    public int getGossipNodes() {
+        return configure.getInt(GOSSIP_NODES, DEFAULT_GOSSIP_NODES);
     }
 
 
@@ -188,6 +194,10 @@ public class DiscoveryConfig {
 
     public int getIndirectNodeNum() {
         return configure.getInt(INDIRECT_NODE_NUM, DEFAULT_INDIRECT_NODE_NUM);
+    }
+
+    public int getMaxGossipTimes(){
+        return configure.getInt(MESSAGE_MAX_GOSSIP_TIMES, DEFAULT_MESSAGE_MAX_GOSSIP_TIMES);
     }
 
 }

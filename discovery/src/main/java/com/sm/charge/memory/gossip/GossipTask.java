@@ -4,8 +4,7 @@ import com.sm.charge.memory.DiscoveryConfig;
 import com.sm.charge.memory.Node;
 import com.sm.charge.memory.NodeFilter;
 import com.sm.charge.memory.Nodes;
-import com.sm.charge.memory.gossip.messages.GossipMessage;
-import com.sm.charge.memory.gossip.messages.MessageWrapper;
+import com.sm.charge.memory.gossip.messages.GossipContent;
 import com.sm.finance.charge.common.base.LoggerSupport;
 import com.sm.finance.charge.transport.api.Connection;
 
@@ -20,16 +19,16 @@ import java.util.List;
 public class GossipTask extends LoggerSupport implements Runnable {
 
     private final Nodes nodes;
-    private final MessageQueue messageQueue;
+    private final MessageGossiper messageQueue;
     private final NodeFilter filter = new GossipTask.Filter();
     private final int gossipNodes;
     private final int maxGossipCount;
 
 
-    public GossipTask(Nodes nodes, MessageQueue messageQueue, DiscoveryConfig config) {
+    public GossipTask(Nodes nodes, MessageGossiper messageQueue, DiscoveryConfig config) {
         this.nodes = nodes;
         this.messageQueue = messageQueue;
-        this.gossipNodes = config.getNodesPerGossip();
+        this.gossipNodes = config.getGossipNodes();
         this.maxGossipCount = config.getMaxGossipMessageCount();
     }
 
@@ -42,7 +41,7 @@ public class GossipTask extends LoggerSupport implements Runnable {
             return;
         }
 
-        List<GossipMessage> messages = messageQueue.dequeue(maxGossipCount);
+        List<GossipContent> messages = messageQueue.dequeue(maxGossipCount);
         logger.info("node:{} trying to gossip {} messages", nodes.getSelf(), messages.size());
         if (CollectionUtils.isEmpty(messages)) {
             return;

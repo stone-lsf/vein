@@ -6,32 +6,32 @@ import com.sm.charge.memory.gossip.GossipFinishNotifier;
  * @author shifeng.luo
  * @version created on 2017/10/27 上午12:01
  */
-public class MemberWrapper implements MessageWrapper {
+public class MemberMessage implements GossipMessage {
     private GossipFinishNotifier finishNotifier;
 
-    private final GossipMessage message;
+    private final GossipContent content;
 
     private volatile boolean invalid = false;
 
     private volatile int transmits;
 
-    public MemberWrapper(GossipMessage message) {
-        this.message = message;
+    public MemberMessage(GossipContent content) {
+        this.content = content;
     }
 
     @Override
-    public GossipMessage message() {
-        return message;
+    public GossipContent getContent() {
+        return content;
     }
 
     @Override
-    public void invalidate(MessageWrapper wrapper) {
-        if (!(wrapper instanceof MemberWrapper)) {
+    public void invalidate(GossipMessage message) {
+        if (!(message instanceof MemberMessage)) {
             return;
         }
 
-        MemberWrapper msg = (MemberWrapper) wrapper;
-        if (this.message.getNodeId().equals(msg.message.getNodeId())) {
+        MemberMessage msg = (MemberMessage) message;
+        if (this.content.getNodeId().equals(msg.content.getNodeId())) {
             msg.onGossipFinish();
             msg.invalid = true;
         }

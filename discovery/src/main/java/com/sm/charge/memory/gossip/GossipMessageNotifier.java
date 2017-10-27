@@ -1,7 +1,7 @@
 package com.sm.charge.memory.gossip;
 
 
-import com.sm.charge.memory.gossip.messages.GossipMessage;
+import com.sm.charge.memory.gossip.messages.GossipContent;
 
 /**
  * @author shifeng.luo
@@ -14,5 +14,5 @@ public interface GossipMessageNotifier {
      *
      * @param message 消息
      */
-    void notify(GossipMessage message);
+    void notify(GossipContent message);
 }

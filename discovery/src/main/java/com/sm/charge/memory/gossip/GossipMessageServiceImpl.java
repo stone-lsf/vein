@@ -7,8 +7,8 @@ import com.sm.charge.memory.Nodes;
 import com.sm.charge.memory.ServerContext;
 import com.sm.charge.memory.gossip.messages.AliveMessage;
 import com.sm.charge.memory.gossip.messages.DeadMessage;
-import com.sm.charge.memory.gossip.messages.GossipMessage;
-import com.sm.charge.memory.gossip.messages.MemberWrapper;
+import com.sm.charge.memory.gossip.messages.GossipContent;
+import com.sm.charge.memory.gossip.messages.MemberMessage;
 import com.sm.charge.memory.gossip.messages.SuspectMessage;
 import com.sm.finance.charge.common.Address;
 import com.sm.finance.charge.common.base.LoggerSupport;
@@ -26,7 +26,6 @@ import java.util.concurrent.TimeUnit;
 import static com.sm.charge.memory.NodeStatus.ALIVE;
 import static com.sm.charge.memory.NodeStatus.DEAD;
 import static com.sm.charge.memory.NodeStatus.SUSPECT;
-import static com.sm.charge.memory.gossip.messages.GossipMessage.USER;
 
 
 /**
@@ -39,17 +38,17 @@ public class GossipMessageServiceImpl extends LoggerSupport implements GossipMes
 
     private final Nodes nodes;
     private final ServerContext serverContext;
-    private final MessageQueue messageQueue;
+    private final MessageGossiper messageGossiper;
     private final int suspectTimeout;
 
     private final ScheduledExecutorService executorService;
 
     private GossipMessageNotifier messageNotifier;
 
-    public GossipMessageServiceImpl(Nodes nodes, ServerContext serverContext, MessageQueue messageQueue, int suspectTimeout) {
+    public GossipMessageServiceImpl(Nodes nodes, ServerContext serverContext, MessageGossiper messageGossiper, int suspectTimeout) {
         this.nodes = nodes;
         this.serverContext = serverContext;
-        this.messageQueue = messageQueue;
+        this.messageGossiper = messageGossiper;
         this.suspectTimeout = suspectTimeout;
         this.executorService = serverContext.getExecutorService();
     }
@@ -109,7 +108,7 @@ public class GossipMessageServiceImpl extends LoggerSupport implements GossipMes
             }
 
             nodes.aliveNode(existNode);
-            enqueue(message);
+            gossip(message);
 
             for (NodeListener listener : listeners) {
                 if (oldStatus == DEAD) {
@@ -137,7 +136,7 @@ public class GossipMessageServiceImpl extends LoggerSupport implements GossipMes
         localNode.setIncarnation(newIncarnation);
 
         AliveMessage message = new AliveMessage(localNode.getNodeId(), localNode.getAddress(), newIncarnation, localNode.getType());
-        enqueue(message);
+        gossip(message);
     }
 
     private Connection createConnection(Address address) {
@@ -181,7 +180,7 @@ public class GossipMessageServiceImpl extends LoggerSupport implements GossipMes
                 return;
             }
 
-            enqueue(message);
+            gossip(message);
 
             node.setIncarnation(suspectIncarnation);
             node.setStatus(SUSPECT);
@@ -237,7 +236,7 @@ public class GossipMessageServiceImpl extends LoggerSupport implements GossipMes
             }
 
             logger.info("equeue dead message:{}", message);
-            enqueue(message);
+            gossip(message);
             node.setStatus(DEAD);
             node.setIncarnation(deadIncarnation);
             node.setStatusChangeTime(new Date());
@@ -251,9 +250,9 @@ public class GossipMessageServiceImpl extends LoggerSupport implements GossipMes
         }
     }
 
-    private void enqueue(GossipMessage message) {
-        MemberWrapper wrapper = new MemberWrapper(message);
-        messageQueue.enqueue(wrapper);
+    private void gossip(GossipContent content) {
+        MemberMessage message = new MemberMessage(content);
+        messageGossiper.gossip(message);
     }
 
     @Override
@@ -268,24 +267,24 @@ public class GossipMessageServiceImpl extends LoggerSupport implements GossipMes
 
     @Override
     public void handle(GossipRequest request) {
-        List<GossipMessage> messages = request.getMessages();
-        for (GossipMessage message : messages) {
-            switch (message.getType()) {
-                case GossipMessage.ALIVE:
-                    aliveNode((AliveMessage) message, false);
+        List<GossipContent> contents = request.getMessages();
+        for (GossipContent content : contents) {
+            switch (content.getType()) {
+                case GossipContent.ALIVE:
+                    aliveNode((AliveMessage) content, false);
                     break;
-                case GossipMessage.SUSPECT:
-                    suspectNode((SuspectMessage) message);
+                case GossipContent.SUSPECT:
+                    suspectNode((SuspectMessage) content);
                     break;
-                case GossipMessage.DEAD:
-                    deadNode((DeadMessage) message);
+                case GossipContent.DEAD:
+                    deadNode((DeadMessage) content);
                     break;
-                case USER:
-                    messageNotifier.notify(message);
+                case GossipContent.USER:
+                    messageNotifier.notify(content);
                     break;
                 default:
-                    logger.error("unknown com.sm.charge.memory.gossip message type:{}", message.getType());
-                    throw new RuntimeException("unknown com.sm.charge.memory.gossip message type:" + message.getType());
+                    logger.error("unknown com.sm.charge.memory.gossip message type:{}", content.getType());
+                    throw new RuntimeException("unknown com.sm.charge.memory.gossip message type:" + content.getType());
             }
         }
     }

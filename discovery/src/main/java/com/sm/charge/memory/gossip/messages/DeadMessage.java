@@ -4,7 +4,7 @@ package com.sm.charge.memory.gossip.messages;
  * @author shifeng.luo
  * @version created on 2017/9/11 下午11:27
  */
-public class DeadMessage implements GossipMessage {
+public class DeadMessage implements GossipContent {
     /**
      * 节点名称
      */

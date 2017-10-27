@@ -2,15 +2,14 @@ package com.sm.charge.memory;
 
 import com.sm.charge.memory.gossip.GossipMessageService;
 import com.sm.charge.memory.gossip.GossipMessageServiceImpl;
-import com.sm.charge.memory.gossip.GossipTask;
-import com.sm.charge.memory.gossip.MessageQueue;
+import com.sm.charge.memory.gossip.MessageGossiper;
 import com.sm.charge.memory.gossip.messages.AliveMessage;
 import com.sm.charge.memory.handler.GossipRequestHandler;
 import com.sm.charge.memory.handler.PingMessageHandler;
 import com.sm.charge.memory.handler.PushPullRequestHandler;
 import com.sm.charge.memory.handler.RedirectPingHandler;
-import com.sm.charge.memory.probe.ProbeServiceImpl;
 import com.sm.charge.memory.probe.ProbeService;
+import com.sm.charge.memory.probe.ProbeServiceImpl;
 import com.sm.charge.memory.probe.ProbeTask;
 import com.sm.charge.memory.pushpull.PushPullService;
 import com.sm.charge.memory.pushpull.PushPullServiceImpl;
@@ -44,7 +43,7 @@ public class DiscoveryServiceImpl extends AbstractService implements DiscoverySe
     private final DiscoveryConfig config;
     private final Nodes nodes;
 
-    private final MessageQueue messageQueue;
+    private final MessageGossiper messageQueue;
     private volatile boolean joined = false;
     private GossipMessageService gossipMessageService;
     private PushPullService pushPullService;
@@ -52,7 +51,6 @@ public class DiscoveryServiceImpl extends AbstractService implements DiscoverySe
 
 
     private volatile ScheduledFuture probeFuture;
-    private volatile ScheduledFuture gossipFuture;
     private volatile ScheduledFuture pushPullFuture;
 
     public DiscoveryServiceImpl(DiscoveryConfig config) {
@@ -69,7 +67,7 @@ public class DiscoveryServiceImpl extends AbstractService implements DiscoverySe
         this.serverContext = new ServerContext(localNode.getNodeId(), client, server);
 
         nodes = new Nodes(config.getNodeId());
-        messageQueue = new MessageQueue(config.getGossipQueueSize());
+        messageQueue = new MessageGossiper(nodes, config, serverContext.getExecutorService());
     }
 
 
@@ -135,11 +133,6 @@ public class DiscoveryServiceImpl extends AbstractService implements DiscoverySe
         int probeInterval = config.getProbeInterval();
         probeFuture = executorService.scheduleWithFixedDelay(probeTask, probeInterval, probeInterval, TimeUnit.MILLISECONDS);
 
-
-        GossipTask gossipTask = new GossipTask(nodes, messageQueue, config);
-        int gossipInterval = config.getGossipInterval();
-        gossipFuture = executorService.scheduleWithFixedDelay(gossipTask, gossipInterval, gossipInterval, TimeUnit.MILLISECONDS);
-
         PushPullTask pushPullTask = new PushPullTask(nodes, pushPullService);
         int pushPullInterval = config.getPushPullInterval();
         pushPullFuture = executorService.scheduleWithFixedDelay(pushPullTask, pushPullInterval, pushPullInterval, TimeUnit.MILLISECONDS);
@@ -160,10 +153,6 @@ public class DiscoveryServiceImpl extends AbstractService implements DiscoverySe
     private void cancelFutures() {
         if (probeFuture != null) {
             probeFuture.cancel(false);
-        }
-
-        if (gossipFuture != null) {
-            gossipFuture.cancel(false);
         }
 
         if (pushPullFuture != null) {

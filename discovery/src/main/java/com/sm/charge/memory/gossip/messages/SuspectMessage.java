@@ -7,7 +7,7 @@ import com.sm.finance.charge.common.Address;
  * @author shifeng.luo
  * @version created on 2017/9/11 下午11:28
  */
-public class SuspectMessage implements GossipMessage {
+public class SuspectMessage implements GossipContent {
 
     private String nodeId;
     private Address address;
