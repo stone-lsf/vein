@@ -19,6 +19,7 @@
         <module>buffer</module>
         <module>discovery</module>
         <module>raft</module>
+        <module>group</module>
     </modules>
 
 
