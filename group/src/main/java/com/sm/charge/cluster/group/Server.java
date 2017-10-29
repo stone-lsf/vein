@@ -10,10 +10,13 @@ import com.sm.finance.charge.transport.api.Connection;
 public class Server {
 
     private Address address;
+
+    private volatile boolean leader;
     private volatile long commitIndex;
     private volatile long matchIndex;
     private volatile long replicateIndex;
     private volatile Connection connection;
+
 
     public Address getAddress() {
         return address;
@@ -21,6 +24,14 @@ public class Server {
 
     public void setAddress(Address address) {
         this.address = address;
+    }
+
+    public boolean isLeader() {
+        return leader;
+    }
+
+    public void setLeader(boolean leader) {
+        this.leader = leader;
     }
 
     public long getCommitIndex() {

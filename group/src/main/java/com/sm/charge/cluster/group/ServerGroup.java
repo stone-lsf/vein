@@ -1,6 +1,11 @@
 package com.sm.charge.cluster.group;
 
+import com.sm.finance.charge.common.Address;
+
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * @author shifeng.luo
@@ -8,8 +13,9 @@ import java.util.List;
  */
 public class ServerGroup {
 
+    private volatile long version;
     private Server leader;
-    private List<Server> servers;
+    private ConcurrentMap<Address, Server> servers = new ConcurrentHashMap<>();
 
     private int quorum;
 
@@ -30,10 +36,23 @@ public class ServerGroup {
     }
 
     public List<Server> getServers() {
-        return servers;
+        return new ArrayList<>(servers.values());
     }
 
-    public void setServers(List<Server> servers) {
-        this.servers = servers;
+    public void add(Server server) {
+        servers.put(server.getAddress(), server);
+    }
+
+    public Server get(Address address) {
+        return servers.get(address);
+    }
+
+
+    public long getVersion() {
+        return version;
+    }
+
+    public void setVersion(long version) {
+        this.version = version;
     }
 }

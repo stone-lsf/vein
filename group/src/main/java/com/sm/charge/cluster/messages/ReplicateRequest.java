@@ -1,5 +1,6 @@
-package com.sm.charge.cluster.group;
+package com.sm.charge.cluster.messages;
 
+import com.sm.charge.cluster.group.Entry;
 import com.sm.finance.charge.common.Address;
 
 import java.util.List;

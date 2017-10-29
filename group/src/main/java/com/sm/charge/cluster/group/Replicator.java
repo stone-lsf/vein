@@ -2,6 +2,8 @@ package com.sm.charge.cluster.group;
 
 import com.sm.charge.cluster.BaseObject;
 import com.sm.charge.cluster.Store;
+import com.sm.charge.cluster.messages.ReplicateRequest;
+import com.sm.charge.cluster.messages.ReplicateResponse;
 import com.sm.finance.charge.common.AbstractService;
 import com.sm.finance.charge.common.NamedThreadFactory;
 import com.sm.finance.charge.transport.api.Connection;

@@ -1,4 +1,4 @@
-package com.sm.charge.cluster.group;
+package com.sm.charge.cluster.messages;
 
 /**
  * @author shifeng.luo
