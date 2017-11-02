@@ -1,10 +1,11 @@
 package com.sm.charge.cluster.group;
 
 import com.sm.charge.cluster.Store;
+import com.sm.charge.cluster.exceptions.NotGroupServerException;
 import com.sm.charge.cluster.messages.JoinRequest;
 import com.sm.charge.cluster.messages.JoinResponse;
-import com.sm.charge.cluster.messages.PullRequest;
-import com.sm.charge.cluster.messages.PullResponse;
+import com.sm.charge.cluster.messages.StatePullRequest;
+import com.sm.charge.cluster.messages.StatePullResponse;
 import com.sm.charge.cluster.messages.PullState;
 import com.sm.finance.charge.common.Address;
 import com.sm.finance.charge.common.base.LoggerSupport;
@@ -25,62 +26,81 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * @author shifeng.luo
  * @version created on 2017/10/29 下午1:50
  */
-public class Selector extends LoggerSupport {
+public class LeaderSelector extends LoggerSupport {
     private final Server self;
     private final ServerGroup group;
     private final int electTimeout;
+    private final LeaderListener listener;
     private Store store;
     private final ConcurrentMap<Address, PullState> pullStates = new ConcurrentHashMap<>();
     private final AtomicReference<ElectionContext> contextReference = new AtomicReference<>();
     private final ConcurrentMap<Address, CompletableFuture<Void>> pendJoinFutures = new ConcurrentHashMap<>();
 
 
-    public Selector(Server self, ServerGroup group, int electTimeout) {
+    public LeaderSelector(Server self, ServerGroup group, int electTimeout, LeaderListener listener) {
         this.self = self;
         this.group = group;
         this.electTimeout = electTimeout;
+        this.listener = listener;
     }
 
 
     public void joinGroup() {
-        Server master = null;
-        while (master == null) {
-            master = findMaster();
+        Server leader = null;
+        while (leader == null) {
+            leader = findLeader();
         }
 
-        if (master == self) {
+        if (leader == self) {
             waitToBeLeader(new ElectionCallback() {
                 @Override
                 public void onElectAsLeader() {
                     logger.info("server:{} select as leader", self.getAddress());
+                    self.setLeader(true);
+                    self.increaseVersion();
+                    Set<Address> addresses = new HashSet<>(pendJoinFutures.keySet());
+                    for (Address address : addresses) {
+                        CompletableFuture<Void> future = pendJoinFutures.remove(address);
+                        future.complete(null);
+                    }
+
+                    //TODO update group leader to raft
                 }
 
                 @Override
                 public void onFailure(Throwable error) {
+                    Set<Address> addresses = new HashSet<>(pendJoinFutures.keySet());
+                    for (Address address : addresses) {
+                        CompletableFuture<Void> future = pendJoinFutures.remove(address);
+                        future.completeExceptionally(error);
+                    }
+
                     joinGroup();
                 }
             }, group.getQuorum());
         } else {
-            joinElectedLeader(master).whenComplete((success, error) -> {
+            Server finalLeader = leader;
+            joinElectedLeader(leader).whenComplete((success, error) -> {
                 if (error != null || !success) {
                     joinGroup();
                     return;
                 }
 
-                //TODO pull from leader
+                store.truncate(self.getWatermark());
+                group.setLeader(finalLeader);
+                listener.onSelected(finalLeader);
             });
         }
     }
 
 
-    public Server findMaster() {
+    private Server findLeader() {
         List<PullState> states = pullState();
 
         List<PullState> masters = new ArrayList<>();
@@ -90,25 +110,25 @@ public class Selector extends LoggerSupport {
             }
         }
 
-        PullState master;
+        PullState leader;
         if (masters.isEmpty()) {
             if (states.size() >= group.getQuorum()) {
-                master = selectMaster(states);
+                leader = selectLeader(states);
             } else {
                 logger.error("not enough nodes:{} to select", states);
                 return null;
             }
         } else {
-            master = selectMaster(masters);
+            leader = selectLeader(masters);
         }
 
-        if (master != null) {
-            return group.get(master.getAddress());
+        if (leader != null) {
+            return group.get(leader.getAddress());
         }
         return null;
     }
 
-    private PullState selectMaster(List<PullState> states) {
+    private PullState selectLeader(List<PullState> states) {
         if (CollectionUtils.isEmpty(states)) {
             return null;
         }
@@ -121,7 +141,7 @@ public class Selector extends LoggerSupport {
     private List<PullState> pullState() {
         List<Server> servers = group.getServers();
         CountDownLatch latch = new CountDownLatch(servers.size() - 1);
-        PullRequest request = new PullRequest(buildPullState());
+        StatePullRequest request = new StatePullRequest(buildPullState());
 
         Map<Address, PullState> responseMap = new HashMap<>();
         for (Server server : servers) {
@@ -135,7 +155,7 @@ public class Selector extends LoggerSupport {
                 continue;
             }
 
-            connection.<PullResponse>request(request).whenComplete((response, error) -> {
+            connection.<StatePullResponse>request(request).whenComplete((response, error) -> {
                 if (error != null) {
                     logger.error("send pull request to {} caught exception", server.getAddress(), error);
                 } else {
@@ -148,7 +168,7 @@ public class Selector extends LoggerSupport {
         return new ArrayList<>(responseMap.values());
     }
 
-    private synchronized void merge(PullResponse response, Map<Address, PullState> responseMap, Server from) {
+    private synchronized void merge(StatePullResponse response, Map<Address, PullState> responseMap, Server from) {
         List<PullState> states = response.getStates();
         for (PullState state : states) {
             Address address = state.getAddress();
@@ -167,20 +187,20 @@ public class Selector extends LoggerSupport {
     }
 
 
-    public CompletableFuture<PullResponse> handle(PullRequest request) {
+    public CompletableFuture<StatePullResponse> handle(StatePullRequest request) {
         PullState state = request.getState();
         pullStates.put(state.getAddress(), state);
 
         List<PullState> states = new ArrayList<>(pullStates.values());
         states.add(buildPullState());
 
-        PullResponse response = new PullResponse(states);
+        StatePullResponse response = new StatePullResponse(states);
         return CompletableFuture.completedFuture(response);
     }
 
 
     private PullState buildPullState() {
-        PullState state = new PullState(self.getAddress(), store.lastIndex(), group.getVersion());
+        PullState state = new PullState(self.getAddress(), self.getServerId(), store.lastIndex(), self.getVersion());
 
         Server leader = group.getLeader();
         if (leader == self) {
@@ -193,10 +213,10 @@ public class Selector extends LoggerSupport {
 
     private void waitToBeLeader(ElectionCallback callback, int requiredJoins) {
         CountDownLatch done = new CountDownLatch(1);
-        ElectionContext context = new ElectionContext(callback, requiredJoins) {
+        final ElectionContext context = new ElectionContext(callback, requiredJoins) {
             @Override
             void onClose() {
-
+                contextReference.compareAndSet(this, null);
             }
         };
 
@@ -222,7 +242,7 @@ public class Selector extends LoggerSupport {
     }
 
     private CompletableFuture<Boolean> joinElectedLeader(Server server) {
-        JoinRequest request = new JoinRequest(self.getAddress(), group.getVersion(), store.lastIndex());
+        JoinRequest request = new JoinRequest(self.getAddress(), self.getVersion(), store.lastIndex());
         Connection connection = server.getConnection();
         if (connection == null) {
             return CompletableFuture.completedFuture(false);
@@ -235,7 +255,7 @@ public class Selector extends LoggerSupport {
                 future.complete(false);
             } else {
                 if (response.getStatus() == JoinResponse.SUCCESS) {
-                    group.setVersion(response.getVersion());
+                    self.setVersion(response.getVersion());
                     future.complete(true);
                 } else {
                     future.complete(false);
@@ -255,7 +275,7 @@ public class Selector extends LoggerSupport {
             if (error != null) {
                 future.complete(new JoinResponse(JoinResponse.INNER_ERROR));
             } else {
-                future.complete(new JoinResponse(JoinResponse.SUCCESS, group.getVersion()));
+                future.complete(new JoinResponse(JoinResponse.SUCCESS, self.getVersion()));
             }
         });
 
@@ -272,7 +292,7 @@ public class Selector extends LoggerSupport {
             if (elected) {
                 CompletableFuture<Void> completableFuture = pendJoinFutures.remove(request.getAddress());
                 if (completableFuture != null) {
-                    future.complete(new JoinResponse(JoinResponse.SUCCESS, group.getVersion()));
+                    future.complete(new JoinResponse(JoinResponse.SUCCESS, self.getVersion()));
                 }
             }
         }
@@ -287,21 +307,17 @@ public class Selector extends LoggerSupport {
 
         Server server = group.get(request.getAddress());
         if (server == null) {
-            //TODO add server to group
+            logger.warn("receive not group server:{} join request", request.getAddress());
+            throw new NotGroupServerException();
         }
 
-        return new JoinResponse(JoinResponse.SUCCESS, group.getVersion());
+        return new JoinResponse(JoinResponse.SUCCESS, self.getVersion());
     }
 
     private boolean checkPendingJoins(ElectionContext context) {
         int size = pendJoinFutures.size();
         if (size < context.getRequiredJoins()) {
             return false;
-        }
-
-        if (context.getEnoughJoins().getAndSet(true)) {
-            logger.info("elected as leader has submit ,ignore...");
-            return true;
         }
 
         context.onElectAsLeader();
@@ -322,60 +338,4 @@ public class Selector extends LoggerSupport {
         }
     }
 
-
-    abstract class ElectionContext implements ElectionCallback {
-
-        private final ElectionCallback callback;
-        private final int requiredJoins;
-        private final AtomicBoolean enoughJoins = new AtomicBoolean(false);
-        final AtomicBoolean closed = new AtomicBoolean();
-
-        ElectionContext(ElectionCallback callback, int requiredJoins) {
-            this.callback = callback;
-            this.requiredJoins = requiredJoins;
-        }
-
-        abstract void onClose();
-
-        @Override
-        public void onElectAsLeader() {
-            Set<Address> addresses = new HashSet<>(pendJoinFutures.keySet());
-            for (Address address : addresses) {
-                CompletableFuture<Void> future = pendJoinFutures.remove(address);
-                future.complete(null);
-            }
-            if (closed.compareAndSet(false, true)) {
-                try {
-                    onClose();
-                } finally {
-                    callback.onElectAsLeader();
-                }
-            }
-        }
-
-        @Override
-        public void onFailure(Throwable error) {
-            Set<Address> addresses = new HashSet<>(pendJoinFutures.keySet());
-            for (Address address : addresses) {
-                CompletableFuture<Void> future = pendJoinFutures.remove(address);
-                future.completeExceptionally(error);
-            }
-            if (closed.compareAndSet(false, true)) {
-                try {
-                    onClose();
-                } finally {
-                    callback.onFailure(error);
-                }
-            }
-        }
-
-
-        int getRequiredJoins() {
-            return requiredJoins;
-        }
-
-        AtomicBoolean getEnoughJoins() {
-            return enoughJoins;
-        }
-    }
 }

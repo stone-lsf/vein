@@ -4,13 +4,13 @@ package com.sm.charge.cluster.messages;
  * @author shifeng.luo
  * @version created on 2017/10/29 下午2:19
  */
-public class PullRequest {
+public class StatePullRequest {
     private PullState state;
 
-    public PullRequest() {
+    public StatePullRequest() {
     }
 
-    public PullRequest(PullState state) {
+    public StatePullRequest(PullState state) {
         this.state = state;
     }
 

@@ -6,14 +6,14 @@ import java.util.List;
  * @author shifeng.luo
  * @version created on 2017/10/29 下午2:20
  */
-public class PullResponse {
+public class StatePullResponse {
 
     private List<PullState> states;
 
-    public PullResponse() {
+    public StatePullResponse() {
     }
 
-    public PullResponse(List<PullState> states) {
+    public StatePullResponse(List<PullState> states) {
         this.states = states;
     }
 

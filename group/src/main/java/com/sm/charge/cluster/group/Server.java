@@ -9,21 +9,33 @@ import com.sm.finance.charge.transport.api.Connection;
  */
 public class Server {
 
-    private Address address;
+    private final long serverId;
+    private final Address address;
+    private volatile long version;
 
     private volatile boolean leader;
-    private volatile long commitIndex;
-    private volatile long matchIndex;
-    private volatile long replicateIndex;
+
+    /**
+     * 水位
+     */
+    private volatile long watermark;
+    /**
+     * 已经拉取的index
+     */
+    private volatile long pullIndex;
     private volatile Connection connection;
 
+    public Server(long serverId, Address address) {
+        this.serverId = serverId;
+        this.address = address;
+    }
+
+    public long getServerId() {
+        return serverId;
+    }
 
     public Address getAddress() {
         return address;
-    }
-
-    public void setAddress(Address address) {
-        this.address = address;
     }
 
     public boolean isLeader() {
@@ -34,35 +46,41 @@ public class Server {
         this.leader = leader;
     }
 
-    public long getCommitIndex() {
-        return commitIndex;
-    }
-
-    public void setCommitIndex(long commitIndex) {
-        this.commitIndex = commitIndex;
-    }
-
-    public long getMatchIndex() {
-        return matchIndex;
-    }
-
-    public void setMatchIndex(long matchIndex) {
-        this.matchIndex = matchIndex;
-    }
-
-    public long getReplicateIndex() {
-        return replicateIndex;
-    }
-
-    public void setReplicateIndex(long replicateIndex) {
-        this.replicateIndex = replicateIndex;
-    }
 
     public Connection getConnection() {
         return connection;
     }
 
+    public long getWatermark() {
+        return watermark;
+    }
+
+    public void setWatermark(long watermark) {
+        this.watermark = watermark;
+    }
+
+
+    public long getPullIndex() {
+        return pullIndex;
+    }
+
+    public void setPullIndex(long pullIndex) {
+        this.pullIndex = pullIndex;
+    }
+
     public void setConnection(Connection connection) {
         this.connection = connection;
+    }
+
+    public long getVersion() {
+        return version;
+    }
+
+    public void setVersion(long version) {
+        this.version = version;
+    }
+
+    public long increaseVersion() {
+        return ++version;
     }
 }

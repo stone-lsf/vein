@@ -15,13 +15,15 @@ public class PullState {
      * 自增id
      */
     private long id;
+    private long serverId;
     private Address address;
     private long version;
     private long lastIndex;
     private boolean leader;
 
-    public PullState(Address address, long lastIndex,long version) {
+    public PullState(Address address, long serverId, long lastIndex, long version) {
         this.address = address;
+        this.serverId = serverId;
         this.lastIndex = lastIndex;
         this.version = version;
         this.id = idGenerator.incrementAndGet();
@@ -33,6 +35,14 @@ public class PullState {
 
     public void setId(long id) {
         this.id = id;
+    }
+
+    public long getServerId() {
+        return serverId;
+    }
+
+    public void setServerId(long serverId) {
+        this.serverId = serverId;
     }
 
     public Address getAddress() {

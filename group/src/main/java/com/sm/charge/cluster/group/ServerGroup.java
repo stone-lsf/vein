@@ -13,11 +13,19 @@ import java.util.concurrent.ConcurrentMap;
  */
 public class ServerGroup {
 
-    private volatile long version;
+    private String name;
     private Server leader;
     private ConcurrentMap<Address, Server> servers = new ConcurrentHashMap<>();
 
     private int quorum;
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
 
     public int getQuorum() {
         return quorum;
@@ -48,11 +56,4 @@ public class ServerGroup {
     }
 
 
-    public long getVersion() {
-        return version;
-    }
-
-    public void setVersion(long version) {
-        this.version = version;
-    }
 }
