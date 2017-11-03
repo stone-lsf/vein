@@ -15,13 +15,13 @@ public class PullState {
      * 自增id
      */
     private long id;
-    private long serverId;
+    private String serverId;
     private Address address;
     private long version;
     private long lastIndex;
     private boolean leader;
 
-    public PullState(Address address, long serverId, long lastIndex, long version) {
+    public PullState(Address address, String serverId, long lastIndex, long version) {
         this.address = address;
         this.serverId = serverId;
         this.lastIndex = lastIndex;
@@ -37,11 +37,11 @@ public class PullState {
         this.id = id;
     }
 
-    public long getServerId() {
+    public String getServerId() {
         return serverId;
     }
 
-    public void setServerId(long serverId) {
+    public void setServerId(String serverId) {
         this.serverId = serverId;
     }
 

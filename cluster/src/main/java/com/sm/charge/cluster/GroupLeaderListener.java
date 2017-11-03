@@ -1,9 +1,8 @@
 package com.sm.charge.cluster;
 
 import com.sm.charge.cluster.group.LeaderListener;
-import com.sm.charge.cluster.group.LeaderSelector;
-import com.sm.charge.cluster.group.MessagePuller;
-import com.sm.charge.cluster.group.Server;
+import com.sm.charge.cluster.group.GroupMembership;
+import com.sm.charge.cluster.group.MessageReplicator;
 
 /**
  * @author shifeng.luo
@@ -11,22 +10,22 @@ import com.sm.charge.cluster.group.Server;
  */
 public class GroupLeaderListener implements LeaderListener {
 
-    private final MessagePuller puller;
-    private final LeaderSelector selector;
+    private final MessageReplicator replicator;
+    private final GroupMembership membership;
 
-    public GroupLeaderListener(MessagePuller puller, LeaderSelector selector) {
-        this.puller = puller;
-        this.selector = selector;
+    public GroupLeaderListener(MessageReplicator replicator, GroupMembership membership) {
+        this.replicator = replicator;
+        this.membership = membership;
     }
 
     @Override
     public void onLeave(Server leader) {
-        selector.joinGroup();
+        membership.joinGroup();
     }
 
     @Override
     public void onSelected(Server leader) {
-        puller.setLeader(leader);
-        puller.pullMessage();
+        replicator.setLeader(leader);
+        replicator.pullMessage();
     }
 }

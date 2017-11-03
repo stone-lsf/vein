@@ -1,6 +1,8 @@
 package com.sm.charge.cluster.group;
 
-import com.sm.charge.cluster.BaseObject;
+import com.sm.charge.cluster.ClusterMessage;
+
+import java.util.concurrent.CompletableFuture;
 
 /**
  * @author shifeng.luo
@@ -8,5 +10,5 @@ import com.sm.charge.cluster.BaseObject;
  */
 public interface GroupService {
 
-    <T> boolean receive(BaseObject<T> obj);
+    CompletableFuture<Boolean> receive(ClusterMessage message);
 }

@@ -7,4 +7,6 @@ package com.sm.finance.charge.common;
 public class SystemConstants {
 
     public static final int PROCESSORS = Runtime.getRuntime().availableProcessors();
+
+    public static final String PROFILE = System.getProperty("profile");
 }

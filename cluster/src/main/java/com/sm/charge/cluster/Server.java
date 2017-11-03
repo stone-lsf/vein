@@ -1,16 +1,15 @@
-package com.sm.charge.cluster.group;
+package com.sm.charge.cluster;
 
 import com.sm.finance.charge.common.Address;
+import com.sm.finance.charge.common.base.BaseNode;
 import com.sm.finance.charge.transport.api.Connection;
 
 /**
  * @author shifeng.luo
  * @version created on 2017/10/28 下午10:28
  */
-public class Server {
+public class Server extends BaseNode<String> {
 
-    private final long serverId;
-    private final Address address;
     private volatile long version;
 
     private volatile boolean leader;
@@ -19,23 +18,20 @@ public class Server {
      * 水位
      */
     private volatile long watermark;
+
     /**
      * 已经拉取的index
      */
     private volatile long pullIndex;
+
     private volatile Connection connection;
 
-    public Server(long serverId, Address address) {
-        this.serverId = serverId;
-        this.address = address;
+    public Server(String serverId, Address address) {
+        super(serverId, address);
     }
 
-    public long getServerId() {
-        return serverId;
-    }
-
-    public Address getAddress() {
-        return address;
+    public String getServerId() {
+        return getNodeId();
     }
 
     public boolean isLeader() {

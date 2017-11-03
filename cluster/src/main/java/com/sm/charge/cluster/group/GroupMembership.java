@@ -1,12 +1,13 @@
 package com.sm.charge.cluster.group;
 
+import com.sm.charge.cluster.Server;
 import com.sm.charge.cluster.Store;
 import com.sm.charge.cluster.exceptions.NotGroupServerException;
 import com.sm.charge.cluster.messages.JoinRequest;
 import com.sm.charge.cluster.messages.JoinResponse;
+import com.sm.charge.cluster.messages.PullState;
 import com.sm.charge.cluster.messages.StatePullRequest;
 import com.sm.charge.cluster.messages.StatePullResponse;
-import com.sm.charge.cluster.messages.PullState;
 import com.sm.finance.charge.common.Address;
 import com.sm.finance.charge.common.base.LoggerSupport;
 import com.sm.finance.charge.transport.api.Connection;
@@ -32,22 +33,21 @@ import java.util.concurrent.atomic.AtomicReference;
  * @author shifeng.luo
  * @version created on 2017/10/29 下午1:50
  */
-public class LeaderSelector extends LoggerSupport {
+public class GroupMembership extends LoggerSupport {
     private final Server self;
     private final ServerGroup group;
     private final int electTimeout;
-    private final LeaderListener listener;
+    private LeaderListener leaderListener;
     private Store store;
     private final ConcurrentMap<Address, PullState> pullStates = new ConcurrentHashMap<>();
     private final AtomicReference<ElectionContext> contextReference = new AtomicReference<>();
     private final ConcurrentMap<Address, CompletableFuture<Void>> pendJoinFutures = new ConcurrentHashMap<>();
 
 
-    public LeaderSelector(Server self, ServerGroup group, int electTimeout, LeaderListener listener) {
+    public GroupMembership(Server self, ServerGroup group, int electTimeout) {
         this.self = self;
         this.group = group;
         this.electTimeout = electTimeout;
-        this.listener = listener;
     }
 
 
@@ -94,7 +94,7 @@ public class LeaderSelector extends LoggerSupport {
 
                 store.truncate(self.getWatermark());
                 group.setLeader(finalLeader);
-                listener.onSelected(finalLeader);
+                leaderListener.onSelected(finalLeader);
             });
         }
     }
@@ -338,4 +338,8 @@ public class LeaderSelector extends LoggerSupport {
         }
     }
 
+
+    public void setLeaderListener(LeaderListener leaderListener) {
+        this.leaderListener = leaderListener;
+    }
 }

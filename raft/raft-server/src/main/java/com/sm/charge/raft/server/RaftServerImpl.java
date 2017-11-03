@@ -24,8 +24,8 @@ import com.sm.charge.raft.server.timer.ElectTimeoutTimer;
 import com.sm.charge.raft.server.timer.HeartbeatTimeoutTimer;
 import com.sm.finance.charge.common.AbstractService;
 import com.sm.finance.charge.common.Address;
-import com.sm.finance.charge.common.utils.AddressUtil;
 import com.sm.finance.charge.common.NamedThreadFactory;
+import com.sm.finance.charge.common.utils.AddressUtil;
 import com.sm.finance.charge.common.utils.RandomUtil;
 import com.sm.finance.charge.common.utils.ThreadUtil;
 import com.sm.finance.charge.transport.api.Connection;
@@ -162,7 +162,7 @@ public class RaftServerImpl extends AbstractService implements RaftServer, RaftL
 
         if (raftMembers.isEmpty()) {
             logger.error("don't have members");
-            return false;
+            throw new RuntimeException("don't config members");
         }
 
         joinTimes = 0;

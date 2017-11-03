@@ -72,11 +72,11 @@ public class DiscoveryServiceImpl extends AbstractService implements DiscoverySe
 
 
     @Override
-    public synchronized boolean join(String cluster) {
+    public synchronized boolean join() {
         if (joined) {
             return true;
         }
-        logger.info("start join cluster:{}", cluster);
+        logger.info("start join discovery cluster");
 
         String members = config.getMembers();
         List<Address> addresses = AddressUtil.parseList(members);

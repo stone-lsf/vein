@@ -12,10 +12,9 @@ public interface DiscoveryService extends Startable, Closable {
     /**
      * 加入集群
      *
-     * @param cluster 集群名称
      * @return 成功则返回true，否则返回false
      */
-    boolean join(String cluster);
+    boolean join();
 
 
     Nodes getNodes();

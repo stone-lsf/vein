@@ -1,134 +1,118 @@
 package com.sm.charge.raft.server;
 
+import com.sm.finance.charge.common.base.Configure;
+
 /**
  * @author shifeng.luo
  * @version created on 2017/9/20 下午10:52
  */
 public class RaftConfig {
 
+    private final Configure configure;
+
     /**
      * 复制日志超时时间(ms)
      */
-    private int replicateTimeout;
+    private static final String REPLICATE_TIMEOUT = "raft.server.replicate.timeout";
+    private static final int DEFAULT_REPLICATE_TIMEOUT = 6000;
 
     /**
      * 集群名称
      */
-    private String clusterName;
+    private static final String CLUSTER_NAME = "raft.cluster.name";
+    private static final String DEFAULT_CLUSTER_NAME = "charge";
 
-    private int port;
-    private String transportType;
+    private static final String PORT = "raft.server.port";
+    private static final int DEFAULT_PORT = 65156;
+
+    private static final String TRANSPORT_TYPE = "raft.server.transport.type";
+    private static final String DEFAULT_TRANSPORT_TYPE = "netty";
 
 
-    private String snapshotDirectory;
-    private String snapshotName;
+    private static final String SNAPSHOT_DIRECTORY = "raft.server.snapshot.directory";
+    private static final String DEFAULT_SNAPSHOT_DIRECTORY = "netty";
 
-    private int heartbeatTimeout;
+    private static final String SNAPSHOT_NAME = "raft.server.snapshot.name";
+    private static final String DEFAULT_SNAPSHOT_NAME = "charge";
 
-    private int maxElectTimeout;
+    private static final String HEARTBEAT_TIMEOUT = "raft.server.heartbeat.timeout";
+    private static final int DEFAULT_HEARTBEAT_TIMEOUT = 5000;
 
-    private int minElectTimeout;
+    private static final String MAX_ELECT_TIMEOUT = "raft.server.select.timeout.max";
+    private static final int DEFAULT_MAX_ELECT_TIMEOUT = 6000;
 
-    private String members;
+    private static final String MIN_ELECT_TIMEOUT = "raft.server.select.timeout.min";
+    private static final int DEFAULT_MIN_ELECT_TIMEOUT = 3000;
 
-    private int joinRetryTimes;
+    private static final String MEMBERS = "raft.server.members";
 
-    private int maxAppendSize;
+    private static final String JOIN_RETRY_TIMES = "raft.server.join.retry.times";
+    private static final int DEFAULT_JOIN_RETRY_TIMES = 6;
+
+    private static final String MAX_APPEND_SIZE = "raft.server.append.size.max";
+    private static final int DEFAULT_MAX_APPEND_SIZE = 5 * 1024 * 1024;
+
+    public RaftConfig(Configure configure) {
+        this.configure = configure;
+    }
 
     public int getReplicateTimeout() {
-        return replicateTimeout;
+        return configure.getInt(REPLICATE_TIMEOUT, DEFAULT_REPLICATE_TIMEOUT);
     }
-
-    public void setReplicateTimeout(int replicateTimeout) {
-        this.replicateTimeout = replicateTimeout;
-    }
-
 
     public String getClusterName() {
-        return clusterName;
+        return configure.getString(CLUSTER_NAME, DEFAULT_CLUSTER_NAME);
     }
 
-    public void setClusterName(String clusterName) {
-        this.clusterName = clusterName;
-    }
 
     public String getTransportType() {
-        return transportType;
+        return configure.getString(TRANSPORT_TYPE, DEFAULT_TRANSPORT_TYPE);
     }
 
-    public void setTransportType(String transportType) {
-        this.transportType = transportType;
-    }
 
     public int getPort() {
-        return port;
+        return configure.getInt(PORT, DEFAULT_PORT);
     }
 
-    public void setPort(int port) {
-        this.port = port;
-    }
 
     public String getSnapshotDirectory() {
-        return snapshotDirectory;
+        return configure.getString(SNAPSHOT_DIRECTORY, DEFAULT_SNAPSHOT_DIRECTORY);
     }
 
-    public void setSnapshotDirectory(String snapshotDirectory) {
-        this.snapshotDirectory = snapshotDirectory;
-    }
 
     public String getSnapshotName() {
-        return snapshotName;
+        return configure.getString(SNAPSHOT_NAME, DEFAULT_SNAPSHOT_NAME);
     }
 
-    public void setSnapshotName(String snapshotName) {
-        this.snapshotName = snapshotName;
-    }
 
     public int getHeartbeatTimeout() {
-        return heartbeatTimeout;
+
+        return configure.getInt(HEARTBEAT_TIMEOUT, DEFAULT_HEARTBEAT_TIMEOUT);
     }
 
-    public void setHeartbeatTimeout(int heartbeatTimeout) {
-        this.heartbeatTimeout = heartbeatTimeout;
-    }
 
     public int getMaxElectTimeout() {
-        return maxElectTimeout;
+        return configure.getInt(MAX_ELECT_TIMEOUT, DEFAULT_MAX_ELECT_TIMEOUT);
     }
 
-    public void setMaxElectTimeout(int maxElectTimeout) {
-        this.maxElectTimeout = maxElectTimeout;
-    }
 
     public int getMinElectTimeout() {
-        return minElectTimeout;
+        return configure.getInt(MIN_ELECT_TIMEOUT, DEFAULT_MIN_ELECT_TIMEOUT);
     }
 
-    public void setMinElectTimeout(int minElectTimeout) {
-        this.minElectTimeout = minElectTimeout;
-    }
 
     public String getMembers() {
-        return members;
+        return configure.getString(MEMBERS);
     }
 
-    public void setMembers(String members) {
-        this.members = members;
-    }
 
     public int getJoinRetryTimes() {
-        return joinRetryTimes;
+        return configure.getInt(JOIN_RETRY_TIMES, DEFAULT_JOIN_RETRY_TIMES);
     }
 
-    public void setJoinRetryTimes(int joinRetryTimes) {
-        this.joinRetryTimes = joinRetryTimes;
-    }
 
     public int getMaxAppendSize() {
-        return maxAppendSize;
+        return configure.getInt(MAX_APPEND_SIZE, DEFAULT_MAX_APPEND_SIZE);
     }
 
-    public void setMaxAppendSize(int maxAppendSize) {
-        this.maxAppendSize = maxAppendSize;
-    }
 }

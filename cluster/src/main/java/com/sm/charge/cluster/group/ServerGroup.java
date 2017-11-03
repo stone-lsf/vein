@@ -1,5 +1,6 @@
 package com.sm.charge.cluster.group;
 
+import com.sm.charge.cluster.Server;
 import com.sm.finance.charge.common.Address;
 
 import java.util.ArrayList;
@@ -18,6 +19,13 @@ public class ServerGroup {
     private ConcurrentMap<Address, Server> servers = new ConcurrentHashMap<>();
 
     private int quorum;
+
+    public ServerGroup() {
+    }
+
+    public ServerGroup(String name) {
+        this.name = name;
+    }
 
     public String getName() {
         return name;
@@ -54,6 +62,4 @@ public class ServerGroup {
     public Server get(Address address) {
         return servers.get(address);
     }
-
-
 }

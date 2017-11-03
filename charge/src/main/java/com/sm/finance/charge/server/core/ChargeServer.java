@@ -29,7 +29,7 @@ public class ChargeServer implements InitializingBean {
         DiscoveryConfig discoveryConfig = new DiscoveryConfig(configure);
         discoveryService = new DiscoveryServiceImpl(discoveryConfig);
 
-        RaftConfig raftConfig = new RaftConfig();
+        RaftConfig raftConfig = new RaftConfig(configure);
         raftServer = new RaftServerImpl(raftConfig, new PrintLogStateMachine());
     }
 }

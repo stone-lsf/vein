@@ -1,6 +1,7 @@
 package com.sm.charge.cluster.group;
 
 import com.sm.charge.cluster.BaseObject;
+import com.sm.charge.cluster.Server;
 import com.sm.charge.cluster.Store;
 import com.sm.charge.cluster.exceptions.NotGroupServerException;
 import com.sm.charge.cluster.messages.MessagePullRequest;
@@ -20,19 +21,18 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author shifeng.luo
  * @version created on 2017/11/2 下午10:31
  */
-public class MessagePuller extends LoggerSupport {
+public class MessageReplicator extends LoggerSupport {
 
     private final Server self;
-    private final LeaderListener listener;
+    private LeaderListener leaderListener;
     private final ServerGroup group;
     private final int maxBatchSize;
     private final Store store;
     private volatile Server leader;
     private final Map<Long, CompletableFuture> futureMap = new ConcurrentHashMap<>();
 
-    public MessagePuller(Server self, LeaderListener listener, ServerGroup group, int maxBatchSize, Store store) {
+    public MessageReplicator(Server self, ServerGroup group, int maxBatchSize, Store store) {
         this.self = self;
-        this.listener = listener;
         this.group = group;
         this.maxBatchSize = maxBatchSize;
         this.store = store;
@@ -43,7 +43,7 @@ public class MessagePuller extends LoggerSupport {
         MessagePullRequest request = new MessagePullRequest(self.getAddress(), store.lastIndex());
         Connection connection = leader.getConnection();
         if (connection == null) {
-            listener.onLeave(leader);
+            leaderListener.onLeave(leader);
             return;
         }
 
@@ -144,5 +144,9 @@ public class MessagePuller extends LoggerSupport {
 
     public void setLeader(Server leader) {
         this.leader = leader;
+    }
+
+    public void setLeaderListener(LeaderListener leaderListener) {
+        this.leaderListener = leaderListener;
     }
 }

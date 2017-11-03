@@ -1,6 +1,6 @@
 package com.sm.charge.cluster.messages.handlers;
 
-import com.sm.charge.cluster.group.LeaderSelector;
+import com.sm.charge.cluster.group.GroupMembership;
 import com.sm.charge.cluster.messages.JoinRequest;
 import com.sm.charge.cluster.messages.JoinResponse;
 import com.sm.finance.charge.transport.api.handler.AbstractRequestHandler;
@@ -14,9 +14,9 @@ import java.util.concurrent.CompletableFuture;
  */
 public class JoinRequestHandler extends AbstractRequestHandler<JoinRequest> {
 
-    private final LeaderSelector selector;
+    private final GroupMembership selector;
 
-    public JoinRequestHandler(LeaderSelector selector) {
+    public JoinRequestHandler(GroupMembership selector) {
         this.selector = selector;
     }
 

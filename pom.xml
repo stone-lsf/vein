@@ -41,7 +41,7 @@
         <repository>
             <id>shenma-nexus-snapshots</id>
             <name>local private nexus</name>
-            <url>http://hc-repo.alibaba.net:8081/nexus/content/repositories/snapshots</url>
+            <url>http://imp-repo.alibaba.net:8081/nexus/content/repositories/snapshots</url>
             <snapshots>
                 <enabled>true</enabled>
                 <updatePolicy>always</updatePolicy>
@@ -50,12 +50,34 @@
         </repository>
         <repository>
             <id>shenma-nexus-releases</id>
-            <url>http://hc-repo.alibaba.net:8081/nexus/content/repositories/releases</url>
+            <url>http://imp-repo.alibaba.net:8081/nexus/content/repositories/releases</url>
         </repository>
-
         <repository>
             <id>shenma-nexus-public</id>
-            <url>http://hc-repo.alibaba.net:8081/nexus/content/groups/public</url>
+            <url>http://imp-repo.alibaba.net:8081/nexus/content/groups/public</url>
+        </repository>
+        <repository>
+            <id>shenma-nexus-public-snapshots</id>
+            <url>http://imp-repo.alibaba.net:8081/nexus/content/groups/public-snapshots</url>
+        </repository>
+        <repository>
+            <id>mvnrepo-alibaba-inc-public</id>
+            <url>http://mvnrepo.alibaba-inc.com/nexus/content/groups/public</url>
+        </repository>
+        <repository>
+            <id>darwin-nexus-snapshots</id>
+            <url>http://imp-repo.alibaba.net:8081/nexus/content/repositories/snapshots/</url>
+        </repository>
+        <repository>
+            <id>nexus</id>
+            <name>local private nexus</name>
+            <url>http://maven.oschina.net/content/groups/public/</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
         </repository>
     </repositories>
 
@@ -63,12 +85,12 @@
         <repository>
             <id>shenma</id>
             <name>scm's Releases</name>
-            <url>http://hc-repo.alibaba.net:8081/nexus/content/repositories/releases</url>
+            <url>http://imp-repo.alibaba.net:8081/nexus/content/repositories/releases</url>
         </repository>
         <snapshotRepository>
             <id>shenma</id>
             <name>scm's snapshot Releases</name>
-            <url>http://hc-repo.alibaba.net:8081/nexus/content/repositories/snapshots</url>
+            <url>http://imp-repo.alibaba.net:8081/nexus/content/repositories/snapshots</url>
         </snapshotRepository>
     </distributionManagement>
 
