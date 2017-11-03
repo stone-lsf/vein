@@ -57,7 +57,7 @@ public class LeaderState extends AbstractState {
         RaftMember self = context.getSelf();
         List<RaftMember> members = context.getCluster().members();
         for (RaftMember member : members) {
-            if (member.getId() == self.getId()) {
+            if (member.getNodeId() == self.getNodeId()) {
                 continue;
             }
 
@@ -73,7 +73,7 @@ public class LeaderState extends AbstractState {
         long nextLogIndex = entry == null ? 1 : entry.getIndex() + 1;
 
         for (RaftMember member : members) {
-            if (member.getId() == self.getId()) {
+            if (member.getNodeId() == self.getNodeId()) {
                 continue;
             }
 
@@ -160,11 +160,11 @@ public class LeaderState extends AbstractState {
         self.getState().setConfiguring(index);
 
         for (RaftMember member : members) {
-            if (!cluster.contain(member.getId())) {
+            if (!cluster.contain(member.getNodeId())) {
                 cluster.add(member);
                 member.setNextLogIndex(1);
                 member.getState().startReplicate();
-                logger.info("server[id:{};address:{}] is add to cluster,log index:{}", member.getId(), member.getAddress(), index);
+                logger.info("server[id:{};address:{}] is add to cluster,log index:{}", member.getNodeId(), member.getAddress(), index);
             }
         }
 

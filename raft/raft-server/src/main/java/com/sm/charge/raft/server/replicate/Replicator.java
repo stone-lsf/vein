@@ -34,7 +34,7 @@ public class Replicator extends LoggerSupport {
 
 
     public CompletableFuture<Void> replicateTo(RaftMember member) {
-        logger.info("leader append entry to member:[{}]", member.getId());
+        logger.info("leader append entry to member:[{}]", member.getNodeId());
         Connection connection = member.getState().getConnection();
         if (connection == null) {
             return CompletableFuture.completedFuture(null);
@@ -69,8 +69,8 @@ public class Replicator extends LoggerSupport {
         long lastLogIndex = lastLogEntry == null ? 0 : lastLogEntry.getIndex();
 
         AppendRequest request = new AppendRequest();
-        request.setDestination(member.getId());
-        request.setSource(leader.getId());
+        request.setDestination(member.getNodeId());
+        request.setSource(leader.getNodeId());
         request.setTerm(leader.getTerm());
         request.setPrevLogIndex(prevLogIndex);
         request.setPrevLogTerm(prevLogTerm);
@@ -101,7 +101,7 @@ public class Replicator extends LoggerSupport {
 
             @Override
             public void onException(Throwable e, ResponseContext context) {
-                logger.error("send append request to member:{} caught exception", member.getId(), e);
+                logger.error("send append request to member:{} caught exception", member.getNodeId(), e);
                 future.complete(null);
             }
         });
@@ -133,7 +133,7 @@ public class Replicator extends LoggerSupport {
 
             @Override
             public void onException(Throwable e, ResponseContext context) {
-                logger.error("send install request to:{} caught exception", member.getId(), e);
+                logger.error("send install request to:{} caught exception", member.getNodeId(), e);
                 future.complete(null);
             }
         });
@@ -156,7 +156,7 @@ public class Replicator extends LoggerSupport {
 
         request.setIndex(snapshot.index());
         request.setTerm(context.getSelf().getTerm());
-        request.setDestination(member.getId());
+        request.setDestination(member.getNodeId());
         request.setOffset(offset);
         request.setData(data);
         request.setComplete(!reader.hasRemaining());

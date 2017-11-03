@@ -46,7 +46,7 @@ public class CandidateState extends AbstractState {
         timer.start();
 
         self.setTerm(self.getTerm() + 1);
-        self.setVotedFor(self.getId());
+        self.setVotedFor(self.getNodeId());
 
         int quorum = context.getCluster().getQuorum();
         VoteQuorum voteQuorum = new VoteQuorum(quorum);
@@ -70,11 +70,11 @@ public class CandidateState extends AbstractState {
         VoteRequest request = new VoteRequest();
         request.setLastLogIndex(lastIndex);
         request.setLastLogTerm(lastTerm);
-        request.setSource(context.getSelf().getId());
+        request.setSource(context.getSelf().getNodeId());
         request.setTerm(context.getSelf().getTerm());
 
         for (RaftMember member : members) {
-            if (member.getId() == context.getSelf().getId()) {
+            if (member.getNodeId() == context.getSelf().getNodeId()) {
                 continue;
             }
 
@@ -84,7 +84,7 @@ public class CandidateState extends AbstractState {
                 continue;
             }
 
-            request.setDestination(member.getId());
+            request.setDestination(member.getNodeId());
             connection.send(request, new AbstractResponseHandler<VoteResponse>() {
                 @Override
                 public void handle(VoteResponse response, Connection connection) {
@@ -93,7 +93,7 @@ public class CandidateState extends AbstractState {
 
                 @Override
                 public void onException(Throwable e, ResponseContext context) {
-                    logger.error("send vote request to:{} caught exception", member.getId(), e);
+                    logger.error("send vote request to:{} caught exception", member.getNodeId(), e);
                     voteQuorum.mergeFailure();
                 }
             });

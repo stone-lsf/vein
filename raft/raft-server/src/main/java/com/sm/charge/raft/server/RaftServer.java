@@ -16,7 +16,7 @@ import java.util.concurrent.CompletableFuture;
  */
 public interface RaftServer extends Startable, Closable {
 
-    long getId();
+    String getId();
 
     /**
      * 过渡到新状态

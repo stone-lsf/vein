@@ -15,17 +15,17 @@ public class RaftMessage implements Event {
     /**
      * 消息来源
      */
-    private long source;
+    private String source;
 
     /**
      * 消息目的地
      */
-    private long destination;
+    private String destination;
 
     public RaftMessage() {
     }
 
-    public RaftMessage(long term, long source, long destination) {
+    public RaftMessage(long term, String source, String destination) {
         this.term = term;
         this.source = source;
         this.destination = destination;
@@ -39,19 +39,19 @@ public class RaftMessage implements Event {
         this.term = term;
     }
 
-    public long getSource() {
+    public String getSource() {
         return source;
     }
 
-    public void setSource(long source) {
+    public void setSource(String source) {
         this.source = source;
     }
 
-    public long getDestination() {
+    public String getDestination() {
         return destination;
     }
 
-    public void setDestination(long destination) {
+    public void setDestination(String destination) {
         this.destination = destination;
     }
 }

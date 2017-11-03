@@ -2,19 +2,16 @@ package com.sm.charge.raft.server;
 
 import com.sm.charge.raft.server.replicate.Replicator;
 import com.sm.finance.charge.common.Address;
+import com.sm.finance.charge.common.base.BaseNode;
 import com.sm.finance.charge.transport.api.TransportClient;
 
 /**
  * @author shifeng.luo
  * @version created on 2017/9/22 上午11:11
  */
-public class RaftMember {
+public class RaftMember extends BaseNode<String>{
 
     private final RaftMemberState state;
-
-    private final long id;
-
-    private final Address address;
 
     /**
      * 自增版本号
@@ -24,7 +21,7 @@ public class RaftMember {
     /**
      * 在当前获得选票的候选人的 Id
      */
-    private volatile long votedFor;
+    private volatile String votedFor;
 
     /**
      * 下一个需要append的日志的index
@@ -58,18 +55,9 @@ public class RaftMember {
 //    private volatile long replicateFailureCount;
 
 
-    public RaftMember(TransportClient client, long id, Address address, Replicator replicator) {
-        this.id = id;
-        this.address = address;
+    public RaftMember(TransportClient client, String id, Address address, Replicator replicator) {
+        super(id,address);
         this.state = new RaftMemberState(client, this, replicator);
-    }
-
-    public long getId() {
-        return id;
-    }
-
-    public Address getAddress() {
-        return address;
     }
 
     public RaftMemberState getState() {
@@ -84,11 +72,11 @@ public class RaftMember {
         this.term = term;
     }
 
-    public long getVotedFor() {
+    public String getVotedFor() {
         return votedFor;
     }
 
-    public void setVotedFor(long votedFor) {
+    public void setVotedFor(String votedFor) {
         this.votedFor = votedFor;
     }
 

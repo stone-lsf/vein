@@ -83,7 +83,7 @@ public class RaftServerImpl extends AbstractService implements RaftServer, RaftL
 
 
         Address address = AddressUtil.getLocalAddress(raftConfig.getPort());
-        this.self = new RaftMember(client, address.ipPort(), address, null);
+        this.self = new RaftMember(client, address.getAddressStr(), address, null);
         this.cluster = new RaftClusterImpl(raftConfig.getClusterName(), self);
         this.log = new FileLog();
         this.snapshotManager = new FileSnapshotManager(raftConfig.getSnapshotDirectory(), raftConfig.getSnapshotName());
@@ -133,8 +133,8 @@ public class RaftServerImpl extends AbstractService implements RaftServer, RaftL
     }
 
     @Override
-    public long getId() {
-        return self.getId();
+    public String getId() {
+        return self.getNodeId();
     }
 
     @Override
@@ -155,7 +155,7 @@ public class RaftServerImpl extends AbstractService implements RaftServer, RaftL
 
         Set<RaftMember> raftMembers = members.stream()
             .filter(m -> !m.equals(self.getAddress()))
-            .map(m -> new RaftMember(client, m.ipPort(), m, replicator))
+            .map(m -> new RaftMember(client, m.getAddressStr(), m, replicator))
             .collect(Collectors.toSet());
 
         raftMembers.forEach(cluster::add);
@@ -179,7 +179,7 @@ public class RaftServerImpl extends AbstractService implements RaftServer, RaftL
         int index = RandomUtil.random(members.size());
         RaftMember member = members.get(index);
 
-        while (member.getId() == self.getId()) {
+        while (member.getNodeId() == self.getNodeId()) {
             index = RandomUtil.random(members.size());
             member = members.get(index);
         }
@@ -193,7 +193,7 @@ public class RaftServerImpl extends AbstractService implements RaftServer, RaftL
     }
 
     private boolean doJoin(Connection connection) {
-        JoinRequest request = new JoinRequest(self.getId(), self.getAddress());
+        JoinRequest request = new JoinRequest(self.getNodeId(), self.getAddress());
         try {
             JoinResponse response = connection.syncRequest(request);
             serverStates.get(state).handle(response);
@@ -207,7 +207,7 @@ public class RaftServerImpl extends AbstractService implements RaftServer, RaftL
             }
 
             if (response.needRedirect()) {
-                long masterId = response.getMaster().getId();
+                String masterId = response.getMaster().getNodeId();
                 RaftMember master = cluster.member(masterId);
                 connection = master.getState().getConnection();
                 if (connection != null) {

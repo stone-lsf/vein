@@ -31,7 +31,7 @@ public class ReplicateTask extends LoggerSupport {
     private void execute() {
         replicator.replicateTo(target).whenComplete((result, error) -> {
             if (error != null) {
-                logger.error("replicate entry to {} caught exception", target.getId(), error);
+                logger.error("replicate entry to {} caught exception", target.getNodeId(), error);
             }
 
             if (started) {

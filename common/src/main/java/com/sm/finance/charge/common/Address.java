@@ -47,6 +47,10 @@ public class Address {
         return Long.valueOf(ipPort);
     }
 
+    public String getAddressStr() {
+        return ip + "/" + port;
+    }
+
     @Override
     public boolean equals(Object object) {
         if (object == null) {

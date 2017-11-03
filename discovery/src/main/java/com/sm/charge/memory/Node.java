@@ -3,6 +3,7 @@ package com.sm.charge.memory;
 import com.sm.charge.memory.gossip.messages.AliveMessage;
 import com.sm.charge.memory.pushpull.PushNodeState;
 import com.sm.finance.charge.common.Address;
+import com.sm.finance.charge.common.base.BaseNode;
 import com.sm.finance.charge.transport.api.Connection;
 
 import java.util.Date;
@@ -12,17 +13,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * @author shifeng.luo
  * @version created on 2017/9/11 下午8:35
  */
-public class Node {
-
-    /**
-     * 节点唯一标识符
-     */
-    private final String nodeId;
-
-    /**
-     * 节点地址
-     */
-    private final Address address;
+public class Node extends BaseNode<String> {
 
     /**
      * 节点类型
@@ -52,16 +43,14 @@ public class Node {
     private final ReentrantLock lock = new ReentrantLock();
 
     public Node(AliveMessage message, NodeStatus status, Date statusChangeTime) {
-        this.nodeId = message.getNodeId();
-        this.address = message.getAddress();
+        super(message.getNodeId(), message.getAddress());
         this.type = message.getNodeType();
         this.status = status;
         this.statusChangeTime = statusChangeTime;
     }
 
     public Node(String nodeId, Address address, NodeType type, long incarnation, Date statusChangeTime, NodeStatus status) {
-        this.nodeId = nodeId;
-        this.address = address;
+        super(nodeId, address);
         this.type = type;
         this.incarnation = incarnation;
         this.statusChangeTime = statusChangeTime;
@@ -86,14 +75,6 @@ public class Node {
 
     public void unlock() {
         lock.unlock();
-    }
-
-    public String getNodeId() {
-        return nodeId;
-    }
-
-    public Address getAddress() {
-        return address;
     }
 
     public NodeType getType() {

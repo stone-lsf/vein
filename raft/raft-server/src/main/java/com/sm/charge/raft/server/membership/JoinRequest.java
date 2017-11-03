@@ -8,23 +8,23 @@ import com.sm.finance.charge.common.Address;
  */
 public class JoinRequest {
 
-    private long memberId;
+    private String memberId;
 
     private Address address;
 
     public JoinRequest() {
     }
 
-    public JoinRequest(long memberId, Address address) {
+    public JoinRequest(String memberId, Address address) {
         this.memberId = memberId;
         this.address = address;
     }
 
-    public long getMemberId() {
+    public String getMemberId() {
         return memberId;
     }
 
-    public void setMemberId(long memberId) {
+    public void setMemberId(String memberId) {
         this.memberId = memberId;
     }
 

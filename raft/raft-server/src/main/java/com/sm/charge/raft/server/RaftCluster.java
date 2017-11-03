@@ -18,9 +18,9 @@ public interface RaftCluster extends Startable, Closable {
 
     void setMaster(RaftMember master);
 
-    RaftMember member(long memberId);
+    RaftMember member(String memberId);
 
-    boolean contain(long memberId);
+    boolean contain(String memberId);
 
     RaftMember local();
 

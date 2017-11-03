@@ -49,7 +49,7 @@ public abstract class AbstractState extends LoggerSupport implements ServerState
     public VoteResponse handle(VoteRequest request) {
         long requestTerm = request.getTerm();
         VoteResponse response = new VoteResponse();
-        response.setSource(self.getId());
+        response.setSource(self.getNodeId());
         response.setDestination(request.getSource());
 
         if (updateTerm(requestTerm)) {
@@ -66,7 +66,7 @@ public abstract class AbstractState extends LoggerSupport implements ServerState
             return response;
         }
 
-        if (self.getVotedFor() > 0 && self.getVotedFor() != request.getSource()) {
+        if (self.getVotedFor() != null && self.getVotedFor() != request.getSource()) {
             response.setVoteGranted(false);
             return response;
         }
@@ -92,7 +92,7 @@ public abstract class AbstractState extends LoggerSupport implements ServerState
         long term = self.getTerm();
         if (term < messageTerm) {
             self.setTerm(messageTerm);
-            self.setVotedFor(-1);
+            self.setVotedFor(null);
             raftListener.onFallBehind();
             return true;
         }
@@ -158,7 +158,7 @@ public abstract class AbstractState extends LoggerSupport implements ServerState
     protected AppendResponse appendWithPrevLog(long prevLogIndex, AppendRequest request) {
         LogEntry prevEntry = context.getLog().get(prevLogIndex);
         LogEntry lastLogEntry = context.getLog().lastEntry();
-        long source = request.getSource();
+        String source = request.getSource();
 
         if (prevEntry == null) {
             logger.info("append entry failure,because received pre index:{} log from master[{}] isn't exist!", prevLogIndex, source);
@@ -192,7 +192,7 @@ public abstract class AbstractState extends LoggerSupport implements ServerState
      * @return AppendResponse
      */
     protected AppendResponse appendInitial(AppendRequest request) {
-        long source = request.getSource();
+        String source = request.getSource();
         List<LogEntry> entries = request.getEntries();
         Log log = context.getLog();
         long lastIndex = 0;
@@ -302,8 +302,8 @@ public abstract class AbstractState extends LoggerSupport implements ServerState
     }
 
 
-    protected void fill(RaftMessage message, long destination) {
-        message.setSource(self.getId());
+    protected void fill(RaftMessage message, String destination) {
+        message.setSource(self.getNodeId());
         message.setDestination(destination);
         message.setTerm(self.getTerm());
     }

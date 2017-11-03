@@ -84,7 +84,7 @@ public class ServerStateMachine extends LoggerSupport {
         }
 
         pendingSnapshot = snapshotManager.create(lastApplied, System.currentTimeMillis());
-        logger.info("{} member taking snapshot:{}", self.getId(), pendingSnapshot.index());
+        logger.info("{} member taking snapshot:{}", self.getNodeId(), pendingSnapshot.index());
         executorService.execute(() -> {
             SnapshotWriter writer = pendingSnapshot.writer();
             stateMachine.take(writer);
@@ -103,7 +103,7 @@ public class ServerStateMachine extends LoggerSupport {
             return;
         }
 
-        logger.info("{} install snapshot:{}", self.getId(), snapshot.index());
+        logger.info("{} install snapshot:{}", self.getNodeId(), snapshot.index());
         executorService.execute(() -> {
             SnapshotReader reader = pendingSnapshot.reader();
             stateMachine.install(reader);

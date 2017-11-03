@@ -17,14 +17,14 @@ public class RaftClusterImpl extends AbstractService implements RaftCluster {
 
     private final String name;
     private final RaftMember self;
-    private final ConcurrentMap<Long, RaftMember> members = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, RaftMember> members = new ConcurrentHashMap<>();
     private volatile long version;
     private volatile RaftMember master;
 
     public RaftClusterImpl(String name, RaftMember self) {
         this.name = name;
         this.self = self;
-        members.put(self.getId(), self);
+        members.put(self.getNodeId(), self);
     }
 
     @Override
@@ -41,12 +41,12 @@ public class RaftClusterImpl extends AbstractService implements RaftCluster {
         this.master = master;
     }
 
-    public RaftMember member(long memberId) {
+    public RaftMember member(String memberId) {
         return members.get(memberId);
     }
 
     @Override
-    public boolean contain(long memberId) {
+    public boolean contain(String memberId) {
         return false;
     }
 
@@ -73,12 +73,12 @@ public class RaftClusterImpl extends AbstractService implements RaftCluster {
 
     @Override
     public void add(RaftMember member) {
-        members.put(member.getId(), member);
+        members.put(member.getNodeId(), member);
     }
 
     @Override
     public void remove(RaftMember member) {
-        members.remove(member.getId());
+        members.remove(member.getNodeId());
     }
 
     @Override
