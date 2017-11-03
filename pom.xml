@@ -14,12 +14,11 @@
         <module>transport</module>
         <module>common</module>
         <module>serializer</module>
-        <module>cluster</module>
         <module>storage</module>
         <module>buffer</module>
         <module>discovery</module>
         <module>raft</module>
-        <module>group</module>
+        <module>cluster</module>
     </modules>
 
 

@@ -11,46 +11,17 @@
 
     <artifactId>charge-cluster</artifactId>
 
+
     <dependencies>
         <dependency>
             <groupId>com.sm.finance</groupId>
             <artifactId>charge-common</artifactId>
             <version>1.0.0-SNAPSHOT</version>
         </dependency>
-
         <dependency>
             <groupId>com.sm.finance</groupId>
             <artifactId>charge-transport</artifactId>
             <version>1.0.0-SNAPSHOT</version>
         </dependency>
-
-        <dependency>
-            <groupId>com.sm.finance</groupId>
-            <artifactId>charge-buffer</artifactId>
-            <version>1.0.0-SNAPSHOT</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-lang3</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>commons-collections</groupId>
-            <artifactId>commons-collections</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>joda-time</groupId>
-            <artifactId>joda-time</artifactId>
-            <version>2.3</version>
-        </dependency>
-        <dependency>
-            <groupId>com.sm.finance</groupId>
-            <artifactId>charge-discovery</artifactId>
-            <version>1.0.0-SNAPSHOT</version>
-        </dependency>
-
     </dependencies>
-
 </project>
