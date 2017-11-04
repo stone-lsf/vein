@@ -1,27 +1,24 @@
 package com.sm.charge.cluster.group;
 
-import com.sm.charge.cluster.BaseObject;
 import com.sm.charge.cluster.Server;
 import com.sm.charge.cluster.Store;
 import com.sm.charge.cluster.exceptions.NotGroupServerException;
 import com.sm.charge.cluster.messages.MessagePullRequest;
 import com.sm.charge.cluster.messages.MessagePullResponse;
+import com.sm.finance.charge.common.AbstractService;
 import com.sm.finance.charge.common.Address;
-import com.sm.finance.charge.common.base.LoggerSupport;
 import com.sm.finance.charge.transport.api.Connection;
 
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author shifeng.luo
  * @version created on 2017/11/2 下午10:31
  */
-public class MessageReplicator extends LoggerSupport {
+public class MessagePullService extends AbstractService {
 
     private final Server self;
     private LeaderListener leaderListener;
@@ -29,9 +26,10 @@ public class MessageReplicator extends LoggerSupport {
     private final int maxBatchSize;
     private final Store store;
     private volatile Server leader;
-    private final Map<Long, CompletableFuture> futureMap = new ConcurrentHashMap<>();
+    private volatile boolean pullMessage;
 
-    public MessageReplicator(Server self, ServerGroup group, int maxBatchSize, Store store) {
+
+    MessagePullService(Server self, ServerGroup group, int maxBatchSize, Store store) {
         this.self = self;
         this.group = group;
         this.maxBatchSize = maxBatchSize;
@@ -39,22 +37,24 @@ public class MessageReplicator extends LoggerSupport {
     }
 
 
-    public void pullMessage() {
-        MessagePullRequest request = new MessagePullRequest(self.getAddress(), store.lastIndex());
-        Connection connection = leader.getConnection();
-        if (connection == null) {
-            leaderListener.onLeave(leader);
-            return;
-        }
-
-        connection.<MessagePullResponse>request(request).whenComplete((response, error) -> {
-            if (error == null) {
-                handle(response);
-            } else {
-                logger.error("pull message from leader:{} caught exception", leader, error);
-                pullMessage();
+    private void pullMessage() {
+        if (pullMessage) {
+            MessagePullRequest request = new MessagePullRequest(self.getAddress(), store.lastIndex());
+            Connection connection = leader.getConnection();
+            if (connection == null) {
+                leaderListener.onLeave(leader);
+                return;
             }
-        });
+
+            connection.<MessagePullResponse>request(request).whenComplete((response, error) -> {
+                if (error == null) {
+                    handle(response);
+                } else {
+                    logger.error("pull message from leader:{} caught exception", leader, error);
+                }
+                pullMessage();
+            });
+        }
     }
 
 
@@ -77,8 +77,8 @@ public class MessageReplicator extends LoggerSupport {
             long lastIndex = store.lastIndex();
             int size = 0;
             for (; nextIndex <= lastIndex; nextIndex++) {
-                BaseObject object = store.get(nextIndex);
-                if (object == null) {
+                Entry entry = store.get(nextIndex);
+                if (entry == null) {
                     continue;
                 }
                 size++;
@@ -86,7 +86,7 @@ public class MessageReplicator extends LoggerSupport {
                     break;
                 }
 
-                objects.add(new Entry(nextIndex, object));
+                objects.add(entry);
             }
 
             MessagePullResponse response = new MessagePullResponse();
@@ -112,9 +112,9 @@ public class MessageReplicator extends LoggerSupport {
         if (watermark > prevWatermark) {
             commit(watermark);
             while (++prevWatermark <= watermark) {
-                CompletableFuture<?> future = futureMap.get(prevWatermark);
+                CompletableFuture<Boolean> future = group.getMessageFuture(prevWatermark);
                 if (future != null) {
-                    future.complete(null);
+                    future.complete(true);
                 }
             }
         }
@@ -132,7 +132,7 @@ public class MessageReplicator extends LoggerSupport {
         for (Entry entry : entries) {
             long skipSize = entry.getIndex() - lastIndex - 1;
             store.skip(skipSize);
-            store.add(entry.getObject());
+            store.add(entry);
             lastIndex = entry.getIndex();
         }
     }
@@ -142,11 +142,27 @@ public class MessageReplicator extends LoggerSupport {
         self.setWatermark(watermark);
     }
 
+    public void clearMessageFutures() {
+        group.clearMessageFutures();
+    }
+
     public void setLeader(Server leader) {
         this.leader = leader;
     }
 
-    public void setLeaderListener(LeaderListener leaderListener) {
+    void setLeaderListener(LeaderListener leaderListener) {
         this.leaderListener = leaderListener;
+    }
+
+    @Override
+    protected void doStart() throws Exception {
+        pullMessage = true;
+        pullMessage();
+    }
+
+    @Override
+    protected void doClose() throws Exception {
+        logger.info("stop pull message");
+        pullMessage = false;
     }
 }

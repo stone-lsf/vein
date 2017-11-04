@@ -5,6 +5,8 @@ import com.sm.finance.charge.common.Address;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -14,14 +16,12 @@ import java.util.concurrent.ConcurrentMap;
  */
 public class ServerGroup {
 
-    private String name;
+    private final String name;
     private Server leader;
-    private ConcurrentMap<Address, Server> servers = new ConcurrentHashMap<>();
-
     private int quorum;
 
-    public ServerGroup() {
-    }
+    private ConcurrentMap<Address, Server> servers = new ConcurrentHashMap<>();
+    private final Map<Long, CompletableFuture<Boolean>> messageFutures = new ConcurrentHashMap<>();
 
     public ServerGroup(String name) {
         this.name = name;
@@ -29,10 +29,6 @@ public class ServerGroup {
 
     public String getName() {
         return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
     }
 
     public int getQuorum() {
@@ -61,5 +57,17 @@ public class ServerGroup {
 
     public Server get(Address address) {
         return servers.get(address);
+    }
+
+    public CompletableFuture<Boolean> getMessageFuture(long index) {
+        return messageFutures.get(index);
+    }
+
+    public void addMessageFuture(long index, CompletableFuture<Boolean> future) {
+        messageFutures.put(index, future);
+    }
+
+    public void clearMessageFutures() {
+        messageFutures.clear();
     }
 }

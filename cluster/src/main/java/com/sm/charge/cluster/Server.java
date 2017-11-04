@@ -10,6 +10,8 @@ import com.sm.finance.charge.transport.api.Connection;
  */
 public class Server extends BaseNode<String> {
 
+    private final ServerType type;
+
     private volatile long version;
 
     private volatile boolean leader;
@@ -26,8 +28,9 @@ public class Server extends BaseNode<String> {
 
     private volatile Connection connection;
 
-    public Server(String serverId, Address address) {
+    public Server(String serverId, Address address, ServerType type) {
         super(serverId, address);
+        this.type = type;
     }
 
     public String getServerId() {
@@ -42,6 +45,9 @@ public class Server extends BaseNode<String> {
         this.leader = leader;
     }
 
+    public ServerType getType() {
+        return type;
+    }
 
     public Connection getConnection() {
         return connection;

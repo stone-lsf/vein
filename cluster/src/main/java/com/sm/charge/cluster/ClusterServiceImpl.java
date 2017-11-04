@@ -45,7 +45,7 @@ public class ClusterServiceImpl extends AbstractService implements ClusterServic
         this.stateMachine = stateMachine;
         Address address = AddressUtil.getLocalAddress(config.getBindPort());
         String serverId = config.getServerId(address);
-        this.self = new Server(serverId, address);
+        this.self = new Server(serverId, address, config.getServerType());
         this.config = config;
     }
 
@@ -61,7 +61,7 @@ public class ClusterServiceImpl extends AbstractService implements ClusterServic
             throw new RuntimeException("discovery service join failed");
         }
 
-        ServerType type = config.getServerType();
+        ServerType type = self.getType();
         if (type != ServerType.core) {
             return;
         }
@@ -86,7 +86,7 @@ public class ClusterServiceImpl extends AbstractService implements ClusterServic
         ServerGroup group = new ServerGroup(groupName);
 
         for (ServerInfo info : servers) {
-            Server server = new Server(info.getServerId(), info.getAddress());
+            Server server = new Server(info.getServerId(), info.getAddress(), info.getType());
             group.add(server);
         }
 

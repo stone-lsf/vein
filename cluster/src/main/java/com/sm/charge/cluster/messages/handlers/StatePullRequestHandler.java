@@ -1,6 +1,6 @@
 package com.sm.charge.cluster.messages.handlers;
 
-import com.sm.charge.cluster.group.GroupMembership;
+import com.sm.charge.cluster.group.GroupMemberService;
 import com.sm.charge.cluster.messages.StatePullRequest;
 import com.sm.charge.cluster.messages.StatePullResponse;
 import com.sm.finance.charge.transport.api.handler.AbstractRequestHandler;
@@ -14,9 +14,9 @@ import java.util.concurrent.CompletableFuture;
  */
 public class StatePullRequestHandler extends AbstractRequestHandler<StatePullRequest> {
 
-    private final GroupMembership selector;
+    private final GroupMemberService selector;
 
-    public StatePullRequestHandler(GroupMembership selector) {
+    public StatePullRequestHandler(GroupMemberService selector) {
         this.selector = selector;
     }
 

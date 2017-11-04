@@ -12,12 +12,15 @@ public class ServerInfo {
 
     private Address address;
 
+    private ServerType type;
+
     public ServerInfo() {
     }
 
-    public ServerInfo(String serverId, Address address) {
+    public ServerInfo(String serverId, Address address, ServerType type) {
         this.serverId = serverId;
         this.address = address;
+        this.type = type;
     }
 
     public String getServerId() {
@@ -34,5 +37,13 @@ public class ServerInfo {
 
     public void setAddress(Address address) {
         this.address = address;
+    }
+
+    public ServerType getType() {
+        return type;
+    }
+
+    public void setType(ServerType type) {
+        this.type = type;
     }
 }

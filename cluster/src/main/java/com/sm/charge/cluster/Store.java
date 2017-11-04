@@ -1,18 +1,20 @@
 package com.sm.charge.cluster;
 
+import com.sm.charge.cluster.group.Entry;
+
 /**
  * @author shifeng.luo
  * @version created on 2017/10/28 下午11:00
  */
 public interface Store {
 
-    <T extends BaseObject> long add(T obj);
+    long add(Entry entry);
 
     long lastIndex();
 
     void skip(long size);
 
-    <T extends BaseObject> T get(long index);
+    Entry get(long index);
 
     void commit(long index);
 

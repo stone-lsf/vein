@@ -1,6 +1,6 @@
 package com.sm.charge.cluster.messages.handlers;
 
-import com.sm.charge.cluster.group.MessageReplicator;
+import com.sm.charge.cluster.group.MessagePullService;
 import com.sm.charge.cluster.messages.MessagePullRequest;
 import com.sm.finance.charge.transport.api.handler.AbstractRequestHandler;
 import com.sm.finance.charge.transport.api.support.RequestContext;
@@ -13,9 +13,9 @@ import java.util.concurrent.CompletableFuture;
  */
 public class MessagePullRequestHandler extends AbstractRequestHandler<MessagePullRequest> {
 
-    private final MessageReplicator puller;
+    private final MessagePullService puller;
 
-    public MessagePullRequestHandler(MessageReplicator puller) {
+    public MessagePullRequestHandler(MessagePullService puller) {
         this.puller = puller;
     }
 

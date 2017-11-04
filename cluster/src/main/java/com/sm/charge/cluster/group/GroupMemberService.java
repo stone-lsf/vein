@@ -33,21 +33,22 @@ import java.util.concurrent.atomic.AtomicReference;
  * @author shifeng.luo
  * @version created on 2017/10/29 下午1:50
  */
-public class GroupMembership extends LoggerSupport {
+public class GroupMemberService extends LoggerSupport {
     private final Server self;
     private final ServerGroup group;
     private final int electTimeout;
-    private LeaderListener leaderListener;
-    private Store store;
+    private final Store store;
     private final ConcurrentMap<Address, PullState> pullStates = new ConcurrentHashMap<>();
     private final AtomicReference<ElectionContext> contextReference = new AtomicReference<>();
     private final ConcurrentMap<Address, CompletableFuture<Void>> pendJoinFutures = new ConcurrentHashMap<>();
+    private LeaderListener leaderListener;
 
 
-    public GroupMembership(Server self, ServerGroup group, int electTimeout) {
+    GroupMemberService(Server self, ServerGroup group, int electTimeout, Store store) {
         this.self = self;
         this.group = group;
         this.electTimeout = electTimeout;
+        this.store = store;
     }
 
 
@@ -339,7 +340,7 @@ public class GroupMembership extends LoggerSupport {
     }
 
 
-    public void setLeaderListener(LeaderListener leaderListener) {
+    void setLeaderListener(LeaderListener leaderListener) {
         this.leaderListener = leaderListener;
     }
 }

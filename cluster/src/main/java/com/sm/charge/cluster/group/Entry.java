@@ -1,6 +1,6 @@
 package com.sm.charge.cluster.group;
 
-import com.sm.charge.cluster.BaseObject;
+import com.sm.charge.cluster.ClusterMessage;
 
 /**
  * @author shifeng.luo
@@ -10,14 +10,13 @@ public class Entry {
 
     private long index;
 
-    private BaseObject object;
+    private ClusterMessage message;
 
     public Entry() {
     }
 
-    public Entry(long index, BaseObject object) {
-        this.index = index;
-        this.object = object;
+    public Entry(ClusterMessage message) {
+        this.message = message;
     }
 
     public long getIndex() {
@@ -28,11 +27,11 @@ public class Entry {
         this.index = index;
     }
 
-    public BaseObject getObject() {
-        return object;
+    public ClusterMessage getMessage() {
+        return message;
     }
 
-    public void setObject(BaseObject object) {
-        this.object = object;
+    public void setMessage(ClusterMessage message) {
+        this.message = message;
     }
 }
