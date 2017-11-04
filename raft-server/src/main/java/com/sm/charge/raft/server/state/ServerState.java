@@ -43,7 +43,7 @@ public interface ServerState {
 
     void handle(JoinResponse response);
 
-    LeaveResponse handle(LeaveRequest request,RequestContext requestContext);
+    LeaveResponse handle(LeaveRequest request, RequestContext requestContext);
 
     void handle(LeaveResponse response);
 

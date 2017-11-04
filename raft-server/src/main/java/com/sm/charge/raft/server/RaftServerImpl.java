@@ -265,19 +265,19 @@ public class RaftServerImpl extends AbstractService implements RaftServer, RaftL
 
     @Override
     public void onElectAsMaster() {
-        logger.info("server elect as master，current state[{}]", state);
+        logger.info("com.sm.charge.raft.server elect as master，current state[{}]", state);
         state = state.onElectAsMaster(this);
     }
 
     @Override
     public void onNewLeader() {
-        logger.info("server found new master，current state[{}]", state);
+        logger.info("com.sm.charge.raft.server found new master，current state[{}]", state);
         state = state.onNewLeader(this);
     }
 
     @Override
     public void onFallBehind() {
-        logger.info("server found higher term server，current state[{}]", state);
+        logger.info("com.sm.charge.raft.server found higher term com.sm.charge.raft.server，current state[{}]", state);
         state = state.onFallBehind(this);
     }
 

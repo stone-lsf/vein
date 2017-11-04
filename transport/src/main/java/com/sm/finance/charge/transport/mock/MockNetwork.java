@@ -40,7 +40,7 @@ public class MockNetwork extends LoggerSupport {
     MockConnection registerConnect(MockClient client, Address serverAddress) throws ConnectException {
         MockServer server = serverMap.get(serverAddress);
         if (server == null) {
-            throw new ConnectException("can't connect to server:" + serverAddress);
+            throw new ConnectException("can't connect to com.sm.charge.raft.server:" + serverAddress);
         }
 
         Address clientAddress = client.getUsableAddress();

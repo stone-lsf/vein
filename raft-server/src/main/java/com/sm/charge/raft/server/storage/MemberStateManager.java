@@ -11,7 +11,7 @@ public interface MemberStateManager {
     /**
      * 持久化server state
      *
-     * @param memberState server state
+     * @param memberState com.sm.charge.raft.server state
      */
     void persistState(RaftMember memberState);
 }

@@ -62,7 +62,7 @@ public class GroupMemberService extends LoggerSupport {
             waitToBeLeader(new ElectionCallback() {
                 @Override
                 public void onElectAsLeader() {
-                    logger.info("server:{} select as leader", self.getAddress());
+                    logger.info("com.sm.charge.raft.server:{} select as leader", self.getAddress());
                     self.setLeader(true);
                     self.increaseVersion();
                     Set<Address> addresses = new HashSet<>(pendJoinFutures.keySet());
@@ -308,7 +308,7 @@ public class GroupMemberService extends LoggerSupport {
 
         Server server = group.get(request.getAddress());
         if (server == null) {
-            logger.warn("receive not group server:{} join request", request.getAddress());
+            logger.warn("receive not group com.sm.charge.raft.server:{} join request", request.getAddress());
             throw new NotGroupServerException();
         }
 

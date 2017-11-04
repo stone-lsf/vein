@@ -1,9 +1,9 @@
 package com.sm.charge.raft.server.replicate;
 
 import com.sm.charge.raft.server.RaftMember;
-import com.sm.finance.charge.common.base.LoggerSupport;
 import com.sm.finance.charge.common.NamedThreadFactory;
 import com.sm.finance.charge.common.SystemConstants;
+import com.sm.finance.charge.common.base.LoggerSupport;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;

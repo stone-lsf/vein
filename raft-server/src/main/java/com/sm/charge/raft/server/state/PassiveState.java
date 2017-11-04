@@ -34,7 +34,7 @@ public class PassiveState extends AbstractState {
 
     @Override
     protected AppendResponse doHandle(AppendRequest request) {
-        logger.error("passive state server should'nt receive append request from master:{}", request.getSource());
+        logger.error("passive state com.sm.charge.raft.server should'nt receive append request from master:{}", request.getSource());
         AppendResponse response = new AppendResponse();
         fill(response, request.getSource());
         response.setSuccess(false);

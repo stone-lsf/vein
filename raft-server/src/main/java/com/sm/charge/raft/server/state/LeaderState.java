@@ -47,7 +47,7 @@ public class LeaderState extends AbstractState {
 
     @Override
     protected AppendResponse doHandle(AppendRequest request) {
-        logger.error("receive append request from another leader[{}] with same term, there must be a bug, server exits", request.getSource());
+        logger.error("receive append request from another leader[{}] with same term, there must be a bug, com.sm.charge.raft.server exits", request.getSource());
         System.exit(-1);
         throw new IllegalStateException("more than one master has the same term:" + self.getTerm());
     }
@@ -164,7 +164,7 @@ public class LeaderState extends AbstractState {
                 cluster.add(member);
                 member.setNextLogIndex(1);
                 member.getState().startReplicate();
-                logger.info("server[id:{};address:{}] is add to cluster,log index:{}", member.getNodeId(), member.getAddress(), index);
+                logger.info("com.sm.charge.raft.server[id:{};address:{}] is add to cluster,log index:{}", member.getNodeId(), member.getAddress(), index);
             }
         }
 

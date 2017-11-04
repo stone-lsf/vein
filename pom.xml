@@ -10,15 +10,15 @@
     <version>1.0.0-SNAPSHOT</version>
     <modules>
         <module>charge</module>
-        <module>notify</module>
         <module>transport</module>
         <module>common</module>
         <module>serializer</module>
         <module>storage</module>
         <module>buffer</module>
         <module>discovery</module>
-        <module>raft</module>
         <module>cluster</module>
+        <module>raft-server</module>
+        <module>raft-client</module>
     </modules>
 
 
