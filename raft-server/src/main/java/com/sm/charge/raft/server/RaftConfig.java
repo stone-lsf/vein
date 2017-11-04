@@ -35,6 +35,9 @@ public class RaftConfig {
     private static final String SNAPSHOT_NAME = "raft.server.snapshot.name";
     private static final String DEFAULT_SNAPSHOT_NAME = "charge";
 
+    private static final String HEARTBEAT_INTERVAL = "raft.server.heartbeat.interval";
+    private static final int DEFAULT_HEARTBEAT_INTERVAL = 3000;
+
     private static final String HEARTBEAT_TIMEOUT = "raft.server.heartbeat.timeout";
     private static final int DEFAULT_HEARTBEAT_TIMEOUT = 5000;
 
@@ -115,4 +118,7 @@ public class RaftConfig {
         return configure.getInt(MAX_APPEND_SIZE, DEFAULT_MAX_APPEND_SIZE);
     }
 
+    public int getHeartbeatInterval(){
+        return configure.getInt(HEARTBEAT_INTERVAL, DEFAULT_HEARTBEAT_INTERVAL);
+    }
 }

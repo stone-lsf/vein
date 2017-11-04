@@ -1,5 +1,6 @@
 package com.sm.charge.raft.server.state;
 
+import com.sm.charge.raft.server.RaftMember;
 import com.sm.charge.raft.server.RaftState;
 import com.sm.charge.raft.server.ServerContext;
 import com.sm.charge.raft.server.replicate.AppendRequest;
@@ -27,6 +28,8 @@ public class FollowerState extends AbstractState {
     @Override
     protected AppendResponse doHandle(AppendRequest request) {
         timer.reset();
+        RaftMember member = context.getCluster().member(request.getSource());
+        context.getCluster().setMaster(member);
         return super.doHandle(request);
     }
 
@@ -37,6 +40,7 @@ public class FollowerState extends AbstractState {
 
     @Override
     public void wakeup() {
+        logger.info("{} transfer to follower state", self.getNodeId());
         timer.start();
     }
 

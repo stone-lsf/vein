@@ -33,4 +33,15 @@ public class AppendResponse extends RaftMessage {
     public void setNextIndex(long nextIndex) {
         this.nextIndex = nextIndex;
     }
+
+    @Override
+    public String toString() {
+        return "AppendResponse{" +
+            "term=" + term +
+            ", source='" + source + '\'' +
+            ", success=" + success +
+            ", destination='" + destination + '\'' +
+            ", nextIndex=" + nextIndex +
+            '}';
+    }
 }

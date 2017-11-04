@@ -100,7 +100,7 @@ public class ServerContext extends LoggerSupport {
         return state;
     }
 
-    public ServerState getServerState() {
+    public synchronized ServerState getServerState() {
         return serverStates.get(state);
     }
 
@@ -109,7 +109,7 @@ public class ServerContext extends LoggerSupport {
     }
 
     public synchronized void transition(RaftState newState) {
-        logger.info("{} transition to new state:{},old state:{}", self.getNodeId(), newState, state);
+//        logger.info("{} transition to old state:{},new state:{}", self.getNodeId(), state, newState);
 
         ServerState serverState = serverStates.get(state);
         serverState.suspect();

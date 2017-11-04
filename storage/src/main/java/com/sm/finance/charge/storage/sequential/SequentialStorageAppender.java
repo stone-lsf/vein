@@ -5,7 +5,7 @@ import com.sm.finance.charge.common.LongIdGenerator;
 import com.sm.finance.charge.common.NamedThreadFactory;
 import com.sm.finance.charge.serializer.api.Serializer;
 import com.sm.finance.charge.storage.api.StorageConfig;
-import com.sm.finance.charge.storage.api.StorageWriter;
+import com.sm.finance.charge.storage.api.StorageAppender;
 import com.sm.finance.charge.storage.api.exceptions.StorageException;
 import com.sm.finance.charge.storage.api.index.IndexFile;
 import com.sm.finance.charge.storage.api.index.IndexFileManager;
@@ -42,7 +42,7 @@ import static com.sm.finance.charge.storage.sequential.segment.SequentialHeader.
  * @author shifeng.luo
  * @version created on 2017/9/25 下午10:41
  */
-public class SequentialStorageWriter extends AbstractService implements StorageWriter, RollingPolicy {
+public class SequentialStorageAppender extends AbstractService implements StorageAppender, RollingPolicy {
     private final ExecutorService executorService = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("AsyncWritePool"));
     private volatile Future<?> future;
 
@@ -58,8 +58,8 @@ public class SequentialStorageWriter extends AbstractService implements StorageW
     private ConcurrentMap<Long, CompletableFuture<Boolean>> futureMap = new ConcurrentHashMap<>(1000 * 1000);
 
 
-    SequentialStorageWriter(SegmentManager segmentManager, long startSequence, IndexFileManager indexFileManager,
-                            Serializer serializer, StorageConfig config) {
+    SequentialStorageAppender(SegmentManager segmentManager, long startSequence, IndexFileManager indexFileManager,
+                              Serializer serializer, StorageConfig config) {
         this.segmentManager = segmentManager;
         this.sequenceGenerator = new LongIdGenerator(startSequence);
         this.indexFileManager = indexFileManager;

@@ -237,6 +237,7 @@ public abstract class AbstractState extends LoggerSupport implements ServerState
     public JoinResponse handle(JoinRequest request, RequestContext requestContext) {
         RaftMember master = context.getCluster().master();
         JoinResponse response = new JoinResponse();
+        response.setTerm(self.getTerm());
         if (master == null) {
             response.setStatus(NO_LEADER);
             return response;

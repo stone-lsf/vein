@@ -47,7 +47,7 @@ public class PassiveState extends AbstractState {
 
     @Override
     public void wakeup() {
-
+        logger.info("{} transfer to passive state", self.getNodeId());
     }
 
     @Override

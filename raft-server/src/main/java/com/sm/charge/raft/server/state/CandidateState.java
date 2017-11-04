@@ -68,15 +68,11 @@ public class CandidateState extends AbstractState {
         LogEntry entry = log.lastEntry();
         long lastIndex = entry == null ? 0 : entry.getIndex();
         long lastTerm = entry == null ? 0 : entry.getTerm();
-
-        VoteRequest request = new VoteRequest();
-        request.setLastLogIndex(lastIndex);
-        request.setLastLogTerm(lastTerm);
-        request.setSource(context.getSelf().getNodeId());
-        request.setTerm(context.getSelf().getTerm());
+        long term = self.getTerm();
 
         for (RaftMember member : members) {
-            if (member.getNodeId().equals(context.getSelf().getNodeId())) {
+            String memberId = member.getNodeId();
+            if (memberId.equals(self.getNodeId())) {
                 continue;
             }
 
@@ -86,7 +82,7 @@ public class CandidateState extends AbstractState {
                 continue;
             }
 
-            request.setDestination(member.getNodeId());
+            VoteRequest request = buildRequest(lastIndex, lastTerm, term, memberId);
             connection.send(request, new AbstractResponseHandler<VoteResponse>() {
                 @Override
                 public void handle(VoteResponse response, Connection connection) {
@@ -100,6 +96,17 @@ public class CandidateState extends AbstractState {
                 }
             });
         }
+    }
+
+    private VoteRequest buildRequest(long lastIndex,long lastTerm,long term,String destination){
+        VoteRequest request = new VoteRequest();
+        request.setLastLogIndex(lastIndex);
+        request.setLastLogTerm(lastTerm);
+        request.setSource(self.getNodeId());
+        request.setTerm(term);
+        request.setDestination(destination);
+
+        return request;
     }
 
     @Override

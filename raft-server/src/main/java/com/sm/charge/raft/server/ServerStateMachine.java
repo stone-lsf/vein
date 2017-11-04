@@ -18,6 +18,7 @@ import java.util.concurrent.ExecutorService;
 public class ServerStateMachine extends LoggerSupport {
 
     private final Log log;
+
     private final RaftMember self;
     private final LogStateMachine stateMachine;
     private final SnapshotManager snapshotManager;
@@ -45,7 +46,6 @@ public class ServerStateMachine extends LoggerSupport {
             if (entry != null) {
                 executorService.execute(() -> apply(entry));
             }
-            setLastApplied(i);
         }
     }
 
@@ -60,6 +60,7 @@ public class ServerStateMachine extends LoggerSupport {
                     future.completeExceptionally(error);
                 }
             }
+            setLastApplied(entry.getIndex());
         });
     }
 

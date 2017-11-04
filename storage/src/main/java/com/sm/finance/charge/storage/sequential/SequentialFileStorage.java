@@ -3,9 +3,9 @@ package com.sm.finance.charge.storage.sequential;
 import com.sm.finance.charge.common.AbstractService;
 import com.sm.finance.charge.serializer.api.Serializer;
 import com.sm.finance.charge.storage.api.FileStorage;
+import com.sm.finance.charge.storage.api.StorageAppender;
 import com.sm.finance.charge.storage.api.StorageConfig;
 import com.sm.finance.charge.storage.api.StorageReader;
-import com.sm.finance.charge.storage.api.StorageWriter;
 import com.sm.finance.charge.storage.api.exceptions.BadDataException;
 import com.sm.finance.charge.storage.api.exceptions.StorageException;
 import com.sm.finance.charge.storage.api.index.IndexFile;
@@ -30,13 +30,15 @@ public class SequentialFileStorage extends AbstractService implements FileStorag
     private final StorageConfig storageConfig;
     private final SegmentManager segmentManager;
     private final IndexFileManager indexManager;
-    private StorageWriter storageWriter;
-    private Serializer serializer;
+    private final Serializer serializer;
 
-    public SequentialFileStorage(File directory, StorageConfig config) {
+    private StorageAppender storageWriter;
+
+    public SequentialFileStorage(File directory, StorageConfig config, Serializer serializer) {
         this.directory = directory;
         this.storageConfig = config;
         this.segmentManager = new SequentialSegmentManager(directory);
+        this.serializer = serializer;
         this.indexManager = new SequentialIndexFileManager(directory, config.getIndexInterval(), config.getMaxIndexFileSize());
     }
 
@@ -56,16 +58,16 @@ public class SequentialFileStorage extends AbstractService implements FileStorag
     }
 
     @Override
-    public StorageWriter appender() {
+    public StorageAppender appender() {
         checkStarted();
         return storageWriter;
     }
 
     @Override
-    public StorageReader reader(long startSequence) {
+    public StorageReader reader(long startSequence) throws StorageException, BadDataException {
         checkStarted();
 
-        SequentialStorageReader reader = new SequentialStorageReader(indexManager, segmentManager);
+        SequentialStorageReader reader = new SequentialStorageReader(indexManager, segmentManager, serializer);
         try {
             reader.readFrom(startSequence);
         } catch (IOException e) {
@@ -73,7 +75,7 @@ public class SequentialFileStorage extends AbstractService implements FileStorag
             throw new StorageException(e);
         } catch (BadDataException e) {
             logger.error("file has been damage", e);
-            throw new IllegalStateException(e);
+            throw e;
         }
         return reader;
     }
@@ -83,7 +85,7 @@ public class SequentialFileStorage extends AbstractService implements FileStorag
         segmentManager.start();
         indexManager.start();
         long sequence = recovery();
-        storageWriter = new SequentialStorageWriter(segmentManager, sequence, indexManager, serializer, storageConfig);
+        storageWriter = new SequentialStorageAppender(segmentManager, sequence, indexManager, serializer, storageConfig);
     }
 
     /**

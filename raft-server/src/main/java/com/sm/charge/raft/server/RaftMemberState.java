@@ -62,9 +62,10 @@ public class RaftMemberState extends LoggerSupport {
         }
 
         Address address = member.getAddress();
-        return client.connect(address).handle((connection, error) -> {
+        return client.connect(address).handle((conn, error) -> {
             if (error == null) {
-                return connection;
+                connection = conn;
+                return conn;
             }
 
             logger.error("create connection to:{} caught exception", address, error);

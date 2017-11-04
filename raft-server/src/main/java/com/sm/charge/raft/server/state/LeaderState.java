@@ -66,6 +66,7 @@ public class LeaderState extends AbstractState {
 
     @Override
     public void wakeup() {
+        logger.info("{} transfer to leader state", self.getNodeId());
         RaftMember self = context.getSelf();
         List<RaftMember> members = context.getCluster().members();
         LogEntry entry = context.getLog().lastEntry();
@@ -110,6 +111,8 @@ public class LeaderState extends AbstractState {
     @Override
     public JoinResponse handle(JoinRequest request, RequestContext requestContext) {
         JoinResponse response = new JoinResponse();
+        response.setTerm(self.getTerm());
+
         if (self.getState().getConfiguring() > 0) {
             response.setStatus(RECONFIGURING);
             return response;

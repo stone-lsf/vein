@@ -35,4 +35,12 @@ public class JoinRequest {
     public void setAddress(Address address) {
         this.address = address;
     }
+
+    @Override
+    public String toString() {
+        return "JoinRequest{" +
+            "memberId='" + memberId + '\'' +
+            ", address=" + address +
+            '}';
+    }
 }

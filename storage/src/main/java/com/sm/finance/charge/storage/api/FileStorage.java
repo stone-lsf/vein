@@ -1,6 +1,8 @@
 package com.sm.finance.charge.storage.api;
 
 import com.sm.finance.charge.common.base.Startable;
+import com.sm.finance.charge.storage.api.exceptions.BadDataException;
+import com.sm.finance.charge.storage.api.exceptions.StorageException;
 
 import java.io.File;
 
@@ -36,13 +38,13 @@ public interface FileStorage extends Startable {
      *
      * @return appender
      */
-    StorageWriter appender();
+    StorageAppender appender();
 
     /**
      * rolling reader
      *
      * @return rolling reader
      */
-    StorageReader reader(long startSequence);
+    StorageReader reader(long startSequence) throws StorageException, BadDataException;
 }
 

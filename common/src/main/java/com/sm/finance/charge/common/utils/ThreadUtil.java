@@ -30,7 +30,7 @@ public class ThreadUtil {
      */
     public static void sleepUnInterrupted(long mills) {
         long start = System.currentTimeMillis();
-        long now = System.currentTimeMillis();
+        long now = start;
         while (now - start < mills) {
             long timeToSleep = mills - (now - start);
             try {

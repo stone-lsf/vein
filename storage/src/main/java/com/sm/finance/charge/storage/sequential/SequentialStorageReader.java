@@ -4,8 +4,10 @@ import com.google.common.collect.Lists;
 
 import com.sm.finance.charge.common.AbstractService;
 import com.sm.finance.charge.common.NamedThreadFactory;
+import com.sm.finance.charge.serializer.api.Serializer;
 import com.sm.finance.charge.storage.api.StorageReader;
 import com.sm.finance.charge.storage.api.exceptions.BadDataException;
+import com.sm.finance.charge.storage.api.exceptions.StorageException;
 import com.sm.finance.charge.storage.api.index.IndexFile;
 import com.sm.finance.charge.storage.api.index.IndexFileManager;
 import com.sm.finance.charge.storage.api.index.OffsetIndex;
@@ -33,13 +35,15 @@ public class SequentialStorageReader extends AbstractService implements StorageR
     private final IndexFileManager indexFileManager;
     private final SegmentManager segmentManager;
     private final ReadBuffer buffer;
+    private final Serializer serializer;
     private volatile SegmentReader reader;
 
     private final BlockingQueue<Message> queue = new LinkedBlockingQueue<>(1000 * 1000);
 
-    SequentialStorageReader(IndexFileManager indexFileManager, SegmentManager segmentManager) {
+    SequentialStorageReader(IndexFileManager indexFileManager, SegmentManager segmentManager, Serializer serializer) {
         this.indexFileManager = indexFileManager;
         this.segmentManager = segmentManager;
+        this.serializer = serializer;
         this.buffer = new ReadBuffer();
     }
 
@@ -75,18 +79,28 @@ public class SequentialStorageReader extends AbstractService implements StorageR
     }
 
     @Override
-    public Object read() {
-        return queue.poll();
+    public <T> T read() throws BadDataException, StorageException {
+        Message message = queue.poll();
+        if (message == null) {
+            return null;
+        }
+
+        if (message.error != null) {
+            if (message.error instanceof BadDataException) {
+                throw (BadDataException) message.error;
+            }
+
+            throw new StorageException(message.error);
+        }
+
+        return serializer.deserialize(message.data.payload());
     }
 
     @Override
-    public List read(int expectCount) {
-        List<Object> result = Lists.newArrayListWithCapacity(expectCount);
+    public <T> List<T> read(int expectCount) throws BadDataException, StorageException {
+        List<T> result = Lists.newArrayListWithCapacity(expectCount);
         for (int i = 0; i < expectCount; i++) {
-            Message message = queue.poll();
-            if (message == null) {
-                break;
-            }
+            T message = read();
             result.add(message);
         }
         return result;
@@ -115,7 +129,7 @@ public class SequentialStorageReader extends AbstractService implements StorageR
 
             if (error == null) {
                 Segment segment = reader.getSegment();
-                if (entry == null && !segment.isActive()) {
+                if (entry == null && !segment.isActive()) {//切换文件
                     try {
                         reader = segment.getNext().reader(buffer);
                     } catch (IOException e) {
@@ -141,11 +155,11 @@ public class SequentialStorageReader extends AbstractService implements StorageR
         private Entry data;
         private Throwable error;
 
-        public Message(Entry data) {
+        Message(Entry data) {
             this.data = data;
         }
 
-        public Message(Entry data, Throwable error) {
+        Message(Entry data, Throwable error) {
             this.data = data;
             this.error = error;
         }

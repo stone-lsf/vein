@@ -55,7 +55,8 @@ public class RaftClusterImpl extends AbstractService implements RaftCluster {
     }
 
     public int getQuorum() {
-        return 0;
+        int size = members.size();
+        return (size + 1) / 2;
     }
 
     public long version() {

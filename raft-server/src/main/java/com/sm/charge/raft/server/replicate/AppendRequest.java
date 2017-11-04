@@ -61,4 +61,17 @@ public class AppendRequest extends RaftMessage {
     public void setEntries(List<LogEntry> entries) {
         this.entries = entries;
     }
+
+    @Override
+    public String toString() {
+        return "AppendRequest{" +
+            "term=" + term +
+            ", source='" + source + '\'' +
+            ", prevLogIndex=" + prevLogIndex +
+            ", destination='" + destination + '\'' +
+            ", prevLogTerm=" + prevLogTerm +
+            ", leaderCommit=" + leaderCommit +
+            ", entries=" + entries +
+            '}';
+    }
 }

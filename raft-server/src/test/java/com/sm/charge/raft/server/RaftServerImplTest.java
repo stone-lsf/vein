@@ -69,6 +69,7 @@ public class RaftServerImplTest {
         new Thread(() -> {
             try {
                 raft1.start();
+                System.out.println("raft1 join success");
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -77,6 +78,7 @@ public class RaftServerImplTest {
         new Thread(() -> {
             try {
                 raft2.start();
+                System.out.println("raft2 join success");
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -85,6 +87,7 @@ public class RaftServerImplTest {
         new Thread(() -> {
             try {
                 raft3.start();
+                System.out.println("raft3 join success");
             } catch (Exception e) {
                 e.printStackTrace();
             }

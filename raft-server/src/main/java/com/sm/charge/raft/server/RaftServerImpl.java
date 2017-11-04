@@ -100,7 +100,7 @@ public class RaftServerImpl extends AbstractService implements RaftServer, Maste
         this.serverStateMachine = new ServerStateMachine(log, self, logStateMachine, snapshotManager, executor);
 
         this.context = initContext(raftConfig);
-        this.replicator = new Replicator(context, raftConfig.getMaxAppendSize());
+        this.replicator = new Replicator(context, raftConfig.getMaxAppendSize(), raftConfig.getHeartbeatInterval());
 
         initStates();
         registerEventHandler();
@@ -237,13 +237,17 @@ public class RaftServerImpl extends AbstractService implements RaftServer, Maste
 
             if (response.needRedirect()) {
                 String masterId = response.getMaster().getNodeId();
+                if (masterId.equals(self.getNodeId())) {
+                    return true;
+                }
+                System.out.println("master id:"+masterId);
                 RaftMember master = cluster.member(masterId);
                 connection = master.getState().getConnection();
                 return connection != null && doJoin(connection);
             }
 
             if (response.reconfiguring()) {
-                ThreadUtil.sleepUnInterrupted(20000);
+                ThreadUtil.sleepUnInterrupted(2000);
                 return doJoin(connection);
             }
 

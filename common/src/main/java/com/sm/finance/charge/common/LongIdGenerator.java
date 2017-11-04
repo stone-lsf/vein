@@ -28,4 +28,8 @@ public class LongIdGenerator {
     public long preId() {
         return current() - 1;
     }
+
+    public long skip(long size) {
+        return count.addAndGet(size);
+    }
 }
