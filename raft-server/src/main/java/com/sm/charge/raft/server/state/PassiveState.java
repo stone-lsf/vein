@@ -1,6 +1,5 @@
 package com.sm.charge.raft.server.state;
 
-import com.sm.charge.raft.server.RaftListener;
 import com.sm.charge.raft.server.RaftState;
 import com.sm.charge.raft.server.ServerContext;
 import com.sm.charge.raft.server.membership.InstallSnapshotRequest;
@@ -21,8 +20,8 @@ public class PassiveState extends AbstractState {
     private volatile long nextSnapshotOffset;
     private final SnapshotManager snapshotManager;
 
-    public PassiveState(RaftListener raftListener, ServerContext context) {
-        super(raftListener, context);
+    public PassiveState(ServerContext context) {
+        super(context);
         this.snapshotManager = context.getSnapshotManager();
     }
 

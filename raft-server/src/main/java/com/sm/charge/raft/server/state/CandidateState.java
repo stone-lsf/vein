@@ -1,6 +1,5 @@
 package com.sm.charge.raft.server.state;
 
-import com.sm.charge.raft.server.RaftListener;
 import com.sm.charge.raft.server.RaftMember;
 import com.sm.charge.raft.server.RaftState;
 import com.sm.charge.raft.server.ServerContext;
@@ -25,8 +24,8 @@ public class CandidateState extends AbstractState {
 
     private final ElectTimeoutTimer timer;
 
-    public CandidateState(RaftListener raftListener, ServerContext context, ElectTimeoutTimer timer) {
-        super(raftListener, context);
+    public CandidateState(ServerContext context, ElectTimeoutTimer timer) {
+        super(context);
         this.timer = timer;
     }
 
@@ -43,13 +42,16 @@ public class CandidateState extends AbstractState {
 
     @Override
     public void wakeup() {
+        logger.info("{} transfer to candidate state", self.getNodeId());
         timer.start();
 
         self.setTerm(self.getTerm() + 1);
         self.setVotedFor(self.getNodeId());
 
         int quorum = context.getCluster().getQuorum();
-        VoteQuorum voteQuorum = new VoteQuorum(quorum);
+
+        VoteQuorum voteQuorum = new VoteQuorum(quorum, context::onElectAsMaster);
+
         voteQuorum.mergeSuccess();
         self.getState().setVoteQuorum(voteQuorum);
 
@@ -74,7 +76,7 @@ public class CandidateState extends AbstractState {
         request.setTerm(context.getSelf().getTerm());
 
         for (RaftMember member : members) {
-            if (member.getNodeId() == context.getSelf().getNodeId()) {
+            if (member.getNodeId().equals(context.getSelf().getNodeId())) {
                 continue;
             }
 

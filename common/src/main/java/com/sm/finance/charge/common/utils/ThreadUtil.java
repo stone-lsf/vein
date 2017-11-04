@@ -10,11 +10,36 @@ import org.slf4j.LoggerFactory;
 public class ThreadUtil {
     private static final Logger logger = LoggerFactory.getLogger(ThreadUtil.class);
 
-    public static void sleep(long mills) {
+    /**
+     * 可中断的睡眠
+     *
+     * @param mills 睡眠毫秒数
+     */
+    public static void sleepInterrupted(long mills) {
         try {
             Thread.sleep(mills);
         } catch (InterruptedException e) {
             logger.warn("sleep {}ms is interrupted by exception:{}", mills, e);
         }
     }
+
+    /**
+     * 不可中断的睡眠
+     *
+     * @param mills 睡眠毫秒数
+     */
+    public static void sleepUnInterrupted(long mills) {
+        long start = System.currentTimeMillis();
+        long now = System.currentTimeMillis();
+        while (now - start < mills) {
+            long timeToSleep = mills - (now - start);
+            try {
+                Thread.sleep(timeToSleep);
+            } catch (InterruptedException e) {
+                logger.warn("sleep {}ms is interrupted by exception:{}", mills, e);
+            }
+            now = System.currentTimeMillis();
+        }
+    }
+
 }

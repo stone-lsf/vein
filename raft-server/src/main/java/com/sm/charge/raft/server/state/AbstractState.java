@@ -1,6 +1,5 @@
 package com.sm.charge.raft.server.state;
 
-import com.sm.charge.raft.server.RaftListener;
 import com.sm.charge.raft.server.RaftMember;
 import com.sm.charge.raft.server.RaftMessage;
 import com.sm.charge.raft.server.ServerContext;
@@ -34,13 +33,11 @@ import static com.sm.charge.raft.server.membership.LeaveResponse.LOWER_TERM;
 public abstract class AbstractState extends LoggerSupport implements ServerState {
 
     protected final RaftMember self;
-    protected final RaftListener raftListener;
     protected final ServerContext context;
     protected final EventExecutor eventExecutor;
 
-    protected AbstractState(RaftListener raftListener, ServerContext context) {
+    protected AbstractState(ServerContext context) {
         this.self = context.getSelf();
-        this.raftListener = raftListener;
         this.context = context;
         this.eventExecutor = context.getEventExecutor();
     }
@@ -93,7 +90,7 @@ public abstract class AbstractState extends LoggerSupport implements ServerState
         if (term < messageTerm) {
             self.setTerm(messageTerm);
             self.setVotedFor(null);
-            raftListener.onFallBehind();
+            context.onFallBehind();
             return true;
         }
 

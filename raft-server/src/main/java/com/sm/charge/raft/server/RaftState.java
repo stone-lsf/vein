@@ -10,66 +10,78 @@ public enum RaftState {
 
     PASSIVE {
         @Override
-        public RaftState onInstallComplete(Snapshot snapshot, RaftServer raftServer) {
-            return super.onInstallComplete(snapshot, raftServer);
+        public RaftState onInstallComplete(Snapshot snapshot, ServerContext raftServer) {
+            raftServer.transition(FOLLOWER);
+            return FOLLOWER;
         }
     },
     FOLLOWER {
         @Override
-        public RaftState onElectTimeout(RaftServer raftServer) {
-            return super.onElectTimeout(raftServer);
+        public RaftState onHeartbeatTimeout(ServerContext raftServer) {
+            raftServer.transition(CANDIDATE);
+            return CANDIDATE;
         }
 
         @Override
-        public RaftState onFallBehind(RaftServer raftServer) {
-            return super.onFallBehind(raftServer);
+        public RaftState onFallBehind(ServerContext raftServer) {
+            raftServer.transition(FOLLOWER);
+            return FOLLOWER;
         }
     },
     CANDIDATE {
         @Override
-        public RaftState onElectTimeout(RaftServer raftServer) {
-            return super.onElectTimeout(raftServer);
+        public RaftState onElectTimeout(ServerContext raftServer) {
+            raftServer.transition(CANDIDATE);
+            return CANDIDATE;
         }
 
         @Override
-        public RaftState onElectAsMaster(RaftServer raftServer) {
-            return super.onElectAsMaster(raftServer);
+        public RaftState onElectAsMaster(ServerContext raftServer) {
+            raftServer.transition(LEADER);
+            return LEADER;
         }
 
         @Override
-        public RaftState onNewLeader(RaftServer raftServer) {
-            return super.onNewLeader(raftServer);
+        public RaftState onNewLeader(ServerContext raftServer) {
+            raftServer.transition(FOLLOWER);
+            return FOLLOWER;
         }
 
         @Override
-        public RaftState onFallBehind(RaftServer raftServer) {
-            return super.onFallBehind(raftServer);
+        public RaftState onFallBehind(ServerContext raftServer) {
+            raftServer.transition(FOLLOWER);
+            return FOLLOWER;
         }
     },
     LEADER {
         @Override
-        public RaftState onFallBehind(RaftServer raftServer) {
-            return super.onFallBehind(raftServer);
+        public RaftState onFallBehind(ServerContext raftServer) {
+            raftServer.transition(FOLLOWER);
+            return FOLLOWER;
         }
     };
 
-    public RaftState onInstallComplete(Snapshot snapshot, RaftServer raftServer) {
+    public RaftState onInstallComplete(Snapshot snapshot, ServerContext raftServer) {
         throw new IllegalStateException();
     }
 
-    public RaftState onElectTimeout(RaftServer raftServer) {
+    public RaftState onHeartbeatTimeout(ServerContext raftServer) {
         throw new IllegalStateException();
     }
 
-    public RaftState onElectAsMaster(RaftServer raftServer) {
+    public RaftState onElectTimeout(ServerContext raftServer) {
         throw new IllegalStateException();
     }
 
-    public RaftState onNewLeader(RaftServer raftServer) {
+    public RaftState onElectAsMaster(ServerContext raftServer) {
         throw new IllegalStateException();
     }
 
-    public RaftState onFallBehind(RaftServer raftServer) {
+    public RaftState onNewLeader(ServerContext raftServer) {
+        throw new IllegalStateException();
+    }
+
+    public RaftState onFallBehind(ServerContext raftServer) {
         throw new IllegalStateException();
     }
 }

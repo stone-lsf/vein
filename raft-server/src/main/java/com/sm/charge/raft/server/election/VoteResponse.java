@@ -20,4 +20,14 @@ public class VoteResponse extends RaftMessage {
     public void setVoteGranted(boolean voteGranted) {
         this.voteGranted = voteGranted;
     }
+
+    @Override
+    public String toString() {
+        return "VoteResponse{" +
+            "term=" + term +
+            ", voteGranted=" + voteGranted +
+            ", source='" + source + '\'' +
+            ", destination='" + destination + '\'' +
+            '}';
+    }
 }

@@ -33,4 +33,15 @@ public class VoteRequest extends RaftMessage {
     public void setLastLogTerm(long lastLogTerm) {
         this.lastLogTerm = lastLogTerm;
     }
+
+    @Override
+    public String toString() {
+        return "VoteRequest{" +
+            "term=" + term +
+            ", lastLogIndex=" + lastLogIndex +
+            ", source='" + source + '\'' +
+            ", lastLogTerm=" + lastLogTerm +
+            ", destination='" + destination + '\'' +
+            '}';
+    }
 }

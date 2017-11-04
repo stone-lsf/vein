@@ -2,7 +2,6 @@ package com.sm.charge.raft.server.state;
 
 import com.sm.charge.raft.client.ConfigureCommand;
 import com.sm.charge.raft.server.RaftCluster;
-import com.sm.charge.raft.server.RaftListener;
 import com.sm.charge.raft.server.RaftMember;
 import com.sm.charge.raft.server.RaftMemberState;
 import com.sm.charge.raft.server.RaftState;
@@ -35,8 +34,8 @@ import static com.sm.charge.raft.server.membership.JoinResponse.SUCCESS;
 public class LeaderState extends AbstractState {
     private final Replicator replicator;
 
-    public LeaderState(RaftListener raftListener, ServerContext context, Replicator replicator) {
-        super(raftListener, context);
+    public LeaderState(ServerContext context, Replicator replicator) {
+        super(context);
         this.replicator = replicator;
     }
 

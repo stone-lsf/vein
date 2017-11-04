@@ -1,5 +1,7 @@
 package com.sm.charge.raft.server.timer;
 
+import com.sm.charge.raft.server.ServerContext;
+
 import java.util.concurrent.ScheduledExecutorService;
 
 /**
@@ -12,15 +14,22 @@ public class HeartbeatTimeoutTimer extends AbstractRaftTimer {
      * 定时间隔
      */
     private final int interval;
+    private final ServerContext context;
 
-    public HeartbeatTimeoutTimer(int interval, ScheduledExecutorService executor) {
+    public HeartbeatTimeoutTimer(int interval, ScheduledExecutorService executor, ServerContext context) {
         super(executor);
         this.interval = interval;
+        this.context = context;
     }
 
     @Override
     public void run() {
-
+        logger.info("heartbeat timeout,interval:{}", interval);
+        try {
+            context.onHeartbeatTimeout();
+        } catch (Throwable error) {
+            logger.error("heartbeat timer caught error", error);
+        }
     }
 
     @Override

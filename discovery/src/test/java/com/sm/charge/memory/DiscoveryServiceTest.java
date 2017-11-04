@@ -50,15 +50,15 @@ public class DiscoveryServiceTest {
 //        service4.start();
 //        service5.start();
 
-        boolean success = service1.join("test");
+        boolean success = service1.join();
         if (success) {
             System.out.println("node1 join success");
         }
-        success = service2.join("test");
+        success = service2.join();
         if (success) {
             System.out.println("node2 join success");
         }
-        success = service3.join("test");
+        success = service3.join();
         if (success) {
             System.out.println("node3 join success");
         }
@@ -79,7 +79,7 @@ public class DiscoveryServiceTest {
                 service3.close();
                 closed = true;
             } else {
-                ThreadUtil.sleep(6000);
+                ThreadUtil.sleepUnInterrupted(6000);
             }
         }
     }

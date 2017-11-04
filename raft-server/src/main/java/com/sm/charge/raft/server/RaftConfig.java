@@ -13,7 +13,7 @@ public class RaftConfig {
     /**
      * 复制日志超时时间(ms)
      */
-    private static final String REPLICATE_TIMEOUT = "raft.com.sm.charge.raft.server.replicate.timeout";
+    private static final String REPLICATE_TIMEOUT = "raft.server.replicate.timeout";
     private static final int DEFAULT_REPLICATE_TIMEOUT = 6000;
 
     /**
@@ -22,34 +22,34 @@ public class RaftConfig {
     private static final String CLUSTER_NAME = "raft.cluster.name";
     private static final String DEFAULT_CLUSTER_NAME = "charge";
 
-    private static final String PORT = "raft.com.sm.charge.raft.server.port";
+    private static final String PORT = "raft.server.port";
     private static final int DEFAULT_PORT = 65156;
 
-    private static final String TRANSPORT_TYPE = "raft.com.sm.charge.raft.server.transport.type";
+    private static final String TRANSPORT_TYPE = "raft.server.transport.type";
     private static final String DEFAULT_TRANSPORT_TYPE = "netty";
 
 
-    private static final String SNAPSHOT_DIRECTORY = "raft.com.sm.charge.raft.server.snapshot.directory";
-    private static final String DEFAULT_SNAPSHOT_DIRECTORY = "netty";
+    private static final String SNAPSHOT_DIRECTORY = "raft.server.snapshot.directory";
+//    private static final String DEFAULT_SNAPSHOT_DIRECTORY = "netty";
 
-    private static final String SNAPSHOT_NAME = "raft.com.sm.charge.raft.server.snapshot.name";
+    private static final String SNAPSHOT_NAME = "raft.server.snapshot.name";
     private static final String DEFAULT_SNAPSHOT_NAME = "charge";
 
-    private static final String HEARTBEAT_TIMEOUT = "raft.com.sm.charge.raft.server.heartbeat.timeout";
+    private static final String HEARTBEAT_TIMEOUT = "raft.server.heartbeat.timeout";
     private static final int DEFAULT_HEARTBEAT_TIMEOUT = 5000;
 
-    private static final String MAX_ELECT_TIMEOUT = "raft.com.sm.charge.raft.server.select.timeout.max";
+    private static final String MAX_ELECT_TIMEOUT = "raft.server.elect.timeout.max";
     private static final int DEFAULT_MAX_ELECT_TIMEOUT = 6000;
 
-    private static final String MIN_ELECT_TIMEOUT = "raft.com.sm.charge.raft.server.select.timeout.min";
+    private static final String MIN_ELECT_TIMEOUT = "raft.server.elect.timeout.min";
     private static final int DEFAULT_MIN_ELECT_TIMEOUT = 3000;
 
-    private static final String MEMBERS = "raft.com.sm.charge.raft.server.members";
+    private static final String MEMBERS = "raft.server.members";
 
-    private static final String JOIN_RETRY_TIMES = "raft.com.sm.charge.raft.server.join.retry.times";
+    private static final String JOIN_RETRY_TIMES = "raft.server.join.retry.times";
     private static final int DEFAULT_JOIN_RETRY_TIMES = 6;
 
-    private static final String MAX_APPEND_SIZE = "raft.com.sm.charge.raft.server.append.size.max";
+    private static final String MAX_APPEND_SIZE = "raft.server.append.size.max";
     private static final int DEFAULT_MAX_APPEND_SIZE = 5 * 1024 * 1024;
 
     public RaftConfig(Configure configure) {
@@ -76,7 +76,7 @@ public class RaftConfig {
 
 
     public String getSnapshotDirectory() {
-        return configure.getString(SNAPSHOT_DIRECTORY, DEFAULT_SNAPSHOT_DIRECTORY);
+        return configure.getString(SNAPSHOT_DIRECTORY);
     }
 
 

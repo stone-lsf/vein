@@ -10,17 +10,17 @@ public class RaftMessage implements Event {
     /**
      * 任期
      */
-    private long term;
+    protected long term;
 
     /**
      * 消息来源
      */
-    private String source;
+    protected String source;
 
     /**
      * 消息目的地
      */
-    private String destination;
+    protected String destination;
 
     public RaftMessage() {
     }
@@ -53,5 +53,14 @@ public class RaftMessage implements Event {
 
     public void setDestination(String destination) {
         this.destination = destination;
+    }
+
+    @Override
+    public String toString() {
+        return "RaftMessage{" +
+            "term=" + term +
+            ", source='" + source + '\'' +
+            ", destination='" + destination + '\'' +
+            '}';
     }
 }

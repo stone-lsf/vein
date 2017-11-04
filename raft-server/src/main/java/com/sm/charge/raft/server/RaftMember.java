@@ -111,4 +111,19 @@ public class RaftMember extends BaseNode<String>{
     public void setLastApplied(long lastApplied) {
         this.lastApplied = lastApplied;
     }
+
+    @Override
+    public String toString() {
+        return "RaftMember{" +
+            "nodeId=" + nodeId +
+            ", address=" + address +
+            ", state=" + state +
+            ", term=" + term +
+            ", votedFor='" + votedFor + '\'' +
+            ", nextLogIndex=" + nextLogIndex +
+            ", commitIndex=" + commitIndex +
+            ", matchedIndex=" + matchedIndex +
+            ", lastApplied=" + lastApplied +
+            '}';
+    }
 }

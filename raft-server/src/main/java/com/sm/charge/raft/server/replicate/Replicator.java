@@ -91,7 +91,7 @@ public class Replicator extends LoggerSupport {
         connection.send(request, new AbstractResponseHandler<AppendResponse>() {
             @Override
             public void handle(AppendResponse response, Connection connection) {
-                Replicator.this.context.getEventExecutor().execute(response).whenComplete((result, error) -> {
+                context.getEventExecutor().execute(response).whenComplete((result, error) -> {
                     if (error != null) {
                         logger.error("handle append response:{} caught exception", response, error);
                     }

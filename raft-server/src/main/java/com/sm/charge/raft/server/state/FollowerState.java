@@ -1,6 +1,5 @@
 package com.sm.charge.raft.server.state;
 
-import com.sm.charge.raft.server.RaftListener;
 import com.sm.charge.raft.server.RaftState;
 import com.sm.charge.raft.server.ServerContext;
 import com.sm.charge.raft.server.replicate.AppendRequest;
@@ -15,8 +14,8 @@ public class FollowerState extends AbstractState {
 
     private final HeartbeatTimeoutTimer timer;
 
-    public FollowerState(RaftListener raftListener, ServerContext context, HeartbeatTimeoutTimer timer) {
-        super(raftListener, context);
+    public FollowerState(ServerContext context, HeartbeatTimeoutTimer timer) {
+        super(context);
         this.timer = timer;
     }
 

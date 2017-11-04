@@ -10,24 +10,13 @@ import java.util.concurrent.CompletableFuture;
  */
 public class VoteQuorum {
 
-    private final int quorum;
-
+    CompletableFuture<Boolean> future = new CompletableFuture<>();
     private Counter successCounter;
     private Counter failureCounter;
 
     private volatile boolean cancelled = false;
 
-    public VoteQuorum(int quorum) {
-        this.quorum = quorum;
-
-    }
-
-    public void cancel() {
-        cancelled = true;
-    }
-
-    public CompletableFuture<Boolean> getResult() {
-        CompletableFuture<Boolean> future = new CompletableFuture<>();
+    public VoteQuorum(int quorum, VoteCallback callback) {
         successCounter = new Counter(count -> {
             if (count >= quorum) {
                 future.complete(true);
@@ -40,7 +29,16 @@ public class VoteQuorum {
             }
         });
 
-        return future;
+        future.whenComplete((success, error) -> {
+            if (success) {
+                callback.onSuccess();
+            }
+        });
+    }
+
+    public void cancel() {
+        cancelled = true;
+        future.cancel(false);
     }
 
     public void mergeSuccess() {

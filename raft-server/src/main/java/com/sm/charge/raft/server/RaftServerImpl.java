@@ -2,20 +2,30 @@ package com.sm.charge.raft.server;
 
 import com.sm.charge.raft.client.Command;
 import com.sm.charge.raft.server.election.MasterListener;
+import com.sm.charge.raft.server.election.VoteRequest;
+import com.sm.charge.raft.server.election.VoteResponse;
+import com.sm.charge.raft.server.handlers.AppendRequestHandler;
+import com.sm.charge.raft.server.handlers.InstallSnapshotRequestHandler;
+import com.sm.charge.raft.server.handlers.JoinRequestHandler;
+import com.sm.charge.raft.server.handlers.LeaveRequestHandler;
+import com.sm.charge.raft.server.handlers.VoteRequestHandler;
+import com.sm.charge.raft.server.membership.InstallSnapshotRequest;
+import com.sm.charge.raft.server.membership.InstallSnapshotResponse;
 import com.sm.charge.raft.server.membership.JoinRequest;
 import com.sm.charge.raft.server.membership.JoinResponse;
 import com.sm.charge.raft.server.membership.LeaveRequest;
 import com.sm.charge.raft.server.membership.LeaveResponse;
+import com.sm.charge.raft.server.replicate.AppendRequest;
+import com.sm.charge.raft.server.replicate.AppendResponse;
 import com.sm.charge.raft.server.replicate.Replicator;
 import com.sm.charge.raft.server.state.CandidateState;
+import com.sm.charge.raft.server.state.EventExecutor;
 import com.sm.charge.raft.server.state.FollowerState;
 import com.sm.charge.raft.server.state.LeaderState;
 import com.sm.charge.raft.server.state.PassiveState;
-import com.sm.charge.raft.server.state.ServerState;
 import com.sm.charge.raft.server.storage.Log;
 import com.sm.charge.raft.server.storage.LogEntry;
 import com.sm.charge.raft.server.storage.MemberStateManager;
-import com.sm.charge.raft.server.storage.Snapshot;
 import com.sm.charge.raft.server.storage.SnapshotManager;
 import com.sm.charge.raft.server.storage.file.FileLog;
 import com.sm.charge.raft.server.storage.file.FileMemberStateManager;
@@ -29,15 +39,15 @@ import com.sm.finance.charge.common.utils.AddressUtil;
 import com.sm.finance.charge.common.utils.RandomUtil;
 import com.sm.finance.charge.common.utils.ThreadUtil;
 import com.sm.finance.charge.transport.api.Connection;
+import com.sm.finance.charge.transport.api.ConnectionManager;
 import com.sm.finance.charge.transport.api.Transport;
 import com.sm.finance.charge.transport.api.TransportClient;
 import com.sm.finance.charge.transport.api.TransportFactory;
 import com.sm.finance.charge.transport.api.TransportServer;
+import com.sm.finance.charge.transport.api.support.RequestContext;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -54,11 +64,10 @@ import static com.sm.charge.raft.server.RaftState.PASSIVE;
  * @author shifeng.luo
  * @version created on 2017/9/20 下午1:14
  */
-public class RaftServerImpl extends AbstractService implements RaftServer, RaftListener, MasterListener {
+public class RaftServerImpl extends AbstractService implements RaftServer, MasterListener {
 
     private final RaftConfig raftConfig;
     private final RaftCluster cluster;
-    private final Map<RaftState, ServerState> serverStates = new HashMap<>();
     private final RaftMember self;
     private final ServerStateMachine serverStateMachine;
     private final TransportServer transportServer;
@@ -69,8 +78,6 @@ public class RaftServerImpl extends AbstractService implements RaftServer, RaftL
     private final MemberStateManager memberStateManager;
     private final ServerContext context;
     private final Replicator replicator;
-
-    private volatile RaftState state = CANDIDATE;
 
 
     public RaftServerImpl(RaftConfig raftConfig, LogStateMachine logStateMachine) {
@@ -96,12 +103,14 @@ public class RaftServerImpl extends AbstractService implements RaftServer, RaftL
         this.replicator = new Replicator(context, raftConfig.getMaxAppendSize());
 
         initStates();
-
-
+        registerEventHandler();
     }
 
 
     private ServerContext initContext(RaftConfig raftConfig) {
+        ExecutorService executor = Executors.newSingleThreadExecutor(new NamedThreadFactory("RaftEventPool"));
+        EventExecutor eventExecutor = new RaftEventExecutor(executor);
+
         ServerContext.Builder builder = ServerContext.builder();
         builder.setCluster(cluster)
             .setLog(log)
@@ -109,44 +118,61 @@ public class RaftServerImpl extends AbstractService implements RaftServer, RaftL
             .setRaftConfig(raftConfig)
             .setSelf(self)
             .setSnapshotManager(snapshotManager)
-            .setStateMachine(serverStateMachine);
+            .setStateMachine(serverStateMachine)
+            .setEventExecutor(eventExecutor);
 
         return builder.build();
     }
 
     private void initStates() {
-        PassiveState catchUpState = new PassiveState(this, context);
+        PassiveState catchUpState = new PassiveState(context);
 
         ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("RaftTimerPool"));
-        HeartbeatTimeoutTimer heartbeatTimeoutTimer = new HeartbeatTimeoutTimer(raftConfig.getHeartbeatTimeout(), executor);
-        FollowerState followerState = new FollowerState(this, context, heartbeatTimeoutTimer);
+        HeartbeatTimeoutTimer heartbeatTimeoutTimer = new HeartbeatTimeoutTimer(raftConfig.getHeartbeatTimeout(), executor, context);
+        FollowerState followerState = new FollowerState(context, heartbeatTimeoutTimer);
 
-        ElectTimeoutTimer electTimeoutTimer = new ElectTimeoutTimer(executor, raftConfig.getMaxElectTimeout(), raftConfig.getMinElectTimeout());
-        CandidateState candidateState = new CandidateState(this, context, electTimeoutTimer);
+        ElectTimeoutTimer electTimeoutTimer = new ElectTimeoutTimer(executor, raftConfig.getMaxElectTimeout(), raftConfig.getMinElectTimeout(), context);
+        CandidateState candidateState = new CandidateState(context, electTimeoutTimer);
 
-        LeaderState leaderState = new LeaderState(this, context, replicator);
+        LeaderState leaderState = new LeaderState(context, replicator);
 
-        serverStates.put(PASSIVE, catchUpState);
-        serverStates.put(FOLLOWER, followerState);
-        serverStates.put(CANDIDATE, candidateState);
-        serverStates.put(LEADER, leaderState);
+        context.add(PASSIVE, catchUpState);
+        context.add(FOLLOWER, followerState);
+        context.add(CANDIDATE, candidateState);
+        context.add(LEADER, leaderState);
+    }
+
+    private void registerEventHandler() {
+        EventExecutor executor = context.getEventExecutor();
+        executor.register(VoteRequest.class, request -> {
+            return context.getServerState().handle(request);
+        });
+
+        executor.register(VoteResponse.class, response -> {
+            context.getServerState().handle(response);
+        });
+
+        executor.register(AppendRequest.class, request -> {
+            return context.getServerState().handle(request);
+        });
+
+        executor.register(AppendResponse.class, response -> {
+            context.getServerState().handle(response);
+        });
+
+        executor.register(InstallSnapshotRequest.class, request -> {
+            return context.getServerState().handle(request);
+        });
+
+        executor.register(InstallSnapshotResponse.class, response -> {
+            context.getServerState().handle(response);
+        });
+
     }
 
     @Override
     public String getId() {
         return self.getNodeId();
-    }
-
-    @Override
-    public void transition(RaftState newState) {
-        if (newState == state) {
-            return;
-        }
-
-        ServerState serverState = serverStates.get(state);
-        serverState.suspect();
-        serverState = serverStates.get(newState);
-        serverState.wakeup();
     }
 
     public boolean join() {
@@ -179,14 +205,17 @@ public class RaftServerImpl extends AbstractService implements RaftServer, RaftL
         int index = RandomUtil.random(members.size());
         RaftMember member = members.get(index);
 
-        while (member.getNodeId() == self.getNodeId()) {
+        while (self.getNodeId().equals(member.getNodeId())) {
             index = RandomUtil.random(members.size());
             member = members.get(index);
         }
 
         Connection connection = member.getState().getConnection();
         if (connection != null) {
-            return doJoin(connection);
+            if (doJoin(connection)) {
+                return true;
+            }
+            ThreadUtil.sleepUnInterrupted(20000);
         }
 
         return join(members);
@@ -196,13 +225,13 @@ public class RaftServerImpl extends AbstractService implements RaftServer, RaftL
         JoinRequest request = new JoinRequest(self.getNodeId(), self.getAddress());
         try {
             JoinResponse response = connection.syncRequest(request);
-            serverStates.get(state).handle(response);
+            context.getServerState().handle(response);
             if (response.getTerm() < self.getTerm()) {
                 return false;
             }
 
             if (response.isSuccess()) {
-                serverStates.get(state).wakeup();
+                context.getServerState().wakeup();
                 return true;
             }
 
@@ -210,27 +239,24 @@ public class RaftServerImpl extends AbstractService implements RaftServer, RaftL
                 String masterId = response.getMaster().getNodeId();
                 RaftMember master = cluster.member(masterId);
                 connection = master.getState().getConnection();
-                if (connection != null) {
-                    return doJoin(connection);
-                }
-                return false;
+                return connection != null && doJoin(connection);
             }
 
             if (response.reconfiguring()) {
-                ThreadUtil.sleep(20000);
+                ThreadUtil.sleepUnInterrupted(20000);
                 return doJoin(connection);
             }
 
             return false;
         } catch (Exception e) {
-            logger.error("join to member:{} caught exception", connection.remoteAddress(), e);
+            logger.error("{}: join to member:{} caught exception", self.getNodeId(), connection.remoteAddress(), e);
             return false;
         }
     }
 
     @Override
-    public CompletableFuture<JoinResponse> handle(JoinRequest request) {
-        return null;
+    public CompletableFuture<JoinResponse> handle(JoinRequest request, RequestContext requestContext) {
+        return CompletableFuture.supplyAsync(() -> context.getServerState().handle(request, requestContext));
     }
 
     @Override
@@ -239,8 +265,23 @@ public class RaftServerImpl extends AbstractService implements RaftServer, RaftL
     }
 
     @Override
-    public CompletableFuture<LeaveResponse> handle(LeaveRequest request) {
-        return null;
+    public CompletableFuture<LeaveResponse> handle(LeaveRequest request, RequestContext requestContext) {
+        return CompletableFuture.supplyAsync(() -> context.getServerState().handle(request, requestContext));
+    }
+
+    @Override
+    public CompletableFuture<VoteResponse> handle(VoteRequest request) {
+        return context.getEventExecutor().submit(request);
+    }
+
+    @Override
+    public CompletableFuture<AppendResponse> handle(AppendRequest request) {
+        return context.getEventExecutor().submit(request);
+    }
+
+    @Override
+    public CompletableFuture<InstallSnapshotResponse> handle(InstallSnapshotRequest request) {
+        return context.getEventExecutor().submit(request);
     }
 
     @Override
@@ -252,40 +293,18 @@ public class RaftServerImpl extends AbstractService implements RaftServer, RaftL
 
 
     @Override
-    public void onInstallComplete(Snapshot snapshot) {
-        logger.info(" install snapshot:{} completed，current state[{}]", snapshot.index(), state);
-        state = state.onInstallComplete(snapshot, this);
-    }
-
-    @Override
-    public void onElectTimeout() {
-        logger.info(" elect timeout，current state[{}]", state);
-        state = state.onElectTimeout(this);
-    }
-
-    @Override
-    public void onElectAsMaster() {
-        logger.info("com.sm.charge.raft.server elect as master，current state[{}]", state);
-        state = state.onElectAsMaster(this);
-    }
-
-    @Override
-    public void onNewLeader() {
-        logger.info("com.sm.charge.raft.server found new master，current state[{}]", state);
-        state = state.onNewLeader(this);
-    }
-
-    @Override
-    public void onFallBehind() {
-        logger.info("com.sm.charge.raft.server found higher term com.sm.charge.raft.server，current state[{}]", state);
-        state = state.onFallBehind(this);
-    }
-
-    @Override
     protected void doStart() throws Exception {
         int port = raftConfig.getPort();
         transportServer.listen(port, (Connection connection) -> logger.info("accept connection:{}", connection.getConnectionId()));
 
+        ConnectionManager manager = transportServer.getConnectionManager();
+        manager.registerMessageHandler(new JoinRequestHandler(this));
+        manager.registerMessageHandler(new LeaveRequestHandler(this));
+        manager.registerMessageHandler(new VoteRequestHandler(this));
+        manager.registerMessageHandler(new AppendRequestHandler(this));
+        manager.registerMessageHandler(new InstallSnapshotRequestHandler(this));
+
+        context.getServerState().wakeup();
         join();
     }
 

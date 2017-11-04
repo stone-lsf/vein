@@ -99,4 +99,16 @@ public class JoinResponse implements Event{
     public void setMaster(RaftMember master) {
         this.master = master;
     }
+
+    @Override
+    public String toString() {
+        return "JoinResponse{" +
+            "status=" + status +
+            ", index=" + index +
+            ", term=" + term +
+            ", timestamp=" + timestamp +
+            ", members=" + members +
+            ", master=" + master +
+            '}';
+    }
 }

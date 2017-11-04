@@ -35,8 +35,6 @@ public class ServerStateMachine extends LoggerSupport {
     }
 
     public void apply(long index) {
-
-
         long lastApplied = self.getLastApplied();
         if (index < lastApplied + 1) {
             return;
