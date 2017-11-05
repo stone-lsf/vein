@@ -2,9 +2,9 @@ package com.sm.charge.raft.server.storage.file;
 
 import com.google.common.collect.Lists;
 
-import com.sm.charge.raft.server.storage.Snapshot;
-import com.sm.charge.raft.server.storage.SnapshotDescriptor;
-import com.sm.charge.raft.server.storage.SnapshotManager;
+import com.sm.charge.raft.server.storage.snapshot.Snapshot;
+import com.sm.charge.raft.server.storage.snapshot.SnapshotDescriptor;
+import com.sm.charge.raft.server.storage.snapshot.SnapshotManager;
 import com.sm.finance.charge.common.AbstractService;
 import com.sm.finance.charge.common.utils.FileUtil;
 

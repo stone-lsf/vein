@@ -1,10 +1,10 @@
 package com.sm.charge.raft.server.storage.file;
 
 
-import com.sm.charge.raft.server.storage.Snapshot;
-import com.sm.charge.raft.server.storage.SnapshotDescriptor;
-import com.sm.charge.raft.server.storage.SnapshotReader;
-import com.sm.charge.raft.server.storage.SnapshotWriter;
+import com.sm.charge.raft.server.storage.snapshot.Snapshot;
+import com.sm.charge.raft.server.storage.snapshot.SnapshotDescriptor;
+import com.sm.charge.raft.server.storage.snapshot.SnapshotReader;
+import com.sm.charge.raft.server.storage.snapshot.SnapshotWriter;
 
 import java.io.File;
 

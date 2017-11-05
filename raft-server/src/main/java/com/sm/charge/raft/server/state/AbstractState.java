@@ -13,8 +13,8 @@ import com.sm.charge.raft.server.membership.LeaveRequest;
 import com.sm.charge.raft.server.membership.LeaveResponse;
 import com.sm.charge.raft.server.replicate.AppendRequest;
 import com.sm.charge.raft.server.replicate.AppendResponse;
-import com.sm.charge.raft.server.storage.Log;
-import com.sm.charge.raft.server.storage.LogEntry;
+import com.sm.charge.raft.server.storage.logs.RaftLogger;
+import com.sm.charge.raft.server.storage.logs.entry.LogEntry;
 import com.sm.finance.charge.common.base.LoggerSupport;
 import com.sm.finance.charge.transport.api.support.RequestContext;
 
@@ -191,7 +191,7 @@ public abstract class AbstractState extends LoggerSupport implements ServerState
     protected AppendResponse appendInitial(AppendRequest request) {
         String source = request.getSource();
         List<LogEntry> entries = request.getEntries();
-        Log log = context.getLog();
+        RaftLogger log = context.getLog();
         long lastIndex = 0;
         if (CollectionUtils.isNotEmpty(entries)) {
             for (LogEntry entry : entries) {

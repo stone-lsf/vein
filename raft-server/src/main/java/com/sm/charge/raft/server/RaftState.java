@@ -1,6 +1,6 @@
 package com.sm.charge.raft.server;
 
-import com.sm.charge.raft.server.storage.Snapshot;
+import com.sm.charge.raft.server.storage.snapshot.Snapshot;
 
 /**
  * @author shifeng.luo

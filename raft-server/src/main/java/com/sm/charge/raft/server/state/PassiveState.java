@@ -6,9 +6,9 @@ import com.sm.charge.raft.server.membership.InstallSnapshotRequest;
 import com.sm.charge.raft.server.membership.InstallSnapshotResponse;
 import com.sm.charge.raft.server.replicate.AppendRequest;
 import com.sm.charge.raft.server.replicate.AppendResponse;
-import com.sm.charge.raft.server.storage.Snapshot;
-import com.sm.charge.raft.server.storage.SnapshotManager;
-import com.sm.charge.raft.server.storage.SnapshotWriter;
+import com.sm.charge.raft.server.storage.snapshot.Snapshot;
+import com.sm.charge.raft.server.storage.snapshot.SnapshotManager;
+import com.sm.charge.raft.server.storage.snapshot.SnapshotWriter;
 
 /**
  * @author shifeng.luo

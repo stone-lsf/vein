@@ -23,13 +23,12 @@ import com.sm.charge.raft.server.state.EventExecutor;
 import com.sm.charge.raft.server.state.FollowerState;
 import com.sm.charge.raft.server.state.LeaderState;
 import com.sm.charge.raft.server.state.PassiveState;
-import com.sm.charge.raft.server.storage.Log;
-import com.sm.charge.raft.server.storage.LogEntry;
-import com.sm.charge.raft.server.storage.MemberStateManager;
-import com.sm.charge.raft.server.storage.SnapshotManager;
-import com.sm.charge.raft.server.storage.file.FileLog;
 import com.sm.charge.raft.server.storage.file.FileMemberStateManager;
 import com.sm.charge.raft.server.storage.file.FileSnapshotManager;
+import com.sm.charge.raft.server.storage.logs.RaftLogger;
+import com.sm.charge.raft.server.storage.logs.entry.LogEntry;
+import com.sm.charge.raft.server.storage.snapshot.SnapshotManager;
+import com.sm.charge.raft.server.storage.state.MemberStateManager;
 import com.sm.charge.raft.server.timer.ElectTimeoutTimer;
 import com.sm.charge.raft.server.timer.HeartbeatTimeoutTimer;
 import com.sm.finance.charge.common.AbstractService;
@@ -38,6 +37,8 @@ import com.sm.finance.charge.common.NamedThreadFactory;
 import com.sm.finance.charge.common.utils.AddressUtil;
 import com.sm.finance.charge.common.utils.RandomUtil;
 import com.sm.finance.charge.common.utils.ThreadUtil;
+import com.sm.finance.charge.serializer.api.AbstractSerializerFactory;
+import com.sm.finance.charge.serializer.api.Serializer;
 import com.sm.finance.charge.transport.api.Connection;
 import com.sm.finance.charge.transport.api.ConnectionManager;
 import com.sm.finance.charge.transport.api.Transport;
@@ -46,6 +47,7 @@ import com.sm.finance.charge.transport.api.TransportFactory;
 import com.sm.finance.charge.transport.api.TransportServer;
 import com.sm.finance.charge.transport.api.support.RequestContext;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -72,7 +74,7 @@ public class RaftServerImpl extends AbstractService implements RaftServer, Maste
     private final ServerStateMachine serverStateMachine;
     private final TransportServer transportServer;
     private final TransportClient client;
-    private final Log log;
+    private final RaftLogger log;
     private final LogStateMachine logStateMachine;
     private final SnapshotManager snapshotManager;
     private final MemberStateManager memberStateManager;
@@ -92,7 +94,8 @@ public class RaftServerImpl extends AbstractService implements RaftServer, Maste
         Address address = AddressUtil.getLocalAddress(raftConfig.getPort());
         this.self = new RaftMember(client, address.getAddressStr(), address, null);
         this.cluster = new RaftClusterImpl(raftConfig.getClusterName(), self);
-        this.log = new FileLog();
+        this.log = initLogger();
+
         this.snapshotManager = new FileSnapshotManager(raftConfig.getSnapshotDirectory(), raftConfig.getSnapshotName());
         this.memberStateManager = new FileMemberStateManager();
 
@@ -104,6 +107,17 @@ public class RaftServerImpl extends AbstractService implements RaftServer, Maste
 
         initStates();
         registerEventHandler();
+    }
+
+    private RaftLogger initLogger() {
+        String name = raftConfig.getLogName();
+        File directory = new File(raftConfig.getLogDirectory());
+
+        Serializer serializer = AbstractSerializerFactory.create(raftConfig.getSerializeType(), new RaftDataTypes());
+        int logFileMaxSize = raftConfig.getLogFileMaxSize();
+        int maxEntries = raftConfig.getLogFileMaxEntries();
+
+        return new RaftLogger(name, directory, serializer, logFileMaxSize, maxEntries);
     }
 
 
@@ -240,7 +254,7 @@ public class RaftServerImpl extends AbstractService implements RaftServer, Maste
                 if (masterId.equals(self.getNodeId())) {
                     return true;
                 }
-                System.out.println("master id:"+masterId);
+                System.out.println("master id:" + masterId);
                 RaftMember master = cluster.member(masterId);
                 connection = master.getState().getConnection();
                 return connection != null && doJoin(connection);

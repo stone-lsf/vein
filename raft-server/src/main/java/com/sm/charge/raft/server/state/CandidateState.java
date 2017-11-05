@@ -6,9 +6,9 @@ import com.sm.charge.raft.server.ServerContext;
 import com.sm.charge.raft.server.election.VoteQuorum;
 import com.sm.charge.raft.server.election.VoteRequest;
 import com.sm.charge.raft.server.election.VoteResponse;
-import com.sm.charge.raft.server.storage.Log;
-import com.sm.charge.raft.server.storage.LogEntry;
-import com.sm.charge.raft.server.storage.MemberStateManager;
+import com.sm.charge.raft.server.storage.logs.RaftLogger;
+import com.sm.charge.raft.server.storage.logs.entry.LogEntry;
+import com.sm.charge.raft.server.storage.state.MemberStateManager;
 import com.sm.charge.raft.server.timer.ElectTimeoutTimer;
 import com.sm.finance.charge.transport.api.Connection;
 import com.sm.finance.charge.transport.api.handler.AbstractResponseHandler;
@@ -64,7 +64,7 @@ public class CandidateState extends AbstractState {
 
     private void requestVotes(VoteQuorum voteQuorum) {
         List<RaftMember> members = context.getCluster().members();
-        Log log = context.getLog();
+        RaftLogger log = context.getLog();
         LogEntry entry = log.lastEntry();
         long lastIndex = entry == null ? 0 : entry.getIndex();
         long lastTerm = entry == null ? 0 : entry.getTerm();

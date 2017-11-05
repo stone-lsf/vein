@@ -1,7 +1,7 @@
 package com.sm.charge.raft.server.storage.file;
 
 import com.sm.charge.raft.server.RaftMember;
-import com.sm.charge.raft.server.storage.MemberStateManager;
+import com.sm.charge.raft.server.storage.state.MemberStateManager;
 
 /**
  * @author shifeng.luo

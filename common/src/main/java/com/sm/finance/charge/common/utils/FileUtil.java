@@ -123,7 +123,7 @@ public class FileUtil {
      * @param offset 文件内偏移
      */
     public static void truncate(long offset, File file) throws IOException {
-        RandomAccessFile accessFile = new RandomAccessFile(file, "wr");
+        RandomAccessFile accessFile = new RandomAccessFile(file, "rw");
         FileChannel channel = accessFile.getChannel();
 
         try {

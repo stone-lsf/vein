@@ -3,10 +3,10 @@ package com.sm.charge.raft.server;
 
 import com.sm.charge.raft.server.state.EventExecutor;
 import com.sm.charge.raft.server.state.ServerState;
-import com.sm.charge.raft.server.storage.Log;
-import com.sm.charge.raft.server.storage.MemberStateManager;
-import com.sm.charge.raft.server.storage.Snapshot;
-import com.sm.charge.raft.server.storage.SnapshotManager;
+import com.sm.charge.raft.server.storage.logs.RaftLogger;
+import com.sm.charge.raft.server.storage.state.MemberStateManager;
+import com.sm.charge.raft.server.storage.snapshot.Snapshot;
+import com.sm.charge.raft.server.storage.snapshot.SnapshotManager;
 import com.sm.finance.charge.common.base.LoggerSupport;
 import com.sm.finance.charge.transport.api.TransportClient;
 
@@ -27,7 +27,7 @@ public class ServerContext extends LoggerSupport {
 
     private final SnapshotManager snapshotManager;
 
-    private final Log log;
+    private final RaftLogger log;
 
     private final RaftMember self;
 
@@ -43,7 +43,7 @@ public class ServerContext extends LoggerSupport {
     private volatile RaftState state = FOLLOWER;
 
     private ServerContext(TransportClient client, RaftConfig raftConfig, SnapshotManager snapshotManager,
-                          Log log, RaftMember self, RaftCluster cluster, ServerStateMachine stateMachine,
+                          RaftLogger log, RaftMember self, RaftCluster cluster, ServerStateMachine stateMachine,
                           MemberStateManager memberStateManager, EventExecutor eventExecutor) {
         this.client = client;
         this.raftConfig = raftConfig;
@@ -66,7 +66,7 @@ public class ServerContext extends LoggerSupport {
     }
 
 
-    public Log getLog() {
+    public RaftLogger getLog() {
         return log;
     }
 
@@ -162,7 +162,7 @@ public class ServerContext extends LoggerSupport {
 
         private SnapshotManager snapshotManager;
 
-        private Log log;
+        private RaftLogger log;
 
         private RaftMember self;
 
@@ -189,7 +189,7 @@ public class ServerContext extends LoggerSupport {
             return this;
         }
 
-        public Builder setLog(Log log) {
+        public Builder setLog(RaftLogger log) {
             this.log = log;
             return this;
         }

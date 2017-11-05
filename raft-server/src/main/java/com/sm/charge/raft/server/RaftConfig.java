@@ -55,6 +55,21 @@ public class RaftConfig {
     private static final String MAX_APPEND_SIZE = "raft.server.append.size.max";
     private static final int DEFAULT_MAX_APPEND_SIZE = 5 * 1024 * 1024;
 
+    private static final String LOG_NAME = "raft.server.log.name";
+    private static final String DEFAULT_LOG_NAME = "raft";
+
+    private static final String SERIALIZE_TYPE = "raft.server.log.serialize.type";
+    private static final String DEFAULT_SERIALIZE_TYPE = "json";
+
+    private static final String LOG_DIRECTORY = "raft.server.log.directory";
+
+    private static final String LOG_FILE_MAX_SIZE = "raft.server.log.size.max";
+    private static final int DEFAULT_LOG_FILE_MAX_SIZE = 64 * 1024 * 1024;
+
+    private static final String LOG_ENTRY_MAX = "raft.server.log.entry.max";
+    private static final int DEFAULT_LOG_ENTRY_MAX = 20 * 1000;
+
+
     public RaftConfig(Configure configure) {
         this.configure = configure;
     }
@@ -118,7 +133,30 @@ public class RaftConfig {
         return configure.getInt(MAX_APPEND_SIZE, DEFAULT_MAX_APPEND_SIZE);
     }
 
-    public int getHeartbeatInterval(){
+    public int getHeartbeatInterval() {
         return configure.getInt(HEARTBEAT_INTERVAL, DEFAULT_HEARTBEAT_INTERVAL);
+    }
+
+
+    public String getSerializeType() {
+        return configure.getString(SERIALIZE_TYPE, DEFAULT_SERIALIZE_TYPE);
+    }
+
+    public String getLogName() {
+        return configure.getString(LOG_NAME, DEFAULT_LOG_NAME);
+    }
+
+    public String getLogDirectory() {
+        return configure.getString(LOG_DIRECTORY);
+    }
+
+
+    public int getLogFileMaxSize() {
+        return configure.getInt(LOG_FILE_MAX_SIZE, DEFAULT_LOG_FILE_MAX_SIZE);
+    }
+
+
+    public int getLogFileMaxEntries() {
+        return configure.getInt(LOG_ENTRY_MAX, DEFAULT_LOG_ENTRY_MAX);
     }
 }

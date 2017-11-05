@@ -1,8 +1,8 @@
 package com.sm.charge.raft.server;
 
 import com.sm.charge.raft.client.Command;
-import com.sm.charge.raft.server.storage.SnapshotReader;
-import com.sm.charge.raft.server.storage.SnapshotWriter;
+import com.sm.charge.raft.server.storage.snapshot.SnapshotReader;
+import com.sm.charge.raft.server.storage.snapshot.SnapshotWriter;
 import com.sm.finance.charge.common.base.Configure;
 import com.sm.finance.charge.common.base.ConfigureLoader;
 import com.sm.finance.charge.common.utils.ThreadUtil;

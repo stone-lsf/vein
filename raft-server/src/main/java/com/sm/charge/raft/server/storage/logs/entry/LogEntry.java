@@ -1,4 +1,4 @@
-package com.sm.charge.raft.server.storage;
+package com.sm.charge.raft.server.storage.logs.entry;
 
 
 import com.sm.charge.raft.client.Command;
@@ -8,16 +8,23 @@ import com.sm.charge.raft.client.Command;
  * @version created on 2017/10/8 下午3:24
  */
 public class LogEntry {
+    public static final int INDEX_TERM_LENGTH = 8+8;
 
     private long index;
     private long term;
-    private Command command;
-
     private int size;
+    private Command command;
 
     public LogEntry(Command command, long term) {
         this.command = command;
         this.term = term;
+    }
+
+    public LogEntry(long index, long term, int size, Command command) {
+        this.index = index;
+        this.term = term;
+        this.size = size;
+        this.command = command;
     }
 
     public long getIndex() {

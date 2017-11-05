@@ -5,10 +5,10 @@ import com.sm.charge.raft.server.RaftMemberState;
 import com.sm.charge.raft.server.ServerContext;
 import com.sm.charge.raft.server.membership.InstallSnapshotRequest;
 import com.sm.charge.raft.server.membership.InstallSnapshotResponse;
-import com.sm.charge.raft.server.storage.Log;
-import com.sm.charge.raft.server.storage.LogEntry;
-import com.sm.charge.raft.server.storage.Snapshot;
-import com.sm.charge.raft.server.storage.SnapshotReader;
+import com.sm.charge.raft.server.storage.logs.RaftLogger;
+import com.sm.charge.raft.server.storage.logs.entry.LogEntry;
+import com.sm.charge.raft.server.storage.snapshot.Snapshot;
+import com.sm.charge.raft.server.storage.snapshot.SnapshotReader;
 import com.sm.finance.charge.common.base.LoggerSupport;
 import com.sm.finance.charge.common.utils.ThreadUtil;
 import com.sm.finance.charge.transport.api.Connection;
@@ -84,7 +84,7 @@ public class Replicator extends LoggerSupport {
         long prevLogIndex = 0;
         long prevLogTerm = 0;
 
-        Log log = this.context.getLog();
+        RaftLogger log = this.context.getLog();
         long nextLogIndex = member.getNextLogIndex();
         LogEntry entry = log.get(nextLogIndex - 1);
         if (entry != null) {

@@ -4,7 +4,7 @@ package com.sm.finance.charge.storage.api.exceptions;
  * @author shifeng.luo
  * @version created on 2017/9/26 下午11:37
  */
-public class BadDataException extends Exception {
+public class BadDataException extends RuntimeException {
     public BadDataException() {
     }
 

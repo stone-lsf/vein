@@ -15,8 +15,8 @@ import com.sm.charge.raft.server.replicate.AppendRequest;
 import com.sm.charge.raft.server.replicate.AppendResponse;
 import com.sm.charge.raft.server.replicate.InstallContext;
 import com.sm.charge.raft.server.replicate.Replicator;
-import com.sm.charge.raft.server.storage.Log;
-import com.sm.charge.raft.server.storage.LogEntry;
+import com.sm.charge.raft.server.storage.logs.RaftLogger;
+import com.sm.charge.raft.server.storage.logs.entry.LogEntry;
 import com.sm.finance.charge.transport.api.support.RequestContext;
 
 import java.util.Comparator;
@@ -156,7 +156,7 @@ public class LeaderState extends AbstractState {
 
         ConfigureCommand command = new ConfigureCommand();
         LogEntry entry = new LogEntry(command, self.getTerm());
-        Log log = context.getLog();
+        RaftLogger log = context.getLog();
         RaftCluster cluster = context.getCluster();
         long index = log.append(entry);
         self.getState().setConfiguring(index);

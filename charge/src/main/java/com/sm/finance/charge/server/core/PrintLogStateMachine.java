@@ -3,8 +3,8 @@ package com.sm.finance.charge.server.core;
 import com.sm.charge.raft.client.Command;
 import com.sm.charge.raft.server.Compactor;
 import com.sm.charge.raft.server.LogStateMachine;
-import com.sm.charge.raft.server.storage.SnapshotReader;
-import com.sm.charge.raft.server.storage.SnapshotWriter;
+import com.sm.charge.raft.server.storage.snapshot.SnapshotReader;
+import com.sm.charge.raft.server.storage.snapshot.SnapshotWriter;
 
 import java.util.concurrent.CompletableFuture;
 

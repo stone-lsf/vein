@@ -1,4 +1,4 @@
-package com.sm.charge.raft.server.storage;
+package com.sm.charge.raft.server.storage.snapshot;
 
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;

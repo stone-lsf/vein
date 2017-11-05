@@ -1,7 +1,7 @@
 package com.sm.charge.raft.server.replicate;
 
 import com.sm.charge.raft.server.RaftMessage;
-import com.sm.charge.raft.server.storage.LogEntry;
+import com.sm.charge.raft.server.storage.logs.entry.LogEntry;
 
 import java.util.List;
 

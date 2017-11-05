@@ -1,11 +1,11 @@
 package com.sm.charge.raft.server;
 
-import com.sm.charge.raft.server.storage.Log;
-import com.sm.charge.raft.server.storage.LogEntry;
-import com.sm.charge.raft.server.storage.Snapshot;
-import com.sm.charge.raft.server.storage.SnapshotManager;
-import com.sm.charge.raft.server.storage.SnapshotReader;
-import com.sm.charge.raft.server.storage.SnapshotWriter;
+import com.sm.charge.raft.server.storage.logs.RaftLogger;
+import com.sm.charge.raft.server.storage.logs.entry.LogEntry;
+import com.sm.charge.raft.server.storage.snapshot.Snapshot;
+import com.sm.charge.raft.server.storage.snapshot.SnapshotManager;
+import com.sm.charge.raft.server.storage.snapshot.SnapshotReader;
+import com.sm.charge.raft.server.storage.snapshot.SnapshotWriter;
 import com.sm.finance.charge.common.base.LoggerSupport;
 
 import java.util.concurrent.CompletableFuture;
@@ -17,7 +17,7 @@ import java.util.concurrent.ExecutorService;
  */
 public class ServerStateMachine extends LoggerSupport {
 
-    private final Log log;
+    private final RaftLogger log;
 
     private final RaftMember self;
     private final LogStateMachine stateMachine;
@@ -26,7 +26,7 @@ public class ServerStateMachine extends LoggerSupport {
 
     private volatile Snapshot pendingSnapshot;
 
-    public ServerStateMachine(Log log, RaftMember self, LogStateMachine stateMachine,
+    public ServerStateMachine(RaftLogger log, RaftMember self, LogStateMachine stateMachine,
                               SnapshotManager snapshotManager, ExecutorService executorService) {
         this.log = log;
         this.self = self;
