@@ -1,9 +1,9 @@
 package com.sm.charge.raft.server;
 
-import com.sm.charge.raft.server.election.VoteQuorum;
-import com.sm.charge.raft.server.replicate.InstallContext;
-import com.sm.charge.raft.server.replicate.ReplicateTask;
-import com.sm.charge.raft.server.replicate.Replicator;
+import com.sm.charge.raft.server.state.support.VoteQuorum;
+import com.sm.charge.raft.server.state.support.InstallContext;
+import com.sm.charge.raft.server.state.support.ReplicateTask;
+import com.sm.charge.raft.server.state.support.Replicator;
 import com.sm.finance.charge.common.Address;
 import com.sm.finance.charge.common.base.LoggerSupport;
 import com.sm.finance.charge.transport.api.Connection;

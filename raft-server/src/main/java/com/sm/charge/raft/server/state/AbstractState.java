@@ -3,16 +3,17 @@ package com.sm.charge.raft.server.state;
 import com.sm.charge.raft.server.RaftMember;
 import com.sm.charge.raft.server.RaftMessage;
 import com.sm.charge.raft.server.ServerContext;
-import com.sm.charge.raft.server.election.VoteRequest;
-import com.sm.charge.raft.server.election.VoteResponse;
-import com.sm.charge.raft.server.membership.InstallSnapshotRequest;
-import com.sm.charge.raft.server.membership.InstallSnapshotResponse;
-import com.sm.charge.raft.server.membership.JoinRequest;
-import com.sm.charge.raft.server.membership.JoinResponse;
-import com.sm.charge.raft.server.membership.LeaveRequest;
-import com.sm.charge.raft.server.membership.LeaveResponse;
-import com.sm.charge.raft.server.replicate.AppendRequest;
-import com.sm.charge.raft.server.replicate.AppendResponse;
+import com.sm.charge.raft.server.events.EventExecutor;
+import com.sm.charge.raft.server.events.VoteRequest;
+import com.sm.charge.raft.server.events.VoteResponse;
+import com.sm.charge.raft.server.events.InstallSnapshotRequest;
+import com.sm.charge.raft.server.events.InstallSnapshotResponse;
+import com.sm.charge.raft.server.events.JoinRequest;
+import com.sm.charge.raft.server.events.JoinResponse;
+import com.sm.charge.raft.server.events.LeaveRequest;
+import com.sm.charge.raft.server.events.LeaveResponse;
+import com.sm.charge.raft.server.events.AppendRequest;
+import com.sm.charge.raft.server.events.AppendResponse;
 import com.sm.charge.raft.server.storage.logs.RaftLogger;
 import com.sm.charge.raft.server.storage.logs.entry.LogEntry;
 import com.sm.finance.charge.common.base.LoggerSupport;
@@ -22,9 +23,9 @@ import org.apache.commons.collections.CollectionUtils;
 
 import java.util.List;
 
-import static com.sm.charge.raft.server.membership.JoinResponse.NO_LEADER;
-import static com.sm.charge.raft.server.membership.JoinResponse.REDIRECT;
-import static com.sm.charge.raft.server.membership.LeaveResponse.LOWER_TERM;
+import static com.sm.charge.raft.server.events.JoinResponse.NO_LEADER;
+import static com.sm.charge.raft.server.events.JoinResponse.REDIRECT;
+import static com.sm.charge.raft.server.events.LeaveResponse.LOWER_TERM;
 
 /**
  * @author shifeng.luo

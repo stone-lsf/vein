@@ -2,7 +2,6 @@ package com.sm.charge.raft.server;
 
 import com.google.common.collect.Lists;
 
-import com.sm.charge.raft.server.election.MasterListener;
 import com.sm.finance.charge.common.AbstractService;
 
 import java.util.List;

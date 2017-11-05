@@ -1,6 +1,6 @@
 package com.sm.charge.raft.server;
 
-import com.sm.charge.raft.server.replicate.Replicator;
+import com.sm.charge.raft.server.state.support.Replicator;
 import com.sm.finance.charge.common.Address;
 import com.sm.finance.charge.common.base.BaseNode;
 import com.sm.finance.charge.transport.api.TransportClient;

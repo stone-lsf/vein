@@ -3,9 +3,9 @@ package com.sm.charge.raft.server.state;
 import com.sm.charge.raft.server.RaftMember;
 import com.sm.charge.raft.server.RaftState;
 import com.sm.charge.raft.server.ServerContext;
-import com.sm.charge.raft.server.replicate.AppendRequest;
-import com.sm.charge.raft.server.replicate.AppendResponse;
-import com.sm.charge.raft.server.timer.HeartbeatTimeoutTimer;
+import com.sm.charge.raft.server.events.AppendRequest;
+import com.sm.charge.raft.server.events.AppendResponse;
+import com.sm.charge.raft.server.state.support.timer.HeartbeatTimeoutTimer;
 
 /**
  * @author shifeng.luo

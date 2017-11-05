@@ -6,15 +6,15 @@ import com.sm.charge.raft.server.RaftMember;
 import com.sm.charge.raft.server.RaftMemberState;
 import com.sm.charge.raft.server.RaftState;
 import com.sm.charge.raft.server.ServerContext;
-import com.sm.charge.raft.server.membership.InstallSnapshotResponse;
-import com.sm.charge.raft.server.membership.JoinRequest;
-import com.sm.charge.raft.server.membership.JoinResponse;
-import com.sm.charge.raft.server.membership.LeaveRequest;
-import com.sm.charge.raft.server.membership.LeaveResponse;
-import com.sm.charge.raft.server.replicate.AppendRequest;
-import com.sm.charge.raft.server.replicate.AppendResponse;
-import com.sm.charge.raft.server.replicate.InstallContext;
-import com.sm.charge.raft.server.replicate.Replicator;
+import com.sm.charge.raft.server.events.InstallSnapshotResponse;
+import com.sm.charge.raft.server.events.JoinRequest;
+import com.sm.charge.raft.server.events.JoinResponse;
+import com.sm.charge.raft.server.events.LeaveRequest;
+import com.sm.charge.raft.server.events.LeaveResponse;
+import com.sm.charge.raft.server.events.AppendRequest;
+import com.sm.charge.raft.server.events.AppendResponse;
+import com.sm.charge.raft.server.state.support.InstallContext;
+import com.sm.charge.raft.server.state.support.Replicator;
 import com.sm.charge.raft.server.storage.logs.RaftLogger;
 import com.sm.charge.raft.server.storage.logs.entry.LogEntry;
 import com.sm.finance.charge.transport.api.support.RequestContext;
@@ -23,9 +23,9 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
-import static com.sm.charge.raft.server.membership.JoinResponse.INTERNAL_ERROR;
-import static com.sm.charge.raft.server.membership.JoinResponse.RECONFIGURING;
-import static com.sm.charge.raft.server.membership.JoinResponse.SUCCESS;
+import static com.sm.charge.raft.server.events.JoinResponse.INTERNAL_ERROR;
+import static com.sm.charge.raft.server.events.JoinResponse.RECONFIGURING;
+import static com.sm.charge.raft.server.events.JoinResponse.SUCCESS;
 
 /**
  * @author shifeng.luo

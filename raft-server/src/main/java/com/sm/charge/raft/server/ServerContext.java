@@ -1,7 +1,7 @@
 package com.sm.charge.raft.server;
 
 
-import com.sm.charge.raft.server.state.EventExecutor;
+import com.sm.charge.raft.server.events.EventExecutor;
 import com.sm.charge.raft.server.state.ServerState;
 import com.sm.charge.raft.server.storage.logs.RaftLogger;
 import com.sm.charge.raft.server.storage.state.MemberStateManager;

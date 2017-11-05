@@ -1,6 +1,5 @@
 package com.sm.charge.raft.server;
 
-import com.sm.charge.raft.server.election.MasterListener;
 import com.sm.finance.charge.common.base.Closable;
 import com.sm.finance.charge.common.base.Startable;
 

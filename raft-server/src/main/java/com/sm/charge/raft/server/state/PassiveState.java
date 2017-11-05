@@ -2,10 +2,10 @@ package com.sm.charge.raft.server.state;
 
 import com.sm.charge.raft.server.RaftState;
 import com.sm.charge.raft.server.ServerContext;
-import com.sm.charge.raft.server.membership.InstallSnapshotRequest;
-import com.sm.charge.raft.server.membership.InstallSnapshotResponse;
-import com.sm.charge.raft.server.replicate.AppendRequest;
-import com.sm.charge.raft.server.replicate.AppendResponse;
+import com.sm.charge.raft.server.events.InstallSnapshotRequest;
+import com.sm.charge.raft.server.events.InstallSnapshotResponse;
+import com.sm.charge.raft.server.events.AppendRequest;
+import com.sm.charge.raft.server.events.AppendResponse;
 import com.sm.charge.raft.server.storage.snapshot.Snapshot;
 import com.sm.charge.raft.server.storage.snapshot.SnapshotManager;
 import com.sm.charge.raft.server.storage.snapshot.SnapshotWriter;

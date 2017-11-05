@@ -1,6 +1,6 @@
 package com.sm.charge.raft.server;
 
-import com.sm.charge.raft.server.state.Event;
+import com.sm.charge.raft.server.events.Event;
 
 /**
  * @author shifeng.luo

@@ -1,16 +1,16 @@
 package com.sm.charge.raft.server.state;
 
 import com.sm.charge.raft.server.RaftState;
-import com.sm.charge.raft.server.election.VoteRequest;
-import com.sm.charge.raft.server.election.VoteResponse;
-import com.sm.charge.raft.server.membership.InstallSnapshotRequest;
-import com.sm.charge.raft.server.membership.InstallSnapshotResponse;
-import com.sm.charge.raft.server.membership.JoinRequest;
-import com.sm.charge.raft.server.membership.JoinResponse;
-import com.sm.charge.raft.server.membership.LeaveRequest;
-import com.sm.charge.raft.server.membership.LeaveResponse;
-import com.sm.charge.raft.server.replicate.AppendRequest;
-import com.sm.charge.raft.server.replicate.AppendResponse;
+import com.sm.charge.raft.server.events.VoteRequest;
+import com.sm.charge.raft.server.events.VoteResponse;
+import com.sm.charge.raft.server.events.InstallSnapshotRequest;
+import com.sm.charge.raft.server.events.InstallSnapshotResponse;
+import com.sm.charge.raft.server.events.JoinRequest;
+import com.sm.charge.raft.server.events.JoinResponse;
+import com.sm.charge.raft.server.events.LeaveRequest;
+import com.sm.charge.raft.server.events.LeaveResponse;
+import com.sm.charge.raft.server.events.AppendRequest;
+import com.sm.charge.raft.server.events.AppendResponse;
 import com.sm.finance.charge.transport.api.support.RequestContext;
 
 /**

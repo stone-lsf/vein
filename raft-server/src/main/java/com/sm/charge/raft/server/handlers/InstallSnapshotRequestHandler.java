@@ -1,8 +1,8 @@
 package com.sm.charge.raft.server.handlers;
 
 import com.sm.charge.raft.server.RaftServer;
-import com.sm.charge.raft.server.membership.InstallSnapshotRequest;
-import com.sm.charge.raft.server.membership.InstallSnapshotResponse;
+import com.sm.charge.raft.server.events.InstallSnapshotRequest;
+import com.sm.charge.raft.server.events.InstallSnapshotResponse;
 import com.sm.finance.charge.transport.api.handler.AbstractRequestHandler;
 import com.sm.finance.charge.transport.api.support.RequestContext;
 

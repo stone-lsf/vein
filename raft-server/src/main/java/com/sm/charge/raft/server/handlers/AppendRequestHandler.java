@@ -1,8 +1,8 @@
 package com.sm.charge.raft.server.handlers;
 
 import com.sm.charge.raft.server.RaftServer;
-import com.sm.charge.raft.server.replicate.AppendRequest;
-import com.sm.charge.raft.server.replicate.AppendResponse;
+import com.sm.charge.raft.server.events.AppendRequest;
+import com.sm.charge.raft.server.events.AppendResponse;
 import com.sm.finance.charge.transport.api.handler.AbstractRequestHandler;
 import com.sm.finance.charge.transport.api.support.RequestContext;
 
