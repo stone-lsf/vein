@@ -55,7 +55,7 @@ public class Replicator extends LoggerSupport {
         }
 
         if (snapshot != null && nextLogIndex < snapshot.index()) {
-            InstallContext installContext = new InstallContext(snapshot);
+            SnapshotInstallContext installContext = new SnapshotInstallContext(snapshot);
             state.setInstallContext(installContext);
             return sendSnapshot(member);
         }
@@ -132,7 +132,7 @@ public class Replicator extends LoggerSupport {
 
     private CompletableFuture<Void> sendSnapshot(RaftMember member) {
         RaftMemberState state = member.getState();
-        InstallContext installContext = state.getInstallContext();
+        SnapshotInstallContext installContext = state.getInstallContext();
         InstallSnapshotRequest request = buildSnapshotRequest(installContext, member);
 
         CompletableFuture<Void> future = new CompletableFuture<>();
@@ -164,7 +164,7 @@ public class Replicator extends LoggerSupport {
     }
 
 
-    private InstallSnapshotRequest buildSnapshotRequest(InstallContext installContext, RaftMember member) {
+    private InstallSnapshotRequest buildSnapshotRequest(SnapshotInstallContext installContext, RaftMember member) {
         Snapshot snapshot = installContext.getSnapshot();
         long offset = installContext.getOffset();
         SnapshotReader reader = snapshot.reader();

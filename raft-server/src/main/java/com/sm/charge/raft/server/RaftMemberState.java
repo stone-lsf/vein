@@ -1,7 +1,7 @@
 package com.sm.charge.raft.server;
 
 import com.sm.charge.raft.server.state.support.VoteQuorum;
-import com.sm.charge.raft.server.state.support.InstallContext;
+import com.sm.charge.raft.server.state.support.SnapshotInstallContext;
 import com.sm.charge.raft.server.state.support.ReplicateTask;
 import com.sm.charge.raft.server.state.support.Replicator;
 import com.sm.finance.charge.common.Address;
@@ -36,7 +36,7 @@ public class RaftMemberState extends LoggerSupport {
      */
     private volatile long configuring;
 
-    private volatile InstallContext installContext;
+    private volatile SnapshotInstallContext installContext;
 
     /**
      * 需要复制的下一个snapshot的index
@@ -140,11 +140,11 @@ public class RaftMemberState extends LoggerSupport {
         this.nextSnapshotOffset = nextSnapshotOffset;
     }
 
-    public InstallContext getInstallContext() {
+    public SnapshotInstallContext getInstallContext() {
         return installContext;
     }
 
-    public void setInstallContext(InstallContext installContext) {
+    public void setInstallContext(SnapshotInstallContext installContext) {
         this.installContext = installContext;
     }
 }

@@ -6,7 +6,7 @@ import com.sm.charge.raft.server.storage.snapshot.Snapshot;
  * @author shifeng.luo
  * @version created on 2017/10/20 下午5:21
  */
-public class InstallContext {
+public class SnapshotInstallContext {
 
     private final Snapshot snapshot;
 
@@ -16,7 +16,7 @@ public class InstallContext {
 
     private volatile boolean complete;
 
-    public InstallContext(Snapshot snapshot) {
+    public SnapshotInstallContext(Snapshot snapshot) {
         this.snapshot = snapshot;
     }
 

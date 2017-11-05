@@ -13,7 +13,7 @@ import com.sm.charge.raft.server.events.LeaveRequest;
 import com.sm.charge.raft.server.events.LeaveResponse;
 import com.sm.charge.raft.server.events.AppendRequest;
 import com.sm.charge.raft.server.events.AppendResponse;
-import com.sm.charge.raft.server.state.support.InstallContext;
+import com.sm.charge.raft.server.state.support.SnapshotInstallContext;
 import com.sm.charge.raft.server.state.support.Replicator;
 import com.sm.charge.raft.server.storage.logs.RaftLogger;
 import com.sm.charge.raft.server.storage.logs.entry.LogEntry;
@@ -235,7 +235,7 @@ public class LeaderState extends AbstractState {
             return;
         }
 
-        InstallContext installContext = state.getInstallContext();
+        SnapshotInstallContext installContext = state.getInstallContext();
         if (installContext.isComplete()) {
             return;
         }
