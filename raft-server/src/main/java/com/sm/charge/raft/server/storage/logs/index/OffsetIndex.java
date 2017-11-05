@@ -71,10 +71,10 @@ public class OffsetIndex extends LoggerSupport {
             this.file = file;
             this.baseIndex = baseIndex;
             raf = new RandomAccessFile(file, "r");
-            this.maxFileSize = mapBuffer.limit();
 
-            this.mapBuffer = raf.getChannel().map(FileChannel.MapMode.READ_WRITE, 0, raf.length());
+            this.mapBuffer = raf.getChannel().map(FileChannel.MapMode.READ_ONLY, 0, raf.length());
             this.mapBuffer.position(roundToExactMultiple(mapBuffer.limit(), ENTRY_SIZE));
+            this.maxFileSize = mapBuffer.limit();
             this.entries = mapBuffer.position() / ENTRY_SIZE;
 
             LogIndex logIndex = lastIndex();

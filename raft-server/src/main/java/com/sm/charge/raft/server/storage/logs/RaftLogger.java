@@ -113,7 +113,7 @@ public class RaftLogger extends LoggerSupport {
         if (segment == null) {
             return null;
         }
-        if (segment.isOpened()) {
+        if (!segment.isOpened()) {
             segment.open();
         }
 
