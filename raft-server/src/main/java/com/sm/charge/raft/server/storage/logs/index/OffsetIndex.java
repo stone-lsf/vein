@@ -166,26 +166,6 @@ public class OffsetIndex extends LoggerSupport {
         return file;
     }
 
-
-    public void truncate(long offset) throws IOException {
-        FileUtil.truncate(offset, file);
-    }
-
-    public void resize() throws IOException {
-        RandomAccessFile raf = new RandomAccessFile(file, "rw");
-        raf.setLength(maxFileSize);
-        int position = mapBuffer.position();
-        try {
-            this.mapBuffer = raf.getChannel().map(FileChannel.MapMode.READ_WRITE, 0, raf.length());
-            mapBuffer.position(roundToExactMultiple(position, ENTRY_SIZE));
-
-            this.entries = position / ENTRY_SIZE;
-        } finally {
-            IoUtil.close(raf);
-        }
-    }
-
-
     public void indexEntry(long index, long offset) {
         ByteBuffer buffer = ByteBuffer.allocate(LENGTH);
         buffer.putLong(index);
@@ -205,7 +185,7 @@ public class OffsetIndex extends LoggerSupport {
 
 
     public void trimToValidSize() throws IOException {
-        truncate(entries * ENTRY_SIZE);
+        FileUtil.truncate(entries * ENTRY_SIZE, file);
     }
 
 
