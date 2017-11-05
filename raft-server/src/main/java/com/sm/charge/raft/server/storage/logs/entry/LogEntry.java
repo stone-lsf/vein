@@ -8,7 +8,12 @@ import com.sm.charge.raft.client.Command;
  * @version created on 2017/10/8 下午3:24
  */
 public class LogEntry {
-    public static final int INDEX_TERM_LENGTH = 8+8;
+    public static final int INDEX_TERM_LENGTH = 8 + 8;
+    /**
+     * entry除了数据之外的大小
+     * INDEX_TERM_LENGTH + size(4)+checksum(8)
+     */
+    public static final int ENTRY_OTHER_SIZE = 4 + INDEX_TERM_LENGTH + 8;
 
     private long index;
     private long term;

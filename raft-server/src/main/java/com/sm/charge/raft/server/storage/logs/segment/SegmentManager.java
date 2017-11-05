@@ -1,6 +1,8 @@
 package com.sm.charge.raft.server.storage.logs.segment;
 
 import com.sm.charge.raft.server.storage.logs.entry.LogEntry;
+import com.sm.charge.raft.server.storage.logs.index.LogIndex;
+import com.sm.finance.charge.common.LongIdGenerator;
 import com.sm.finance.charge.common.base.LoggerSupport;
 import com.sm.finance.charge.common.utils.FileUtil;
 import com.sm.finance.charge.serializer.api.Serializer;
@@ -25,16 +27,19 @@ public class SegmentManager extends LoggerSupport implements FileNameRule {
     private final Serializer serializer;
     private final int maxSegmentSize;
     private final int maxSegmentEntries;
+    private final int maxMessageSize;
+    private final LongIdGenerator indexGenerator = new LongIdGenerator(0);
 
     private final ConcurrentNavigableMap<Long, Segment> segments = new ConcurrentSkipListMap<>();
     private volatile Segment currentSegment;
 
-    public SegmentManager(String fileName, File directory, Serializer serializer, int maxSegmentSize, int maxSegmentEntries) {
+    public SegmentManager(String fileName, File directory, Serializer serializer, int maxSegmentSize, int maxSegmentEntries, int maxMessageSize) {
         this.fileName = fileName;
         this.directory = directory;
         this.serializer = serializer;
         this.maxSegmentSize = maxSegmentSize;
         this.maxSegmentEntries = maxSegmentEntries;
+        this.maxMessageSize = maxMessageSize;
         loadSegments();
         check();
     }
@@ -54,7 +59,7 @@ public class SegmentManager extends LoggerSupport implements FileNameRule {
                 continue;
             }
 
-            Segment segment = new Segment(file, baseIndex, serializer);
+            Segment segment = new Segment(file, baseIndex, serializer, maxSegmentEntries, maxMessageSize);
             segments.put(baseIndex, segment);
         }
 
@@ -72,23 +77,34 @@ public class SegmentManager extends LoggerSupport implements FileNameRule {
             currentSegment = segment;
         }
 
-        for (Long index : segments.keySet()) {
-            Segment segment = segments.get(index);
-            if (segment != currentSegment) {
-                segment.buildIndex(maxSegmentEntries);
-            } else {
-                segment.rebuildIndex(maxSegmentEntries);
-            }
+        currentSegment.check();
+
+        LogIndex lastIndex = currentSegment.lastIndex();
+        if (lastIndex != null) {
+            indexGenerator.skip(lastIndex.getIndex());
         }
     }
 
-
     public long addEntry(LogEntry entry) {
-        long index = currentSegment.append(entry);
+        long index = indexGenerator.nextId();
+        entry.setIndex(index);
+        currentSegment.append(entry);
         if (needRolling(currentSegment)) {
             currentSegment = nextSegment(index + 1);
         }
         return index;
+    }
+
+    public void skip(long entries) {
+        indexGenerator.skip(entries);
+    }
+
+    public Segment firstSegment() {
+        Map.Entry<Long, Segment> firstEntry = segments.firstEntry();
+        if (firstEntry != null) {
+            return firstEntry.getValue();
+        }
+        return null;
     }
 
     public Segment segment(long index) {
@@ -96,14 +112,12 @@ public class SegmentManager extends LoggerSupport implements FileNameRule {
         return segment != null ? segment.getValue() : null;
     }
 
-    public void flush() {
-        currentSegment.flush();
-    }
 
     private Segment nextSegment(long index) {
         File file = new File(directory, generate(index));
 
-        Segment segment = new Segment(file, index, serializer);
+        Segment segment = new Segment(file, index, serializer, maxSegmentEntries, maxMessageSize);
+        segment.buildIndex();
         segments.put(index, segment);
         if (currentSegment != null) {
             currentSegment.flush();
@@ -149,5 +163,13 @@ public class SegmentManager extends LoggerSupport implements FileNameRule {
             logger.warn("file:{} is not a segment", file);
             return -1;
         }
+    }
+
+    public void flush() {
+        currentSegment.flush();
+    }
+
+    public Segment currentSegment() {
+        return currentSegment;
     }
 }

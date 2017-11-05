@@ -2,9 +2,10 @@ package com.sm.charge.raft.server.storage.logs;
 
 
 import com.sm.charge.raft.server.storage.logs.entry.LogEntry;
+import com.sm.charge.raft.server.storage.logs.index.LogIndex;
 import com.sm.charge.raft.server.storage.logs.segment.Segment;
 import com.sm.charge.raft.server.storage.logs.segment.SegmentManager;
-import com.sm.finance.charge.common.LongIdGenerator;
+import com.sm.finance.charge.common.NamedThreadFactory;
 import com.sm.finance.charge.common.base.LoggerSupport;
 import com.sm.finance.charge.serializer.api.Serializer;
 
@@ -13,6 +14,9 @@ import java.util.Map;
 import java.util.NavigableSet;
 import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author shifeng.luo
@@ -22,17 +26,18 @@ public class RaftLogger extends LoggerSupport {
 
     private final File directory;
     private final int maxSegmentSize;
+    private final int maxMessageSize;
     private final int maxSegmentEntries;
     private final SegmentManager segments;
-    private final LongIdGenerator indexGenerator = new LongIdGenerator(0);
     private final ConcurrentNavigableMap<Long, LogEntry> entryBuffer = new ConcurrentSkipListMap<>();
+    private ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("LogCleanPool"));
 
-
-    public RaftLogger(String fileName, File directory, Serializer serializer, int maxSegmentSize, int maxSegmentEntries) {
+    public RaftLogger(String fileName, File directory, Serializer serializer, int maxSegmentSize, int maxMessageSize, int maxSegmentEntries) {
         this.directory = directory;
         this.maxSegmentSize = maxSegmentSize;
+        this.maxMessageSize = maxMessageSize;
         this.maxSegmentEntries = maxSegmentEntries;
-        this.segments = new SegmentManager(fileName, directory, serializer, maxSegmentSize, maxSegmentEntries);
+        this.segments = new SegmentManager(fileName, directory, serializer, maxSegmentSize, maxSegmentEntries, maxMessageSize);
     }
 
     /**
@@ -51,11 +56,9 @@ public class RaftLogger extends LoggerSupport {
      * 将索引id生成器跳过指定的数量
      *
      * @param entries 需要跳过的数量
-     * @return {@link RaftLogger}
      */
-    public RaftLogger skip(long entries) {
-        indexGenerator.skip(entries);
-        return this;
+    public void skip(long entries) {
+        segments.skip(entries);
     }
 
     /**
@@ -64,7 +67,20 @@ public class RaftLogger extends LoggerSupport {
      * @return 如果有日志记录，则返回第一条日志记录的index，否则返回0
      */
     public long firstIndex() {
-        //TODO get first
+        Segment segment = segments.firstSegment();
+        if (segment == null) {
+            return 0;
+        }
+
+        if (!segment.isOpened()) {
+            segment.open();
+        }
+
+        LogIndex logIndex = segment.firstIndex();
+        if (logIndex != null) {
+            return logIndex.getIndex();
+        }
+
         return 0;
     }
 
@@ -97,6 +113,9 @@ public class RaftLogger extends LoggerSupport {
         if (segment == null) {
             return null;
         }
+        if (segment.isOpened()) {
+            segment.open();
+        }
 
         return segment.get(index);
     }
@@ -111,6 +130,21 @@ public class RaftLogger extends LoggerSupport {
         if (lastEntry != null) {
             return lastEntry.getValue();
         }
+
+        Segment segment = segments.currentSegment();
+        if (segment == null) {
+            return null;
+        }
+
+        if (!segment.isOpened()) {
+            segment.open();
+        }
+
+        LogIndex logIndex = segment.lastIndex();
+        if (logIndex != null) {
+            return segment.get(logIndex.getIndex());
+        }
+
         return null;
     }
 
@@ -119,25 +153,29 @@ public class RaftLogger extends LoggerSupport {
      *
      * @param index 指定日志的索引
      */
-    public RaftLogger truncate(long index) {
+    public void truncate(long index) {
         NavigableSet<Long> set = entryBuffer.keySet();
         for (Long idx : set) {
             if (idx >= index) {
                 entryBuffer.remove(idx);
             }
         }
-        return this;
     }
 
     /**
      * 提交所有小于等于index的日志
      *
      * @param index log index
-     * @return {@link RaftLogger}
      */
-    public RaftLogger commit(long index) {
+    public void commit(long index) {
         segments.flush();
-        return this;
+        executorService.schedule(() -> {
+            Long startIndex = entryBuffer.firstKey();
+            while (startIndex <= index) {
+                entryBuffer.remove(startIndex);
+                startIndex++;
+            }
+        }, 10 * 1000, TimeUnit.MILLISECONDS);
     }
 
     /**
@@ -165,5 +203,14 @@ public class RaftLogger extends LoggerSupport {
      */
     public int maxSegmentEntries() {
         return maxSegmentEntries;
+    }
+
+    /**
+     * 最大segment大小(字节)
+     *
+     * @return 字节数
+     */
+    public int maxMessageSize() {
+        return maxMessageSize;
     }
 }

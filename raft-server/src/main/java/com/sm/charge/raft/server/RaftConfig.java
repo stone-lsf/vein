@@ -66,8 +66,11 @@ public class RaftConfig {
     private static final String LOG_FILE_MAX_SIZE = "raft.server.log.size.max";
     private static final int DEFAULT_LOG_FILE_MAX_SIZE = 64 * 1024 * 1024;
 
-    private static final String LOG_ENTRY_MAX = "raft.server.log.entry.max";
+    private static final String LOG_ENTRY_MAX = "raft.server.log.entries.max";
     private static final int DEFAULT_LOG_ENTRY_MAX = 20 * 1000;
+
+    private static final String COMMAND_MAX_SIZE = "raft.server.command.size.max";
+    private static final int DEFAULT_COMMAND_MAX_SIZE = 1024 * 1024;
 
 
     public RaftConfig(Configure configure) {
@@ -158,5 +161,9 @@ public class RaftConfig {
 
     public int getLogFileMaxEntries() {
         return configure.getInt(LOG_ENTRY_MAX, DEFAULT_LOG_ENTRY_MAX);
+    }
+
+    public int getCommandMaxSize() {
+        return configure.getInt(COMMAND_MAX_SIZE, DEFAULT_COMMAND_MAX_SIZE);
     }
 }

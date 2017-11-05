@@ -5,6 +5,7 @@ import com.sm.charge.raft.server.storage.logs.entry.LogEntry;
 import com.sm.charge.raft.server.storage.logs.index.LogIndex;
 import com.sm.charge.raft.server.storage.logs.index.OffsetIndex;
 import com.sm.finance.charge.common.base.LoggerSupport;
+import com.sm.finance.charge.common.exceptions.MessageOverLimitException;
 import com.sm.finance.charge.serializer.api.Serializer;
 import com.sm.finance.charge.storage.api.exceptions.BadDataException;
 import com.sm.finance.charge.storage.api.exceptions.StorageException;
@@ -17,6 +18,7 @@ import java.nio.channels.FileChannel;
 import java.util.zip.CRC32;
 import java.util.zip.Checksum;
 
+import static com.sm.charge.raft.server.storage.logs.entry.LogEntry.ENTRY_OTHER_SIZE;
 import static com.sm.charge.raft.server.storage.logs.entry.LogEntry.INDEX_TERM_LENGTH;
 
 /**
@@ -24,47 +26,60 @@ import static com.sm.charge.raft.server.storage.logs.entry.LogEntry.INDEX_TERM_L
  * @version created on 2017/11/5 上午11:50
  */
 public class Segment extends LoggerSupport {
-
     private final File file;
     private final long baseIndex;
     private final Serializer serializer;
+    private final int maxSegmentEntries;
+    private final int maxMessageSize;
     private OffsetIndex offsetIndex;
-    //TODO 调整buffer 大小
-    private final ByteBuffer buffer = ByteBuffer.allocate(1000000);
-    private final FileChannel fileChannel;
-    private volatile long writePosition;
+    private ByteBuffer buffer;
+    private FileChannel fileChannel;
 
-    public Segment(File file, long baseIndex, Serializer serializer) {
+    private volatile long writePosition;
+    private volatile boolean opened = false;
+
+    Segment(File file, long baseIndex, Serializer serializer, int maxSegmentEntries, int maxMessageSize) {
         this.file = file;
         this.baseIndex = baseIndex;
         this.serializer = serializer;
+        this.maxSegmentEntries = maxSegmentEntries;
+        this.maxMessageSize = maxMessageSize;
+    }
 
+    public void open() {
+        File indexFile = buildChannelAndIndexFile("r");
+        this.offsetIndex = new OffsetIndex(indexFile, baseIndex);
+        opened = true;
+    }
+
+    private File buildChannelAndIndexFile(String mode) {
         try {
-            RandomAccessFile accessFile = new RandomAccessFile(file, "rw");
+            RandomAccessFile accessFile = new RandomAccessFile(file, mode);
             this.fileChannel = accessFile.getChannel();
+            this.buffer = ByteBuffer.allocate(ENTRY_OTHER_SIZE + maxMessageSize);
         } catch (Exception e) {
             logger.error("get file:{} channel caught exception", file);
             throw new IllegalStateException(e);
         }
-    }
 
-    void buildIndex(int maxSegmentEntries) {
-        File indexFile = buildIndexFile();
-        this.offsetIndex = new OffsetIndex(indexFile, baseIndex, maxSegmentEntries);
-    }
-
-    private File buildIndexFile() {
         String fileName = file.getName();
         fileName = fileName.substring(0, fileName.lastIndexOf(SegmentManager.EXTENSION));
         fileName += "index";
         return new File(file.getParent(), fileName);
     }
 
+    void buildIndex() {
+        File indexFile = buildChannelAndIndexFile("rw");
+        this.offsetIndex = new OffsetIndex(indexFile, baseIndex, maxSegmentEntries);
+    }
 
-    public long append(LogEntry entry) {
-        long index = nextIndex();
-        entry.setIndex(index);
+    public void append(LogEntry entry) {
         byte[] bytes = serializer.serialize(entry.getCommand());
+        if (bytes.length > maxMessageSize) {
+            logger.error("entry payload size:{} has over limit:{}", bytes.length, maxMessageSize);
+            throw new MessageOverLimitException("entry payload size:" + bytes.length + " has over limit:" + maxMessageSize);
+        }
+
         buffer.clear();
         int totalLength = INDEX_TERM_LENGTH + bytes.length;
         entry.setSize(totalLength);
@@ -92,9 +107,7 @@ public class Segment extends LoggerSupport {
             throw new StorageException(e);
         }
 
-        offsetIndex.indexEntry(index, position);
-
-        return index;
+        offsetIndex.indexEntry(entry.getIndex(), position);
     }
 
     public LogEntry get(long index) {
@@ -151,15 +164,12 @@ public class Segment extends LoggerSupport {
         return new LogEntry(index, term, size, command);
     }
 
-    public void rebuildIndex(int maxSegmentEntries) {
-        File file = buildIndexFile();
-        if (file.exists()) {
-            file.delete();
-        }
-        offsetIndex = new OffsetIndex(file, baseIndex, maxSegmentEntries);
+    void check() {
+        File indexFile = buildChannelAndIndexFile("rw");
+
+        offsetIndex = new OffsetIndex(indexFile, baseIndex, maxSegmentEntries);
         long size;
         try {
-            offsetIndex.truncate(0);
             size = fileChannel.size();
         } catch (IOException e) {
             logger.error("truncate segment:{} position:{} caught exception", this.file, 0, e);
@@ -183,8 +193,12 @@ public class Segment extends LoggerSupport {
         writePosition = position;
     }
 
-    public long nextIndex() {
-        return offsetIndex.getLastIndex() + 1;
+    public LogIndex lastIndex() {
+        return offsetIndex.lastIndex();
+    }
+
+    public LogIndex firstIndex() {
+        return offsetIndex.firstIndex();
     }
 
     public int size() {
@@ -196,13 +210,14 @@ public class Segment extends LoggerSupport {
         }
     }
 
-    public int entries() {
+    int entries() {
         return offsetIndex.size();
     }
 
-    public void flush() {
+    void flush() {
         try {
             fileChannel.force(false);
+            offsetIndex.flush();
         } catch (IOException e) {
             logger.error("flush segment:{}  caught exception", file, e);
             throw new StorageException(e);
@@ -211,10 +226,17 @@ public class Segment extends LoggerSupport {
 
     public void close() {
         try {
+            offsetIndex.trimToValidSize();
+            offsetIndex.close();
             fileChannel.close();
+            this.buffer = null;
         } catch (IOException e) {
             logger.error("flush segment:{}  caught exception", file, e);
             throw new StorageException(e);
         }
+    }
+
+    public boolean isOpened() {
+        return opened;
     }
 }

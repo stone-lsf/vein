@@ -115,9 +115,10 @@ public class RaftServerImpl extends AbstractService implements RaftServer, Maste
 
         Serializer serializer = AbstractSerializerFactory.create(raftConfig.getSerializeType(), new RaftDataTypes());
         int logFileMaxSize = raftConfig.getLogFileMaxSize();
-        int maxEntries = raftConfig.getLogFileMaxEntries();
+        int logFileMaxEntries = raftConfig.getLogFileMaxEntries();
+        int commandMaxSize = raftConfig.getCommandMaxSize();
 
-        return new RaftLogger(name, directory, serializer, logFileMaxSize, maxEntries);
+        return new RaftLogger(name, directory, serializer, logFileMaxSize, commandMaxSize, logFileMaxEntries);
     }
 
 

@@ -5,15 +5,15 @@ package com.sm.charge.raft.server.storage.logs.index;
  * @version created on 2017/11/5 下午2:14
  */
 public class LogIndex {
-    public static final int LENGTH = 8 + 8;
+    public static final int LENGTH = 8 + 4;
 
     private long index;
-    private long offset;
+    private int offset;
 
     public LogIndex() {
     }
 
-    public LogIndex(long index, long offset) {
+    public LogIndex(long index, int offset) {
         this.index = index;
         this.offset = offset;
     }
@@ -26,11 +26,11 @@ public class LogIndex {
         this.index = index;
     }
 
-    public long getOffset() {
+    public int getOffset() {
         return offset;
     }
 
-    public void setOffset(long offset) {
+    public void setOffset(int offset) {
         this.offset = offset;
     }
 }

@@ -1,6 +1,7 @@
 package com.sm.charge.raft.server.storage.logs;
 
 import com.sm.charge.raft.server.storage.logs.entry.LogEntry;
+import com.sm.finance.charge.common.utils.JsonUtil;
 import com.sm.finance.charge.serializer.api.Serializer;
 import com.sm.finance.charge.serializer.json.JsonSerializer;
 
@@ -16,35 +17,44 @@ import java.io.File;
 public class RaftLoggerTest {
 
     private RaftLogger raftLogger;
-    private File direcory;
+    private File directory;
     private int maxSegmentSize;
-    private int maxOffsetIndexSize;
     private int maxSegmentEntries;
+    private int maxMessageSize;
     private Serializer serializer;
 
     @Before
     public void setUp() throws Exception {
-        direcory = new File("/Users/shifengluo/logs/raft");
+        directory = new File("/Users/shifengluo/logs/raft");
         maxSegmentSize = 20 * 1024 * 1024;
-        maxOffsetIndexSize = 2 * 1024 * 1024;
         maxSegmentEntries = 10000;
+        maxMessageSize = 10000;
         serializer = new JsonSerializer(new RaftDataStructure());
 
-        raftLogger = new RaftLogger("raftLog", direcory, serializer, maxSegmentSize, maxOffsetIndexSize, maxSegmentEntries);
+        raftLogger = new RaftLogger("raftLog", directory, serializer, maxSegmentSize, maxMessageSize, maxSegmentEntries);
     }
 
     @Test
     public void append() throws Exception {
         LogEntry entry = new LogEntry(new TestCommand("test"), 1);
-
-        for (int i = 0; i < 100; i++) {
-            entry.setIndex(i);
-            raftLogger.append(entry);
+        int i = 200;
+        try {
+            for (; i < 13000; i++) {
+                entry.setIndex(i);
+                raftLogger.append(entry);
+            }
+        } catch (Exception e) {
+            System.out.println(i);
+            e.printStackTrace();
         }
     }
 
     @Test
     public void get() throws Exception {
+
+        LogEntry entry = raftLogger.get(100);
+        System.out.println(entry.getIndex());
+        System.out.println(JsonUtil.toJson(entry));
     }
 
 }

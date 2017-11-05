@@ -6,9 +6,13 @@ import com.sm.finance.charge.common.utils.IoUtil;
 import com.sm.finance.charge.storage.api.exceptions.ClosedException;
 import com.sm.finance.charge.storage.api.exceptions.StorageException;
 
+import sun.nio.ch.FileChannelImpl;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
@@ -30,38 +34,48 @@ public class OffsetIndex extends LoggerSupport {
     private final File file;
     private final long baseIndex;
     private final int maxFileSize;
-    private final int maxEntries;
     private volatile MappedByteBuffer mapBuffer;
 
     private volatile boolean closed = false;
-
-
     private volatile int entries;
     private volatile long lastIndex;
 
     public OffsetIndex(File file, long baseIndex, int maxEntries) {
         RandomAccessFile raf = null;
         try {
-            boolean newFile = file.createNewFile();
+            if (file.exists()) {
+                file.delete();
+            }
             this.file = file;
             this.baseIndex = baseIndex;
 
-            this.maxEntries = maxEntries;
             this.maxFileSize = maxEntries * ENTRY_SIZE;
             raf = new RandomAccessFile(file, "rw");
-
-            if (newFile) {
-                raf.setLength(maxFileSize);
-            }
+            raf.setLength(maxFileSize);
 
             this.mapBuffer = raf.getChannel().map(FileChannel.MapMode.READ_WRITE, 0, raf.length());
-            if (newFile) {
-                mapBuffer.position(0);
-            } else {
-                mapBuffer.position(roundToExactMultiple(mapBuffer.limit(), ENTRY_SIZE));
-            }
-            this.entries = mapBuffer.position() / ENTRY_SIZE;
+            this.mapBuffer.position(0);
+            this.entries = 0;
+            lastIndex = baseIndex - 1;
+        } catch (IOException e) {
+            logger.error("new OffsetIndex:{} caught exception", file, e);
+            throw new StorageException(e);
+        } finally {
+            IoUtil.close(raf);
+        }
+    }
 
+    public OffsetIndex(File file, long baseIndex) {
+        RandomAccessFile raf = null;
+        try {
+            this.file = file;
+            this.baseIndex = baseIndex;
+            raf = new RandomAccessFile(file, "r");
+            this.maxFileSize = mapBuffer.limit();
+
+            this.mapBuffer = raf.getChannel().map(FileChannel.MapMode.READ_WRITE, 0, raf.length());
+            this.mapBuffer.position(roundToExactMultiple(mapBuffer.limit(), ENTRY_SIZE));
+            this.entries = mapBuffer.position() / ENTRY_SIZE;
 
             LogIndex logIndex = lastIndex();
             if (logIndex == null) {
@@ -82,15 +96,24 @@ public class OffsetIndex extends LoggerSupport {
         return factor * (number / factor);
     }
 
+    public LogIndex firstIndex() {
+        if (entries == 0) {
+            return null;
+        }
+
+        long index = getIndex(mapBuffer, 0);
+        long offset = getOffset(mapBuffer, 0);
+        return new LogIndex(index, (int) offset);
+    }
 
     public LogIndex lastIndex() {
         if (entries == 0) {
             return null;
         }
 
-        long index = getIndex(mapBuffer, entries);
-        long offset = getOffset(mapBuffer, entries);
-        return new LogIndex(index, offset);
+        long index = getIndex(mapBuffer, entries - 1);
+        long offset = getOffset(mapBuffer, entries - 1);
+        return new LogIndex(index, (int) offset);
     }
 
     /**
@@ -112,7 +135,7 @@ public class OffsetIndex extends LoggerSupport {
      * @return index
      */
     private long getOffset(ByteBuffer mapBuffer, int num) {
-        return mapBuffer.getLong(num * ENTRY_SIZE + 8);
+        return mapBuffer.getInt(num * ENTRY_SIZE + 8);
     }
 
 
@@ -135,7 +158,7 @@ public class OffsetIndex extends LoggerSupport {
     private LogIndex getOffsetIndex(ByteBuffer buffer, int slot) {
         long index = getIndex(buffer, slot);
         long offset = getOffset(buffer, slot);
-        return new LogIndex(index, offset);
+        return new LogIndex(index, (int) offset);
     }
 
 
@@ -144,13 +167,11 @@ public class OffsetIndex extends LoggerSupport {
     }
 
 
-    public OffsetIndex truncate(long offset) throws IOException {
+    public void truncate(long offset) throws IOException {
         FileUtil.truncate(offset, file);
-        resize();
-        return this;
     }
 
-    private void resize() throws IOException {
+    public void resize() throws IOException {
         RandomAccessFile raf = new RandomAccessFile(file, "rw");
         raf.setLength(maxFileSize);
         int position = mapBuffer.position();
@@ -168,14 +189,14 @@ public class OffsetIndex extends LoggerSupport {
     public void indexEntry(long index, long offset) {
         ByteBuffer buffer = ByteBuffer.allocate(LENGTH);
         buffer.putLong(index);
-        buffer.putLong(offset);
+        buffer.putInt((int) offset);
 
         Checksum crc32 = new CRC32();
         crc32.update(buffer.array(), 0, LENGTH);
         long checksum = crc32.getValue();
 
         mapBuffer.putLong(index);
-        mapBuffer.putLong(offset);
+        mapBuffer.putInt((int) offset);
         mapBuffer.putLong(checksum);
 
         entries += 1;
@@ -184,24 +205,13 @@ public class OffsetIndex extends LoggerSupport {
 
 
     public void trimToValidSize() throws IOException {
-        truncate(entries * 8);
+        truncate(entries * ENTRY_SIZE);
     }
 
 
-    public OffsetIndex flush() {
+    public void flush() {
         checkClosed();
         mapBuffer.force();
-        return this;
-    }
-
-
-    public int maxFileSize() {
-        return maxFileSize;
-    }
-
-
-    public boolean isFull() {
-        return entries >= maxEntries;
     }
 
     public long getLastIndex() {
@@ -213,12 +223,23 @@ public class OffsetIndex extends LoggerSupport {
     }
 
     public boolean delete() {
-        //TODO delete
-        return false;
+        if (!closed) {
+            logger.error("try to delete a unclosed index file:{}", file.getName());
+            throw new IllegalStateException();
+        }
+        return file.delete();
     }
 
 
-    public void close() throws Exception {
+    public void close() {
+        try {
+            Method m = FileChannelImpl.class.getDeclaredMethod("unmap", MappedByteBuffer.class);
+            m.setAccessible(true);
+            m.invoke(FileChannelImpl.class, mapBuffer);
+        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+            logger.error("close mapped byte buffer caught exception ", e);
+            throw new StorageException(e);
+        }
         closed = true;
     }
 
