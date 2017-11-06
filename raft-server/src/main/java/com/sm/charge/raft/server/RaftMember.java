@@ -43,18 +43,6 @@ public class RaftMember extends BaseNode<String>{
      */
     private volatile long lastApplied;
 
-//    /**
-//     * 成员的snapshot的index
-//     */
-//    private volatile long snapshotIndex;
-//
-
-//    /**
-//     * 复制数据失败次数
-//     */
-//    private volatile long replicateFailureCount;
-
-
     public RaftMember(TransportClient client, String id, Address address, Replicator replicator) {
         super(id,address);
         this.state = new RaftMemberState(client, this, replicator);

@@ -11,7 +11,14 @@ public interface MemberStateManager {
     /**
      * 持久化server state
      *
-     * @param memberState com.sm.charge.raft.server state
+     * @param member {@link RaftMember}
      */
-    void persistState(RaftMember memberState);
+    void persistState(RaftMember member);
+
+    /**
+     * 加载磁盘上的server state
+     *
+     * @return {@link RaftMember}
+     */
+    RaftMember loadState();
 }
