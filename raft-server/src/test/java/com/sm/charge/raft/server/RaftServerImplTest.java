@@ -6,6 +6,7 @@ import com.sm.charge.raft.server.storage.snapshot.SnapshotWriter;
 import com.sm.finance.charge.common.base.Configure;
 import com.sm.finance.charge.common.base.ConfigureLoader;
 import com.sm.finance.charge.common.utils.ThreadUtil;
+import com.sm.finance.charge.serializer.api.Serializer;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -37,6 +38,11 @@ public class RaftServerImplTest {
 
             @Override
             public Compactor compactor() {
+                return null;
+            }
+
+            @Override
+            public Serializer getSerializer() {
                 return null;
             }
 

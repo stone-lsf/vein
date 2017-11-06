@@ -82,7 +82,7 @@ public class ServerStateMachine extends LoggerSupport {
             return;
         }
 
-        pendingSnapshot = snapshotManager.create(lastApplied, System.currentTimeMillis());
+        pendingSnapshot = snapshotManager.create(lastApplied);
         logger.info("{} member taking snapshot:{}", self.getNodeId(), pendingSnapshot.index());
         executorService.execute(() -> {
             SnapshotWriter writer = pendingSnapshot.writer();

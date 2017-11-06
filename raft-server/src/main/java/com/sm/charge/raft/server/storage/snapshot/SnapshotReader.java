@@ -11,4 +11,6 @@ import java.io.File;
 public interface SnapshotReader extends BufferInputStream<SnapshotReader> {
 
     File getFile();
+
+    void close();
 }

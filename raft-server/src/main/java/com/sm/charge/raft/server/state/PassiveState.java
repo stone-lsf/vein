@@ -2,10 +2,10 @@ package com.sm.charge.raft.server.state;
 
 import com.sm.charge.raft.server.RaftState;
 import com.sm.charge.raft.server.ServerContext;
-import com.sm.charge.raft.server.events.InstallSnapshotRequest;
-import com.sm.charge.raft.server.events.InstallSnapshotResponse;
 import com.sm.charge.raft.server.events.AppendRequest;
 import com.sm.charge.raft.server.events.AppendResponse;
+import com.sm.charge.raft.server.events.InstallSnapshotRequest;
+import com.sm.charge.raft.server.events.InstallSnapshotResponse;
 import com.sm.charge.raft.server.storage.snapshot.Snapshot;
 import com.sm.charge.raft.server.storage.snapshot.SnapshotManager;
 import com.sm.charge.raft.server.storage.snapshot.SnapshotWriter;
@@ -62,7 +62,6 @@ public class PassiveState extends AbstractState {
 //        electionTimer.restart();
 
         if (pendingSnapshot != null && request.getIndex() != pendingSnapshot.index()) {
-            pendingSnapshot.close();
             pendingSnapshot.delete();
             pendingSnapshot = null;
             nextSnapshotOffset = 0;
@@ -77,7 +76,7 @@ public class PassiveState extends AbstractState {
                 return response;
             }
 
-            pendingSnapshot = snapshotManager.create(request.getIndex(), System.currentTimeMillis());
+            pendingSnapshot = snapshotManager.create(request.getIndex());
             nextSnapshotOffset = 0;
         }
 
@@ -87,9 +86,9 @@ public class PassiveState extends AbstractState {
             return response;
         }
 
-
-        try (SnapshotWriter writer = pendingSnapshot.writer()) {
-            writer.position(request.getOffset());
+        try {
+            SnapshotWriter writer = pendingSnapshot.writer();
+            writer.skip(request.getOffset());
             writer.write(request.getData());
         } catch (Exception e) {
             logger.error("open snapshot:{} writer caught exception", pendingSnapshot.index(), e);

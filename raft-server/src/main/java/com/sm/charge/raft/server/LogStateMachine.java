@@ -2,6 +2,7 @@ package com.sm.charge.raft.server;
 
 
 import com.sm.charge.raft.client.Command;
+import com.sm.finance.charge.serializer.api.Serializer;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -14,4 +15,6 @@ public interface LogStateMachine extends Snapshotable {
     <T> CompletableFuture<T> apply(Command command);
 
     Compactor compactor();
+
+    Serializer getSerializer();
 }

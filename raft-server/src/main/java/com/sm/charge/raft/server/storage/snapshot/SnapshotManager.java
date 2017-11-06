@@ -13,6 +13,8 @@ public interface SnapshotManager extends Startable, Closable {
 
     Snapshot create(long index);
 
+    void addSnapshot(Snapshot snapshot);
+
     Snapshot currentSnapshot();
 
     Collection<Snapshot> snapshots();

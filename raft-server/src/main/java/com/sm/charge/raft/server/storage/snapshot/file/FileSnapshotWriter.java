@@ -27,7 +27,7 @@ public class FileSnapshotWriter extends LoggerSupport implements SnapshotWriter 
     private final File file;
     private final Serializer serializer;
 
-    public FileSnapshotWriter(File file, Serializer serializer) {
+    FileSnapshotWriter(File file, Serializer serializer) {
         this.serializer = serializer;
         this.file = file;
         RandomAccessFile raf = null;
@@ -39,7 +39,7 @@ public class FileSnapshotWriter extends LoggerSupport implements SnapshotWriter 
             raf.setLength(Integer.MAX_VALUE);
 
             this.mapBuffer = raf.getChannel().map(FileChannel.MapMode.READ_WRITE, 0, raf.length());
-            this.mapBuffer.position(0);
+            this.mapBuffer.position(8);
         } catch (IOException e) {
             logger.error("new OffsetIndex:{} caught exception", file, e);
             throw new StorageException(e);
@@ -159,8 +159,8 @@ public class FileSnapshotWriter extends LoggerSupport implements SnapshotWriter 
     }
 
     @Override
-    public SnapshotWriter position(int position) {
-        mapBuffer.position(position);
+    public SnapshotWriter skip(int size) {
+        mapBuffer.position(mapBuffer.position() + size);
         return this;
     }
 
@@ -189,7 +189,12 @@ public class FileSnapshotWriter extends LoggerSupport implements SnapshotWriter 
     }
 
     @Override
-    public void close() throws Exception {
-        FileUtil.close(mapBuffer);
+    public void close() {
+        try {
+            FileUtil.close(mapBuffer);
+        } catch (ReflectiveOperationException e) {
+            logger.error("close snapshot:{} writer fail", file, e);
+            throw new RuntimeException(e);
+        }
     }
 }

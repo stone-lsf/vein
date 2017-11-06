@@ -5,6 +5,7 @@ import com.sm.charge.raft.server.Compactor;
 import com.sm.charge.raft.server.LogStateMachine;
 import com.sm.charge.raft.server.storage.snapshot.SnapshotReader;
 import com.sm.charge.raft.server.storage.snapshot.SnapshotWriter;
+import com.sm.finance.charge.serializer.api.Serializer;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -30,6 +31,11 @@ public class PrintLogStateMachine implements LogStateMachine {
 
     @Override
     public Compactor compactor() {
+        return null;
+    }
+
+    @Override
+    public Serializer getSerializer() {
         return null;
     }
 }

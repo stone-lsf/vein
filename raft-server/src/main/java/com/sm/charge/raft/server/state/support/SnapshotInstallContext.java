@@ -10,9 +10,9 @@ public class SnapshotInstallContext {
 
     private final Snapshot snapshot;
 
-    private volatile long offset;
+    private volatile int offset;
 
-    private volatile long size;
+    private volatile int size;
 
     private volatile boolean complete;
 
@@ -24,19 +24,19 @@ public class SnapshotInstallContext {
         return snapshot;
     }
 
-    public long getOffset() {
+    public int getOffset() {
         return offset;
     }
 
-    public void setOffset(long offset) {
+    public void setOffset(int offset) {
         this.offset = offset;
     }
 
-    public long getSize() {
+    public int getSize() {
         return size;
     }
 
-    public void setSize(long size) {
+    public void setSize(int size) {
         this.size = size;
     }
 

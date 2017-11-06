@@ -12,11 +12,13 @@ public interface SnapshotWriter extends BufferOutputStream<SnapshotWriter> {
 
     File getFile();
 
-    SnapshotWriter position(int position);
+    SnapshotWriter skip(int size);
 
     long position();
 
     SnapshotWriter writeObject(Object object);
 
     SnapshotWriter trimToValidSize();
+
+    void close();
 }

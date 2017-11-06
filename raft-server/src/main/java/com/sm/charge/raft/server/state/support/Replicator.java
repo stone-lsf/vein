@@ -166,24 +166,30 @@ public class Replicator extends LoggerSupport {
 
     private InstallSnapshotRequest buildSnapshotRequest(SnapshotInstallContext installContext, RaftMember member) {
         Snapshot snapshot = installContext.getSnapshot();
-        long offset = installContext.getOffset();
-        SnapshotReader reader = snapshot.reader();
-        reader.skip(offset);
+        int offset = installContext.getOffset();
+        SnapshotReader reader = null;
+        try {
+            reader = snapshot.reader();
+            reader.skip(offset);
 
-        byte[] data = new byte[Math.min(MAX_BATCH_SIZE, (int) reader.remaining())];
-        reader.read(data);
-        installContext.setSize(data.length);
+            byte[] data = new byte[Math.min(MAX_BATCH_SIZE, (int) reader.remaining())];
+            reader.read(data);
+            installContext.setSize(data.length);
 
-        InstallSnapshotRequest request = new InstallSnapshotRequest();
+            InstallSnapshotRequest request = new InstallSnapshotRequest();
 
-        request.setIndex(snapshot.index());
-        request.setTerm(context.getSelf().getTerm());
-        request.setDestination(member.getNodeId());
-        request.setOffset(offset);
-        request.setData(data);
-        request.setComplete(!reader.hasRemaining());
-        installContext.setComplete(!reader.hasRemaining());
-
-        return request;
+            request.setIndex(snapshot.index());
+            request.setTerm(context.getSelf().getTerm());
+            request.setDestination(member.getNodeId());
+            request.setOffset(offset);
+            request.setData(data);
+            request.setComplete(!reader.hasRemaining());
+            installContext.setComplete(!reader.hasRemaining());
+            return request;
+        } finally {
+            if (reader != null) {
+                reader.close();
+            }
+        }
     }
 }

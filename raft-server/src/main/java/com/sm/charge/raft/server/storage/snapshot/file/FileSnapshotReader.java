@@ -35,7 +35,7 @@ public class FileSnapshotReader extends LoggerSupport implements SnapshotReader 
         try {
             raf = new RandomAccessFile(file, "r");
             this.mapBuffer = raf.getChannel().map(FileChannel.MapMode.READ_ONLY, 0, raf.length());
-            this.mapBuffer.position(0);
+            this.mapBuffer.position(8);
             this.size = mapBuffer.limit();
         } catch (IOException e) {
             logger.error("new OffsetIndex:{} caught exception", file, e);
@@ -155,8 +155,13 @@ public class FileSnapshotReader extends LoggerSupport implements SnapshotReader 
     }
 
     @Override
-    public void close() throws Exception {
-        FileUtil.close(mapBuffer);
+    public void close() {
+        try {
+            FileUtil.close(mapBuffer);
+        } catch (ReflectiveOperationException e) {
+            logger.error("close snapshot:{} reader fail", file, e);
+            throw new RuntimeException(e);
+        }
     }
 
     @Override

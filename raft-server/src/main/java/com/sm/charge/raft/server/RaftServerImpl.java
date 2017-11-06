@@ -95,7 +95,7 @@ public class RaftServerImpl extends AbstractService implements RaftServer, Maste
         this.cluster = new RaftClusterImpl(raftConfig.getClusterName(), self);
         this.log = initLogger();
 
-        this.snapshotManager = new FileSnapshotManager(raftConfig.getSnapshotDirectory(), raftConfig.getSnapshotName());
+        this.snapshotManager = new FileSnapshotManager(raftConfig.getSnapshotDirectory(), raftConfig.getSnapshotName(), logStateMachine.getSerializer());
         this.memberStateManager = new FileMemberStateManager();
 
         ExecutorService executor = Executors.newSingleThreadExecutor(new NamedThreadFactory("LogApplyThread"));

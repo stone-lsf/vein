@@ -18,8 +18,6 @@ public interface Snapshot {
 
     void check();
 
-    void close();
-
     void delete();
 
     SnapshotReader reader();

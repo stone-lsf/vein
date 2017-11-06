@@ -7,6 +7,7 @@ import com.sm.charge.raft.server.storage.snapshot.Snapshot;
 import com.sm.charge.raft.server.storage.snapshot.SnapshotManager;
 import com.sm.finance.charge.common.AbstractService;
 import com.sm.finance.charge.common.utils.FileUtil;
+import com.sm.finance.charge.serializer.api.Serializer;
 import com.sm.finance.charge.storage.api.exceptions.BadDataException;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -33,11 +34,13 @@ public class FileSnapshotManager extends AbstractService implements SnapshotMana
 
     private final File directory;
     private final String name;
+    private final Serializer serializer;
     private final ConcurrentNavigableMap<Long, Snapshot> snapshots = new ConcurrentSkipListMap<>();
-    private Snapshot currentSnapshot;
+    private volatile Snapshot currentSnapshot;
 
-    public FileSnapshotManager(String directory, String snapshotName) {
+    public FileSnapshotManager(String directory, String snapshotName, Serializer serializer) {
         this.directory = new File(directory);
+        this.serializer = serializer;
         try {
             FileUtil.mkDirIfAbsent(directory);
         } catch (NotDirectoryException e) {
@@ -73,7 +76,7 @@ public class FileSnapshotManager extends AbstractService implements SnapshotMana
         for (File file : files) {
             Pair<Long, String> indexTime = parse(file.getName());
             if (indexTime != null) {
-                Snapshot snapshot = new FileSnapshot(file, indexTime.getLeft(), indexTime.getRight());
+                Snapshot snapshot = new FileSnapshot(file, indexTime.getLeft(), indexTime.getRight(), serializer, this);
                 snapshots.put(snapshot.index(), snapshot);
             }
         }
@@ -86,7 +89,13 @@ public class FileSnapshotManager extends AbstractService implements SnapshotMana
 
         String fileName = generate(indexTime);
         File file = new File(fileName);
-        return new FileSnapshot(file, index, createTime);
+        return new FileSnapshot(file, index, createTime, serializer, this);
+    }
+
+    @Override
+    public void addSnapshot(Snapshot snapshot) {
+        snapshots.put(snapshot.index(), snapshot);
+        currentSnapshot = snapshot;
     }
 
     @Override

@@ -15,7 +15,7 @@ public class InstallSnapshotRequest extends RaftMessage {
     /**
      * 分块在快照中的偏移量
      */
-    private long offset;
+    private int offset;
 
     private byte data[];
 
@@ -32,11 +32,11 @@ public class InstallSnapshotRequest extends RaftMessage {
         this.index = index;
     }
 
-    public long getOffset() {
+    public int getOffset() {
         return offset;
     }
 
-    public void setOffset(long offset) {
+    public void setOffset(int offset) {
         this.offset = offset;
     }
 
