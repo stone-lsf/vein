@@ -10,7 +10,7 @@ public interface BufferInputStream<T extends BufferInputStream<?>> extends AutoC
 
     boolean hasRemaining();
 
-    T skip(long bytes);
+    T skip(int bytes);
 
     T read(BytesBuffer bytes);
 
@@ -18,23 +18,17 @@ public interface BufferInputStream<T extends BufferInputStream<?>> extends AutoC
 
     T read(BytesBuffer bytes, long offset, long length);
 
-    T read(byte[] bytes, long offset, long length);
+    T read(byte[] bytes, int offset, int length);
 
     T read(BufferStream buffer);
 
     byte readByte();
 
-    int readUnsignedByte();
-
     short readShort();
-
-    int readUnsignedShort();
 
     char readChar();
 
     int readInt();
-
-    long readUnsignedInt();
 
     long readLong();
 

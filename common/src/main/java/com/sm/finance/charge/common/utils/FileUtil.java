@@ -5,11 +5,16 @@ import com.google.common.collect.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sun.nio.ch.FileChannelImpl;
+
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.NotDirectoryException;
 import java.util.Collection;
@@ -130,6 +135,17 @@ public class FileUtil {
             channel.truncate(offset);
         } finally {
             IoUtil.close(accessFile);
+        }
+    }
+
+    public static void close(MappedByteBuffer mapBuffer) throws ReflectiveOperationException {
+        try {
+            Method m = FileChannelImpl.class.getDeclaredMethod("unmap", MappedByteBuffer.class);
+            m.setAccessible(true);
+            m.invoke(FileChannelImpl.class, mapBuffer);
+        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+            logger.error("close mapped byte buffer caught exception ", e);
+            throw e;
         }
     }
 }

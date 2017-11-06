@@ -1,5 +1,6 @@
 package com.sm.charge.raft.server.storage.logs.segment;
 
+import com.sm.charge.raft.server.storage.FileNameRule;
 import com.sm.charge.raft.server.storage.logs.entry.LogEntry;
 import com.sm.charge.raft.server.storage.logs.index.LogIndex;
 import com.sm.finance.charge.common.LongIdGenerator;
@@ -17,7 +18,7 @@ import java.util.concurrent.ConcurrentSkipListMap;
  * @author shifeng.luo
  * @version created on 2017/11/5 上午11:52
  */
-public class SegmentManager extends LoggerSupport implements FileNameRule {
+public class SegmentManager extends LoggerSupport implements FileNameRule<Long> {
     static final String EXTENSION = "segment";
     private static final char EXTENSION_SEPARATOR = '.';
     private static final char SEPARATOR = '_';
@@ -54,8 +55,8 @@ public class SegmentManager extends LoggerSupport implements FileNameRule {
         }
 
         for (File file : files) {
-            long baseIndex = parse(file.getName());
-            if (baseIndex == -1) {
+            Long baseIndex = parse(file.getName());
+            if (baseIndex == null) {
                 continue;
             }
 
@@ -132,36 +133,36 @@ public class SegmentManager extends LoggerSupport implements FileNameRule {
     }
 
     @Override
-    public String generate(long startIndex) {
+    public String generate(Long startIndex) {
         return fileName + SEPARATOR + startIndex + EXTENSION_SEPARATOR + EXTENSION;
     }
 
     @Override
-    public long parse(String file) {
+    public Long parse(String file) {
         if (!file.startsWith(fileName)) {
-            return -1;
+            return null;
         }
 
         if (!file.endsWith(EXTENSION_SEPARATOR + EXTENSION)) {
-            return -1;
+            return null;
         }
 
         int end = file.lastIndexOf(EXTENSION_SEPARATOR);
         int start = file.lastIndexOf(SEPARATOR);
         if (start == -1) {
-            return -1;
+            return null;
         }
 
         String index = file.substring(start + 1, end);
         try {
             long value = Long.parseLong(index);
             if (value <= 0) {
-                return -1;
+                return null;
             }
             return value;
         } catch (Throwable e) {
             logger.warn("file:{} is not a segment", file);
-            return -1;
+            return null;
         }
     }
 

@@ -2,7 +2,6 @@ package com.sm.charge.raft.server.storage.snapshot.file;
 
 
 import com.sm.charge.raft.server.storage.snapshot.Snapshot;
-import com.sm.charge.raft.server.storage.snapshot.SnapshotDescriptor;
 import com.sm.charge.raft.server.storage.snapshot.SnapshotReader;
 import com.sm.charge.raft.server.storage.snapshot.SnapshotWriter;
 
@@ -15,11 +14,11 @@ import java.io.File;
 public class FileSnapshot implements Snapshot {
     private final File file;
     private final long index;
-    private final long timestamp;
+    private final String createTime;
 
-    FileSnapshot(SnapshotDescriptor descriptor, File file) {
-        this.index = descriptor.index();
-        this.timestamp = descriptor.timestamp();
+    FileSnapshot(File file, long index, String createTime) {
+        this.index = index;
+        this.createTime = createTime;
         this.file = file;
     }
 
@@ -34,13 +33,18 @@ public class FileSnapshot implements Snapshot {
     }
 
     @Override
-    public long timestamp() {
-        return timestamp;
+    public String createTime() {
+        return createTime;
     }
 
     @Override
     public Snapshot complete() {
         return null;
+    }
+
+    @Override
+    public void check() {
+
     }
 
     @Override

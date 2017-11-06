@@ -6,13 +6,9 @@ import com.sm.finance.charge.common.utils.IoUtil;
 import com.sm.finance.charge.storage.api.exceptions.ClosedException;
 import com.sm.finance.charge.storage.api.exceptions.StorageException;
 
-import sun.nio.ch.FileChannelImpl;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
@@ -213,10 +209,8 @@ public class OffsetIndex extends LoggerSupport {
 
     public void close() {
         try {
-            Method m = FileChannelImpl.class.getDeclaredMethod("unmap", MappedByteBuffer.class);
-            m.setAccessible(true);
-            m.invoke(FileChannelImpl.class, mapBuffer);
-        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+            FileUtil.close(mapBuffer);
+        } catch (ReflectiveOperationException e) {
             logger.error("close mapped byte buffer caught exception ", e);
             throw new StorageException(e);
         }

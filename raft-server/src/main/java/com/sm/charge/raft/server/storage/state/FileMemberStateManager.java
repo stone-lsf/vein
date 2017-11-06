@@ -1,4 +1,4 @@
-package com.sm.charge.raft.server.storage.snapshot.file;
+package com.sm.charge.raft.server.storage.state;
 
 import com.sm.charge.raft.server.RaftMember;
 import com.sm.charge.raft.server.storage.state.MemberStateManager;

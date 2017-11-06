@@ -2,18 +2,23 @@ package com.sm.charge.raft.server.storage.snapshot.file;
 
 import com.google.common.collect.Lists;
 
+import com.sm.charge.raft.server.storage.FileNameRule;
 import com.sm.charge.raft.server.storage.snapshot.Snapshot;
-import com.sm.charge.raft.server.storage.snapshot.SnapshotDescriptor;
 import com.sm.charge.raft.server.storage.snapshot.SnapshotManager;
 import com.sm.finance.charge.common.AbstractService;
 import com.sm.finance.charge.common.utils.FileUtil;
+import com.sm.finance.charge.storage.api.exceptions.BadDataException;
 
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.NotDirectoryException;
 import java.util.Collection;
+import java.util.Map;
 import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 
@@ -21,9 +26,9 @@ import java.util.concurrent.ConcurrentSkipListMap;
  * @author shifeng.luo
  * @version created on 2017/10/1 下午5:18
  */
-public class FileSnapshotManager extends AbstractService implements SnapshotManager {
+public class FileSnapshotManager extends AbstractService implements SnapshotManager, FileNameRule<Pair<Long, String>> {
     private static final String TIMESTAMP_FORMAT = "yyyyMMddHHmmss";
-    private static final char PART_SEPARATOR = '-';
+    private static final char PART_SEPARATOR = '_';
     private static final String EXTENSION = ".snapshot";
 
     private final File directory;
@@ -33,15 +38,32 @@ public class FileSnapshotManager extends AbstractService implements SnapshotMana
 
     public FileSnapshotManager(String directory, String snapshotName) {
         this.directory = new File(directory);
-        //todo check directory
+        try {
+            FileUtil.mkDirIfAbsent(directory);
+        } catch (NotDirectoryException e) {
+            logger.error("path:{} is not a directory", directory);
+            throw new IllegalStateException(e);
+        }
         this.name = snapshotName;
     }
 
     @Override
     protected void doStart() throws Exception {
         loadSnapshots();
-        if (!snapshots.isEmpty()) {
-            currentSnapshot = snapshots.lastEntry().getValue();
+        Map.Entry<Long, Snapshot> entry = snapshots.lastEntry();
+        if (entry == null) {
+            return;
+        }
+        currentSnapshot = entry.getValue();
+        try {
+            currentSnapshot.check();
+        } catch (BadDataException e) {
+            currentSnapshot.delete();
+            snapshots.remove(currentSnapshot.index());
+            entry = snapshots.lastEntry();
+            if (entry != null) {
+                currentSnapshot = entry.getValue();
+            }
         }
     }
 
@@ -49,67 +71,23 @@ public class FileSnapshotManager extends AbstractService implements SnapshotMana
         Collection<File> files = FileUtil.listAllFile(directory, File::isFile);
 
         for (File file : files) {
-            SnapshotDescriptor descriptor = parse(file);
-            if (descriptor != null) {
-                Snapshot snapshot = new FileSnapshot(descriptor, file);
+            Pair<Long, String> indexTime = parse(file.getName());
+            if (indexTime != null) {
+                Snapshot snapshot = new FileSnapshot(file, indexTime.getLeft(), indexTime.getRight());
                 snapshots.put(snapshot.index(), snapshot);
             }
         }
     }
 
-
     @Override
-    public SnapshotDescriptor parse(File file) {
-        if (file == null) {
-            logger.error("file is null");
-            return null;
-        }
+    public Snapshot create(long index) {
+        String createTime = new DateTime().toString(TIMESTAMP_FORMAT);
+        Pair<Long, String> indexTime = new ImmutablePair<>(index, createTime);
 
-        if (!file.isFile()) {
-            logger.error("{} is not file", file);
-            return null;
-        }
-
-        String fileName = file.getName();
-        int lastSeparator = fileName.lastIndexOf(PART_SEPARATOR);
-        if (!fileName.endsWith(EXTENSION) || !fileName.startsWith(name) || lastSeparator == -1) {
-            logger.error("{} is not snapshot", file);
-            return null;
-        }
-
-        String timestamp = fileName.substring(lastSeparator + 1, fileName.lastIndexOf(EXTENSION));
-
-        try {
-            DateTime.parse(timestamp, DateTimeFormat.forPattern(TIMESTAMP_FORMAT)).getMillis();
-        } catch (Exception e) {
-            logger.error("{} is not snapshot, don't contain legal timestamp", file);
-            return null;
-        }
-
-        int firstSeparator = fileName.lastIndexOf(PART_SEPARATOR, lastSeparator - 1);
-        if (firstSeparator == -1) {
-            logger.error("{} is not snapshot, don't contain two '-'", file);
-            return null;
-        }
-
-        String indexStr = fileName.substring(firstSeparator + 1, lastSeparator);
-        try {
-            long index = Long.valueOf(indexStr);
-            return new SnapshotDescriptor(index, Long.valueOf(timestamp));
-        } catch (Exception e) {
-            logger.error("{} is not snapshot, don't contain legal index", file);
-            return null;
-        }
-    }
-
-    @Override
-    public Snapshot create(long index, long timestamp) {
-        String fileName = String.format("%s-%d-%s.snapshot", name, index, new DateTime(timestamp).toString(TIMESTAMP_FORMAT));
+        String fileName = generate(indexTime);
         File file = new File(fileName);
-        SnapshotDescriptor descriptor = new SnapshotDescriptor(index, timestamp);
-        return new FileSnapshot(descriptor, file);
+        return new FileSnapshot(file, index, createTime);
     }
-
 
     @Override
     public Snapshot currentSnapshot() {
@@ -126,10 +104,46 @@ public class FileSnapshotManager extends AbstractService implements SnapshotMana
         return snapshots.get(index);
     }
 
-
-
     @Override
     protected void doClose() {
 
+    }
+
+    @Override
+    public String generate(Pair<Long, String> indexTime) {
+        return String.format("%s_%d_%s.snapshot", name, indexTime.getLeft(), indexTime.getRight());
+    }
+
+    @Override
+    public Pair<Long, String> parse(String fileName) {
+        int lastSeparator = fileName.lastIndexOf(PART_SEPARATOR);
+        if (!fileName.endsWith(EXTENSION) || !fileName.startsWith(name) || lastSeparator == -1) {
+            logger.error("{} is not snapshot", fileName);
+            return null;
+        }
+
+        String createTime = fileName.substring(lastSeparator + 1, fileName.lastIndexOf(EXTENSION));
+
+        try {
+            DateTime.parse(createTime, DateTimeFormat.forPattern(TIMESTAMP_FORMAT));
+        } catch (Exception e) {
+            logger.error("{} is not snapshot, don't contain legal timestamp", fileName);
+            return null;
+        }
+
+        int firstSeparator = fileName.lastIndexOf(PART_SEPARATOR, lastSeparator - 1);
+        if (firstSeparator == -1) {
+            logger.error("{} is not snapshot, don't contain two '-'", fileName);
+            return null;
+        }
+
+        String indexStr = fileName.substring(firstSeparator + 1, lastSeparator);
+        try {
+            long index = Long.valueOf(indexStr);
+            return index <= 0 ? null : new ImmutablePair<>(index, createTime);
+        } catch (Exception e) {
+            logger.error("{} is not snapshot, don't contain legal index", fileName);
+            return null;
+        }
     }
 }

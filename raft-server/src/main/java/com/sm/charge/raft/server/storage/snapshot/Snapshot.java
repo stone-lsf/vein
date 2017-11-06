@@ -12,9 +12,11 @@ public interface Snapshot {
 
     long index();
 
-    long timestamp();
+    String createTime();
 
     Snapshot complete();
+
+    void check();
 
     void close();
 

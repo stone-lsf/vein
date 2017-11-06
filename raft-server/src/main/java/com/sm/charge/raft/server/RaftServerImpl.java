@@ -27,7 +27,7 @@ import com.sm.charge.raft.server.state.support.timer.HeartbeatTimeoutTimer;
 import com.sm.charge.raft.server.storage.logs.RaftLogger;
 import com.sm.charge.raft.server.storage.logs.entry.LogEntry;
 import com.sm.charge.raft.server.storage.snapshot.SnapshotManager;
-import com.sm.charge.raft.server.storage.snapshot.file.FileMemberStateManager;
+import com.sm.charge.raft.server.storage.state.FileMemberStateManager;
 import com.sm.charge.raft.server.storage.snapshot.file.FileSnapshotManager;
 import com.sm.charge.raft.server.storage.state.MemberStateManager;
 import com.sm.finance.charge.common.AbstractService;

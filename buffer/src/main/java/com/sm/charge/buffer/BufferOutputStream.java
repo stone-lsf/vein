@@ -10,27 +10,21 @@ public interface BufferOutputStream<T extends BufferOutputStream<?>> extends Aut
 
     T write(byte[] bytes);
 
-    T write(BytesBuffer bytes, long offset, long length);
+    T write(BytesBuffer bytes, int offset, int length);
 
-    T write(byte[] bytes, long offset, long length);
+    T write(byte[] bytes, int offset, int length);
 
     T write(BufferStream buffer);
 
     T writeBoolean(boolean v);
 
-    T writeByte(int b);
-
-    T writeUnsignedByte(int b);
+    T writeByte(byte b);
 
     T writeChar(char c);
 
     T writeShort(short s);
 
-    T writeUnsignedShort(int s);
-
     T writeInt(int i);
-
-    T writeUnsignedInt(long i);
 
     T writeLong(long l);
 
