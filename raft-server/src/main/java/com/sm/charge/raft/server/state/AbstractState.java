@@ -3,17 +3,17 @@ package com.sm.charge.raft.server.state;
 import com.sm.charge.raft.server.RaftMember;
 import com.sm.charge.raft.server.RaftMessage;
 import com.sm.charge.raft.server.ServerContext;
+import com.sm.charge.raft.server.events.AppendRequest;
+import com.sm.charge.raft.server.events.AppendResponse;
 import com.sm.charge.raft.server.events.EventExecutor;
-import com.sm.charge.raft.server.events.VoteRequest;
-import com.sm.charge.raft.server.events.VoteResponse;
 import com.sm.charge.raft.server.events.InstallSnapshotRequest;
 import com.sm.charge.raft.server.events.InstallSnapshotResponse;
 import com.sm.charge.raft.server.events.JoinRequest;
 import com.sm.charge.raft.server.events.JoinResponse;
 import com.sm.charge.raft.server.events.LeaveRequest;
 import com.sm.charge.raft.server.events.LeaveResponse;
-import com.sm.charge.raft.server.events.AppendRequest;
-import com.sm.charge.raft.server.events.AppendResponse;
+import com.sm.charge.raft.server.events.VoteRequest;
+import com.sm.charge.raft.server.events.VoteResponse;
 import com.sm.charge.raft.server.storage.logs.RaftLogger;
 import com.sm.charge.raft.server.storage.logs.entry.LogEntry;
 import com.sm.finance.charge.common.base.LoggerSupport;
@@ -37,7 +37,7 @@ public abstract class AbstractState extends LoggerSupport implements ServerState
     protected final ServerContext context;
     protected final EventExecutor eventExecutor;
 
-    protected AbstractState(ServerContext context) {
+    AbstractState(ServerContext context) {
         this.self = context.getSelf();
         this.context = context;
         this.eventExecutor = context.getEventExecutor();
@@ -64,7 +64,7 @@ public abstract class AbstractState extends LoggerSupport implements ServerState
             return response;
         }
 
-        if (self.getVotedFor() != null && self.getVotedFor() != request.getSource()) {
+        if (self.getVotedFor() != null && !request.getSource().equals(self.getVotedFor())) {
             response.setVoteGranted(false);
             return response;
         }
@@ -86,7 +86,7 @@ public abstract class AbstractState extends LoggerSupport implements ServerState
      * @param messageTerm 消息term
      * @return 如果当前任期新则返回false，否则返回true
      */
-    protected boolean updateTerm(long messageTerm) {
+    boolean updateTerm(long messageTerm) {
         long term = self.getTerm();
         if (term < messageTerm) {
             self.setTerm(messageTerm);
@@ -105,7 +105,7 @@ public abstract class AbstractState extends LoggerSupport implements ServerState
      * @return 如果候选者更新，返回true，否则返回false
      */
     private boolean candidateLogNewer(long candidateLogIndex) {
-        LogEntry entry = context.getLog().lastEntry();
+        LogEntry entry = context.getRaftLogger().lastEntry();
         long lastLogIndex = entry == null ? 0 : entry.getIndex();
 
         return candidateLogIndex >= lastLogIndex;
@@ -141,7 +141,7 @@ public abstract class AbstractState extends LoggerSupport implements ServerState
             }
         }
 
-        context.getLog().truncate(0);
+        context.getRaftLogger().truncate(0);
         logger.info("delete all logs,because receive prev log 0 from master[{}]", request.getSource());
         return appendInitial(request);
     }
@@ -153,9 +153,9 @@ public abstract class AbstractState extends LoggerSupport implements ServerState
      * @param request      append请求
      * @return AppendResponse
      */
-    protected AppendResponse appendWithPrevLog(long prevLogIndex, AppendRequest request) {
-        LogEntry prevEntry = context.getLog().get(prevLogIndex);
-        LogEntry lastLogEntry = context.getLog().lastEntry();
+    private AppendResponse appendWithPrevLog(long prevLogIndex, AppendRequest request) {
+        LogEntry prevEntry = context.getRaftLogger().get(prevLogIndex);
+        LogEntry lastLogEntry = context.getRaftLogger().lastEntry();
         String source = request.getSource();
 
         if (prevEntry == null) {
@@ -178,7 +178,7 @@ public abstract class AbstractState extends LoggerSupport implements ServerState
             return response;
         }
 
-        context.getLog().truncate(prevLogIndex);
+        context.getRaftLogger().truncate(prevLogIndex);
         logger.info("delete logs from index greater than {},because receive prev log from master[{}]", prevLogIndex, source);
         return appendInitial(request);
     }
@@ -189,16 +189,16 @@ public abstract class AbstractState extends LoggerSupport implements ServerState
      * @param request append request
      * @return AppendResponse
      */
-    protected AppendResponse appendInitial(AppendRequest request) {
+    private AppendResponse appendInitial(AppendRequest request) {
         String source = request.getSource();
         List<LogEntry> entries = request.getEntries();
-        RaftLogger log = context.getLog();
+        RaftLogger raftLogger = context.getRaftLogger();
         long lastIndex = 0;
         if (CollectionUtils.isNotEmpty(entries)) {
             for (LogEntry entry : entries) {
                 long skipSize = entry.getIndex() - lastIndex - 1;
-                log.skip(skipSize);
-                log.append(entry);
+                raftLogger.skip(skipSize);
+                raftLogger.append(entry);
                 lastIndex = entry.getIndex();
             }
         }
@@ -218,12 +218,12 @@ public abstract class AbstractState extends LoggerSupport implements ServerState
      *
      * @param leaderCommit leader已经提交的日志
      */
-    protected void commit(long leaderCommit) {
-        long lastIndex = context.getLog().lastIndex();
+    void commit(long leaderCommit) {
+        long lastIndex = context.getRaftLogger().lastIndex();
         long commitIndex = Math.min(lastIndex, leaderCommit);
         long prevCommitIndex = self.getCommitIndex();
         if (commitIndex > prevCommitIndex) {
-            context.getLog().commit(commitIndex);
+            context.getRaftLogger().commit(commitIndex);
             self.setCommitIndex(commitIndex);
         }
     }
@@ -301,7 +301,7 @@ public abstract class AbstractState extends LoggerSupport implements ServerState
     }
 
 
-    protected void fill(RaftMessage message, String destination) {
+    void fill(RaftMessage message, String destination) {
         message.setSource(self.getNodeId());
         message.setDestination(destination);
         message.setTerm(self.getTerm());

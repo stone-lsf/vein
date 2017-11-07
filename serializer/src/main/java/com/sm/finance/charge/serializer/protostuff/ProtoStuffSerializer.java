@@ -1,6 +1,7 @@
 package com.sm.finance.charge.serializer.protostuff;
 
-import com.sm.finance.charge.serializer.api.DataStructure;
+import com.sm.finance.charge.serializer.api.Serializable;
+import com.sm.finance.charge.serializer.api.SerializableTypes;
 import com.sm.finance.charge.serializer.api.Serializer;
 
 import org.slf4j.Logger;
@@ -23,25 +24,25 @@ public class ProtoStuffSerializer implements Serializer {
 
     private static Map<Class<?>, Schema<?>> schemaMap = new ConcurrentHashMap<>();
 
-    private final DataStructure dataStructure;
+    private final SerializableTypes types;
 
-    public ProtoStuffSerializer(DataStructure dataStructure) {
-        this.dataStructure = dataStructure;
+    public ProtoStuffSerializer(SerializableTypes types) {
+        this.types = types;
     }
 
     @Override
-    public byte[] serialize(Object obj) {
+    public byte[] serialize(Serializable obj) {
         return toArrayByte(obj);
 
     }
 
     @Override
     @SuppressWarnings("unchecked")
-    public <T> T deserialize(byte[] bytes) {
-        return (T) mergeFrom(bytes, dataStructure.getStruct(bytes[0]));
+    public <T extends Serializable> T deserialize(byte[] bytes) {
+        return (T) mergeFrom(bytes, types.getSerializable(bytes[0]));
     }
 
-    private <T> T mergeFrom(byte[] bytes, Class<T> type) {
+    private <T extends Serializable> T mergeFrom(byte[] bytes, Class<T> type) {
         Schema<T> schema = getSchema(type);
         T instance = schema.newMessage();
         byte[] to = new byte[bytes.length - 1];
@@ -51,13 +52,13 @@ public class ProtoStuffSerializer implements Serializer {
     }
 
     @SuppressWarnings("unchecked")
-    private <T> byte[] toArrayByte(Object obj) {
+    private <T extends Serializable> byte[] toArrayByte(Object obj) {
         T instance = (T) obj;
         Class<T> cType = (Class<T>) obj.getClass();
         Schema<T> schema = getSchema(cType);
         LinkedBuffer buffer = LinkedBufferPool.getLinkedBuffer();
         try {
-            byte[] value = appendHead(ProtobufIOUtil.toByteArray(instance, schema, buffer), dataStructure.getStructType(cType));
+            byte[] value = appendHead(ProtobufIOUtil.toByteArray(instance, schema, buffer), types.getType(cType));
             if (logger.isDebugEnabled()) {
                 logger.debug("protobuf serialize " + obj.getClass() + " instance length:" + value.length);
             }

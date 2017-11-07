@@ -12,6 +12,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
 
 /**
  * @author shifeng.luo
@@ -72,10 +73,12 @@ public class RaftServerImplTest {
 
     @Test
     public void testJoin() throws Exception {
+        CountDownLatch latch = new CountDownLatch(3);
         new Thread(() -> {
             try {
                 raft1.start();
                 System.out.println("raft1 join success");
+                latch.countDown();
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -85,6 +88,7 @@ public class RaftServerImplTest {
             try {
                 raft2.start();
                 System.out.println("raft2 join success");
+                latch.countDown();
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -94,12 +98,13 @@ public class RaftServerImplTest {
             try {
                 raft3.start();
                 System.out.println("raft3 join success");
+                latch.countDown();
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }).start();
 
-
-        ThreadUtil.sleepUnInterrupted(2000000000);
+        latch.await();
+//        ThreadUtil.sleepUnInterrupted(2000000000);
     }
 }

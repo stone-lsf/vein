@@ -1,10 +1,12 @@
 package com.sm.finance.charge.transport.api;
 
+import com.sm.finance.charge.serializer.api.Serializable;
+
 /**
  * @author shifeng.luo
  * @version created on 2017/9/11 下午5:06
  */
-public class Request {
+public class Request implements Serializable{
     private int id;
 
     private Object message;

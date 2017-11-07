@@ -1,5 +1,7 @@
 package com.sm.charge.raft.server.events;
 
+import com.sm.charge.raft.client.Event;
+
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Function;

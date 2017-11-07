@@ -48,7 +48,7 @@ public class RaftMemberState extends LoggerSupport {
      */
     private volatile long nextSnapshotOffset;
 
-    private final ConcurrentMap<Long, CompletableFuture<Object>> commitFutures = new ConcurrentHashMap<>();
+    private final ConcurrentMap<Long, CompletableFuture> commitFutures = new ConcurrentHashMap<>();
 
     public RaftMemberState(TransportClient client, RaftMember member, Replicator replicator) {
         this.client = client;
@@ -86,12 +86,12 @@ public class RaftMemberState extends LoggerSupport {
         replicateTask.stop();
     }
 
-    public void addCommitFuture(long logIndex, CompletableFuture<Object> future) {
+    public void addCommitFuture(long logIndex, CompletableFuture future) {
         commitFutures.put(logIndex, future);
     }
 
 
-    public CompletableFuture<Object> removeCommitFuture(long logIndex) {
+    public CompletableFuture removeCommitFuture(long logIndex) {
         return commitFutures.remove(logIndex);
     }
 

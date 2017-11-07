@@ -1,6 +1,7 @@
 package com.sm.charge.raft.server.storage.snapshot;
 
 import com.sm.charge.buffer.BufferOutputStream;
+import com.sm.finance.charge.serializer.api.Serializable;
 
 import java.io.File;
 
@@ -16,7 +17,7 @@ public interface SnapshotWriter extends BufferOutputStream<SnapshotWriter> {
 
     long position();
 
-    SnapshotWriter writeObject(Object object);
+    SnapshotWriter writeObject(Serializable object);
 
     SnapshotWriter trimToValidSize();
 

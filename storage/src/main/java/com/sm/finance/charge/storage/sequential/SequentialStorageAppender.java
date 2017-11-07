@@ -3,6 +3,7 @@ package com.sm.finance.charge.storage.sequential;
 import com.sm.finance.charge.common.AbstractService;
 import com.sm.finance.charge.common.LongIdGenerator;
 import com.sm.finance.charge.common.NamedThreadFactory;
+import com.sm.finance.charge.serializer.api.Serializable;
 import com.sm.finance.charge.serializer.api.Serializer;
 import com.sm.finance.charge.storage.api.StorageConfig;
 import com.sm.finance.charge.storage.api.StorageAppender;
@@ -81,7 +82,7 @@ public class SequentialStorageAppender extends AbstractService implements Storag
     }
 
     @Override
-    public boolean append(Object message) {
+    public boolean append(Serializable message) {
         CompletableFuture<Boolean> future = appendAsync(message);
         try {
             future.join();
@@ -92,7 +93,7 @@ public class SequentialStorageAppender extends AbstractService implements Storag
     }
 
     @Override
-    public boolean append(List messages) {
+    public boolean append(List<? extends Serializable> messages) {
         CompletableFuture<Boolean> future = appendAsync(messages);
         try {
             future.join();
@@ -103,7 +104,7 @@ public class SequentialStorageAppender extends AbstractService implements Storag
     }
 
     @Override
-    public boolean appendForce(Object message) {
+    public boolean appendForce(Serializable message) {
         boolean success = append(message);
         if (success) {
             flush();
@@ -112,7 +113,7 @@ public class SequentialStorageAppender extends AbstractService implements Storag
     }
 
     @Override
-    public boolean appendForce(List messages) {
+    public boolean appendForce(List<? extends Serializable> messages) {
         boolean success = append(messages);
         if (success) {
             flush();
@@ -130,7 +131,7 @@ public class SequentialStorageAppender extends AbstractService implements Storag
     }
 
     @Override
-    public CompletableFuture<Boolean> appendAsync(Object message) {
+    public CompletableFuture<Boolean> appendAsync(Serializable message) {
         CompletableFuture<Boolean> future = new CompletableFuture<>();
         byte[] bytes = serializer.serialize(message);
         Message msg = new Message(bytes, future);
@@ -145,10 +146,10 @@ public class SequentialStorageAppender extends AbstractService implements Storag
     }
 
     @Override
-    public CompletableFuture<Boolean> appendAsync(List messages) {
+    public CompletableFuture<Boolean> appendAsync(List<? extends Serializable> messages) {
         List<Message> list = new ArrayList<>(messages.size());
         int length = 0;
-        for (Object message : messages) {
+        for (Serializable message : messages) {
             byte[] bytes = serializer.serialize(message);
             Message msg = new Message(bytes);
             list.add(msg);

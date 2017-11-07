@@ -17,11 +17,6 @@ public class TestCommand implements Command {
         this.command = command;
     }
 
-    @Override
-    public byte type() {
-        return 1;
-    }
-
     public String getCommand() {
         return command;
     }

@@ -29,7 +29,7 @@ public class RaftLoggerTest {
         maxSegmentSize = 20 * 1024 * 1024;
         maxSegmentEntries = 10000;
         maxMessageSize = 10000;
-        serializer = new JsonSerializer(new RaftDataStructure());
+        serializer = new JsonSerializer(new RaftSerializableTypes());
 
         raftLogger = new RaftLogger("raftLog", directory, serializer, maxSegmentSize, maxMessageSize, maxSegmentEntries);
     }

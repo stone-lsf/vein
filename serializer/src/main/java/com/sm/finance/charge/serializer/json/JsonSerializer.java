@@ -4,7 +4,8 @@ import com.google.common.collect.Maps;
 
 import com.fasterxml.jackson.databind.JavaType;
 import com.sm.finance.charge.common.utils.JsonUtil;
-import com.sm.finance.charge.serializer.api.DataStructure;
+import com.sm.finance.charge.serializer.api.Serializable;
+import com.sm.finance.charge.serializer.api.SerializableTypes;
 import com.sm.finance.charge.serializer.api.Serializer;
 
 import java.util.HashMap;
@@ -18,15 +19,15 @@ public class JsonSerializer implements Serializer {
     private final String typeKey = "type";
     private final String dataKey = "data";
 
-    private final DataStructure dataStructure;
+    private final SerializableTypes dataStructure;
 
-    public JsonSerializer(DataStructure dataStructure) {
+    public JsonSerializer(SerializableTypes dataStructure) {
         this.dataStructure = dataStructure;
     }
 
     @Override
-    public byte[] serialize(Object obj) {
-        byte type = dataStructure.getStructType(obj.getClass());
+    public byte[] serialize(Serializable obj) {
+        byte type = dataStructure.getType(obj.getClass());
         Map<String, Object> map = Maps.newHashMapWithExpectedSize(2);
         map.put(typeKey, type);
         map.put(dataKey, obj);
@@ -40,7 +41,7 @@ public class JsonSerializer implements Serializer {
 
     @Override
     @SuppressWarnings("unchecked")
-    public <T> T deserialize(byte[] bytes) {
+    public <T extends Serializable> T deserialize(byte[] bytes) {
         String jsonStr = new String(bytes);
         JavaType mapType = JsonUtil.createMapType(HashMap.class, String.class, Object.class);
 
@@ -50,7 +51,7 @@ public class JsonSerializer implements Serializer {
         }
 
         Integer type = (Integer) map.get(typeKey);
-        Class<?> dataType = this.dataStructure.getStruct(type.byteValue());
+        Class<?> dataType = this.dataStructure.getSerializable(type.byteValue());
         String dataStr = JsonUtil.toJson(map.get(dataKey));
 
         return (T) JsonUtil.fromJson(dataStr, dataType);

@@ -1,5 +1,6 @@
 package com.sm.charge.raft.server.events;
 
+import com.sm.charge.raft.client.Event;
 import com.sm.charge.raft.server.RaftMember;
 
 import java.util.List;
@@ -8,7 +9,7 @@ import java.util.List;
  * @author shifeng.luo
  * @version created on 2017/10/11 下午1:47
  */
-public class JoinResponse implements Event{
+public class JoinResponse implements Event {
 
     public static final int SUCCESS = 0;
     public static final int REDIRECT = 1;

@@ -1,6 +1,6 @@
 package com.sm.charge.raft.server;
 
-import com.sm.charge.raft.server.events.Event;
+import com.sm.charge.raft.client.Event;
 import com.sm.charge.raft.server.events.EventExecutor;
 import com.sm.finance.charge.common.base.LoggerSupport;
 

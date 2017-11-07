@@ -1,20 +1,20 @@
 package com.sm.charge.raft.server.state;
 
-import com.sm.charge.raft.client.ConfigureCommand;
+import com.sm.charge.raft.client.Configure;
 import com.sm.charge.raft.server.RaftCluster;
 import com.sm.charge.raft.server.RaftMember;
 import com.sm.charge.raft.server.RaftMemberState;
 import com.sm.charge.raft.server.RaftState;
 import com.sm.charge.raft.server.ServerContext;
+import com.sm.charge.raft.server.events.AppendRequest;
+import com.sm.charge.raft.server.events.AppendResponse;
 import com.sm.charge.raft.server.events.InstallSnapshotResponse;
 import com.sm.charge.raft.server.events.JoinRequest;
 import com.sm.charge.raft.server.events.JoinResponse;
 import com.sm.charge.raft.server.events.LeaveRequest;
 import com.sm.charge.raft.server.events.LeaveResponse;
-import com.sm.charge.raft.server.events.AppendRequest;
-import com.sm.charge.raft.server.events.AppendResponse;
-import com.sm.charge.raft.server.state.support.SnapshotInstallContext;
 import com.sm.charge.raft.server.state.support.Replicator;
+import com.sm.charge.raft.server.state.support.SnapshotInstallContext;
 import com.sm.charge.raft.server.storage.logs.RaftLogger;
 import com.sm.charge.raft.server.storage.logs.entry.LogEntry;
 import com.sm.finance.charge.transport.api.support.RequestContext;
@@ -56,7 +56,7 @@ public class LeaderState extends AbstractState {
         RaftMember self = context.getSelf();
         List<RaftMember> members = context.getCluster().members();
         for (RaftMember member : members) {
-            if (member.getNodeId() == self.getNodeId()) {
+            if (member.getNodeId().equals(self.getNodeId())) {
                 continue;
             }
 
@@ -69,11 +69,11 @@ public class LeaderState extends AbstractState {
         logger.info("{} transfer to leader state", self.getNodeId());
         RaftMember self = context.getSelf();
         List<RaftMember> members = context.getCluster().members();
-        LogEntry entry = context.getLog().lastEntry();
+        LogEntry entry = context.getRaftLogger().lastEntry();
         long nextLogIndex = entry == null ? 1 : entry.getIndex() + 1;
 
         for (RaftMember member : members) {
-            if (member.getNodeId() == self.getNodeId()) {
+            if (member.getNodeId().equals(self.getNodeId())) {
                 continue;
             }
 
@@ -120,19 +120,21 @@ public class LeaderState extends AbstractState {
 
         RaftCluster cluster = context.getCluster();
         List<RaftMember> members = cluster.members();
-        RaftMember member = cluster.member(request.getMemberId());
+        String memberId = request.getMemberId();
+        RaftMember member = cluster.member(memberId);
         if (member != null) {
             response.setStatus(SUCCESS);
-            response.setIndex(context.getLog().lastIndex());
+            response.setIndex(context.getRaftLogger().lastIndex());
             response.setTerm(self.getTerm());
             response.setMembers(members);
             return response;
         }
 
-        member = new RaftMember(context.getClient(), request.getMemberId(), request.getAddress(), replicator);
+        member = new RaftMember(context.getClient(), memberId, request.getAddress(), replicator);
         members.add(member);
 
-        configure(members).whenComplete((index, error) -> {
+        Configure configure = new Configure(Configure.JOIN, memberId, request.getAddress());
+        configure(members, configure).whenComplete((index, error) -> {
             try {
                 if (error != null) {
                     response.setStatus(INTERNAL_ERROR);
@@ -151,14 +153,14 @@ public class LeaderState extends AbstractState {
         return null;
     }
 
-    private CompletableFuture<Long> configure(List<RaftMember> members) {
+    private CompletableFuture<Long> configure(List<RaftMember> members, Configure configure) {
         CompletableFuture<Long> future = new CompletableFuture<>();
 
-        ConfigureCommand command = new ConfigureCommand();
-        LogEntry entry = new LogEntry(command, self.getTerm());
-        RaftLogger log = context.getLog();
+
+        LogEntry entry = new LogEntry(configure, self.getTerm());
+        RaftLogger raftLogger = context.getRaftLogger();
         RaftCluster cluster = context.getCluster();
-        long index = log.append(entry);
+        long index = raftLogger.append(entry);
         self.getState().setConfiguring(index);
 
         for (RaftMember member : members) {
@@ -201,7 +203,8 @@ public class LeaderState extends AbstractState {
         }
 
         members.remove(member);
-        configure(members).whenComplete((index, error) -> {
+        Configure configure = new Configure(Configure.LEAVE, member.getNodeId(), member.getAddress());
+        configure(members, configure).whenComplete((index, error) -> {
             try {
                 if (error != null) {
                     response.setStatus(LeaveResponse.INTERNAL_ERROR);

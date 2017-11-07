@@ -141,7 +141,7 @@ public class RaftLogger extends LoggerSupport {
         }
 
         LogIndex logIndex = segment.lastIndex();
-        if (logIndex != null) {
+        if (logIndex != null && logIndex.getIndex() > 0) {
             return segment.get(logIndex.getIndex());
         }
 

@@ -8,6 +8,7 @@ import com.sm.charge.raft.server.storage.snapshot.SnapshotWriter;
 import com.sm.finance.charge.common.base.LoggerSupport;
 import com.sm.finance.charge.common.utils.FileUtil;
 import com.sm.finance.charge.common.utils.IoUtil;
+import com.sm.finance.charge.serializer.api.Serializable;
 import com.sm.finance.charge.serializer.api.Serializer;
 import com.sm.finance.charge.storage.api.exceptions.StorageException;
 
@@ -170,7 +171,7 @@ public class FileSnapshotWriter extends LoggerSupport implements SnapshotWriter 
     }
 
     @Override
-    public SnapshotWriter writeObject(Object object) {
+    public SnapshotWriter writeObject(Serializable object) {
         byte[] payload = serializer.serialize(object);
         Entry entry = new Entry(payload);
         entry.writeTo(mapBuffer);

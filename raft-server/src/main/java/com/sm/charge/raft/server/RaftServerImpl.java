@@ -1,6 +1,9 @@
 package com.sm.charge.raft.server;
 
-import com.sm.charge.raft.client.Command;
+import com.sm.charge.raft.client.CommandTypes;
+import com.sm.charge.raft.client.protocal.CommandRequest;
+import com.sm.charge.raft.client.protocal.RaftError;
+import com.sm.charge.raft.client.protocal.RaftResponse;
 import com.sm.charge.raft.server.events.AppendRequest;
 import com.sm.charge.raft.server.events.AppendResponse;
 import com.sm.charge.raft.server.events.EventExecutor;
@@ -27,8 +30,8 @@ import com.sm.charge.raft.server.state.support.timer.HeartbeatTimeoutTimer;
 import com.sm.charge.raft.server.storage.logs.RaftLogger;
 import com.sm.charge.raft.server.storage.logs.entry.LogEntry;
 import com.sm.charge.raft.server.storage.snapshot.SnapshotManager;
-import com.sm.charge.raft.server.storage.state.FileMemberStateManager;
 import com.sm.charge.raft.server.storage.snapshot.file.FileSnapshotManager;
+import com.sm.charge.raft.server.storage.state.FileMemberStateManager;
 import com.sm.charge.raft.server.storage.state.MemberStateManager;
 import com.sm.finance.charge.common.AbstractService;
 import com.sm.finance.charge.common.Address;
@@ -36,8 +39,8 @@ import com.sm.finance.charge.common.NamedThreadFactory;
 import com.sm.finance.charge.common.utils.AddressUtil;
 import com.sm.finance.charge.common.utils.RandomUtil;
 import com.sm.finance.charge.common.utils.ThreadUtil;
-import com.sm.finance.charge.serializer.api.AbstractSerializerFactory;
 import com.sm.finance.charge.serializer.api.Serializer;
+import com.sm.finance.charge.serializer.api.SerializerFactory;
 import com.sm.finance.charge.transport.api.Connection;
 import com.sm.finance.charge.transport.api.ConnectionManager;
 import com.sm.finance.charge.transport.api.Transport;
@@ -73,8 +76,7 @@ public class RaftServerImpl extends AbstractService implements RaftServer, Maste
     private final ServerStateMachine serverStateMachine;
     private final TransportServer transportServer;
     private final TransportClient client;
-    private final RaftLogger log;
-    private final LogStateMachine logStateMachine;
+    private final RaftLogger raftLogger;
     private final SnapshotManager snapshotManager;
     private final MemberStateManager memberStateManager;
     private final ServerContext context;
@@ -82,24 +84,22 @@ public class RaftServerImpl extends AbstractService implements RaftServer, Maste
 
 
     public RaftServerImpl(RaftConfig raftConfig, LogStateMachine logStateMachine) {
-        this.logStateMachine = logStateMachine;
         this.raftConfig = raftConfig;
 
         Transport transport = TransportFactory.create(raftConfig.getTransportType());
         this.transportServer = transport.server();
         this.client = transport.client();
 
-
         Address address = AddressUtil.getLocalAddress(raftConfig.getPort());
         this.self = new RaftMember(client, address.getAddressStr(), address, null);
         this.cluster = new RaftClusterImpl(raftConfig.getClusterName(), self);
-        this.log = initLogger();
+        this.raftLogger = initLogger();
 
         this.snapshotManager = new FileSnapshotManager(raftConfig.getSnapshotDirectory(), raftConfig.getSnapshotName(), logStateMachine.getSerializer());
         this.memberStateManager = new FileMemberStateManager();
 
         ExecutorService executor = Executors.newSingleThreadExecutor(new NamedThreadFactory("LogApplyThread"));
-        this.serverStateMachine = new ServerStateMachine(log, self, logStateMachine, snapshotManager, executor);
+        this.serverStateMachine = new ServerStateMachine(raftLogger, self, logStateMachine, snapshotManager, executor);
 
         this.context = initContext(raftConfig);
         this.replicator = new Replicator(context, raftConfig.getMaxAppendSize(), raftConfig.getHeartbeatInterval());
@@ -112,7 +112,7 @@ public class RaftServerImpl extends AbstractService implements RaftServer, Maste
         String name = raftConfig.getLogName();
         File directory = new File(raftConfig.getLogDirectory());
 
-        Serializer serializer = AbstractSerializerFactory.create(raftConfig.getSerializeType(), new RaftDataTypes());
+        Serializer serializer = SerializerFactory.create(raftConfig.getSerializeType(), new CommandTypes());
         int logFileMaxSize = raftConfig.getLogFileMaxSize();
         int logFileMaxEntries = raftConfig.getLogFileMaxEntries();
         int commandMaxSize = raftConfig.getCommandMaxSize();
@@ -127,7 +127,7 @@ public class RaftServerImpl extends AbstractService implements RaftServer, Maste
 
         ServerContext.Builder builder = ServerContext.builder();
         builder.setCluster(cluster)
-            .setLog(log)
+            .setRaftLogger(raftLogger)
             .setMemberStateManager(memberStateManager)
             .setRaftConfig(raftConfig)
             .setSelf(self)
@@ -303,12 +303,55 @@ public class RaftServerImpl extends AbstractService implements RaftServer, Maste
     }
 
     @Override
-    public CompletableFuture<Object> handle(Command command) {
-        LogEntry entry = new LogEntry(command, cluster.version());
+    public <T> CompletableFuture<RaftResponse<T>> handle(CommandRequest request) {
+        RaftMember master = cluster.master();
+        if (master == null) {
+            RaftResponse<T> response = RaftResponse.fail(RaftError.NO_LEADER_ERROR);
+            return CompletableFuture.completedFuture(response);
+        }
 
-        return null;
+
+        if (!master.getNodeId().equals(self.getNodeId())) {
+            return forward(request, master);
+        }
+
+        LogEntry entry = new LogEntry(request.getCommand(), cluster.version());
+        long index = raftLogger.append(entry);
+        CompletableFuture<T> commitFuture = new CompletableFuture<>();
+        self.getState().addCommitFuture(index, commitFuture);
+
+        CompletableFuture<RaftResponse<T>> future = new CompletableFuture<>();
+        commitFuture.whenComplete((result, error) -> {
+            if (error == null) {
+                RaftResponse<T> response = RaftResponse.success(result);
+                future.complete(response);
+            } else {
+                future.completeExceptionally(error);
+            }
+        });
+        return future;
     }
 
+
+    private <T> CompletableFuture<RaftResponse<T>> forward(CommandRequest request, RaftMember master) {
+        CompletableFuture<RaftResponse<T>> future = new CompletableFuture<>();
+        Connection connection = master.getState().getConnection();
+        if (connection == null) {
+            logger.error("leader:{} connection is null", master.getNodeId());
+            RaftResponse<T> response = RaftResponse.fail(RaftError.INTERNAL_ERROR);
+            return CompletableFuture.completedFuture(response);
+        }
+
+        connection.<RaftResponse<T>>request(request).whenComplete((response, error) -> {
+            if (error == null) {
+                future.complete(response);
+            } else {
+                logger.error("forward command request:{} to leader:{} caught exception", request, master.getNodeId(), error);
+                future.completeExceptionally(error);
+            }
+        });
+        return future;
+    }
 
     @Override
     protected void doStart() throws Exception {

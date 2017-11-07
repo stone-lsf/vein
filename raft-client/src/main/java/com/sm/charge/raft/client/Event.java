@@ -1,4 +1,4 @@
-package com.sm.charge.raft.server.events;
+package com.sm.charge.raft.client;
 
 /**
  * @author shifeng.luo

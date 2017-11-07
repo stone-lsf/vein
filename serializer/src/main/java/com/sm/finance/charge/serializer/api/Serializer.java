@@ -13,7 +13,7 @@ public interface Serializer {
      * @param obj 待序列化对象
      * @return 字节数组
      */
-    byte[] serialize(Object obj);
+    byte[] serialize(Serializable obj);
 
     /**
      * 反序列化
@@ -21,5 +21,5 @@ public interface Serializer {
      * @param bytes 字节数组
      * @return 反序列化后的对象
      */
-    <T> T deserialize(byte[] bytes);
+    <T extends Serializable> T deserialize(byte[] bytes);
 }

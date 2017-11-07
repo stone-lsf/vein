@@ -1,16 +1,18 @@
 package com.sm.charge.raft.server;
 
 import com.sm.charge.raft.client.Command;
-import com.sm.charge.raft.server.events.VoteRequest;
-import com.sm.charge.raft.server.events.VoteResponse;
+import com.sm.charge.raft.client.protocal.CommandRequest;
+import com.sm.charge.raft.client.protocal.RaftResponse;
+import com.sm.charge.raft.server.events.AppendRequest;
+import com.sm.charge.raft.server.events.AppendResponse;
 import com.sm.charge.raft.server.events.InstallSnapshotRequest;
 import com.sm.charge.raft.server.events.InstallSnapshotResponse;
 import com.sm.charge.raft.server.events.JoinRequest;
 import com.sm.charge.raft.server.events.JoinResponse;
 import com.sm.charge.raft.server.events.LeaveRequest;
 import com.sm.charge.raft.server.events.LeaveResponse;
-import com.sm.charge.raft.server.events.AppendRequest;
-import com.sm.charge.raft.server.events.AppendResponse;
+import com.sm.charge.raft.server.events.VoteRequest;
+import com.sm.charge.raft.server.events.VoteResponse;
 import com.sm.finance.charge.common.base.Closable;
 import com.sm.finance.charge.common.base.Startable;
 import com.sm.finance.charge.transport.api.support.RequestContext;
@@ -44,5 +46,5 @@ public interface RaftServer extends Startable, Closable {
 
     CompletableFuture<InstallSnapshotResponse> handle(InstallSnapshotRequest request);
 
-    CompletableFuture<Object> handle(Command command);
+    <T> CompletableFuture<RaftResponse<T>> handle(CommandRequest request);
 }

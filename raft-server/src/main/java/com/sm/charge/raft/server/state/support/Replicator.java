@@ -86,9 +86,9 @@ public class Replicator extends LoggerSupport {
         long prevLogIndex = 0;
         long prevLogTerm = 0;
 
-        RaftLogger log = this.context.getLog();
+        RaftLogger raftLogger = this.context.getRaftLogger();
         long nextLogIndex = member.getNextLogIndex();
-        LogEntry entry = log.get(nextLogIndex - 1);
+        LogEntry entry = raftLogger.get(nextLogIndex - 1);
         if (entry != null) {
             prevLogIndex = entry.getIndex();
             prevLogTerm = entry.getTerm();
@@ -107,14 +107,14 @@ public class Replicator extends LoggerSupport {
         ArrayList<LogEntry> entries = new ArrayList<>();
         long start = System.currentTimeMillis();
         long now = start;
-        long lastIndex = log.lastIndex();
+        long lastIndex = raftLogger.lastIndex();
         while (now - start < appendInterval) {
             if (entries.size() == 0 && nextLogIndex > lastIndex) { //此时follower与master同步，没有消息需要发送，sleep
                 long waitTime = appendInterval - (now - start);
                 ThreadUtil.sleepInterrupted(waitTime);
             }
 
-            LogEntry logEntry = log.get(nextLogIndex);
+            LogEntry logEntry = raftLogger.get(nextLogIndex);
             if (logEntry != null) {
                 entries.add(logEntry);
             }

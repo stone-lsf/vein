@@ -1,10 +1,12 @@
 package com.sm.finance.charge.transport.api;
 
+import com.sm.finance.charge.serializer.api.Serializable;
+
 /**
  * @author shifeng.luo
  * @version created on 2017/9/11 下午5:07
  */
-public class Response {
+public class Response implements Serializable {
     public static final Object EMPTY_MESSAGE = new Object();
 
     private int id;

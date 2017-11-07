@@ -27,7 +27,7 @@ public class ServerContext extends LoggerSupport {
 
     private final SnapshotManager snapshotManager;
 
-    private final RaftLogger log;
+    private final RaftLogger raftLogger;
 
     private final RaftMember self;
 
@@ -43,12 +43,12 @@ public class ServerContext extends LoggerSupport {
     private volatile RaftState state = FOLLOWER;
 
     private ServerContext(TransportClient client, RaftConfig raftConfig, SnapshotManager snapshotManager,
-                          RaftLogger log, RaftMember self, RaftCluster cluster, ServerStateMachine stateMachine,
+                          RaftLogger raftLogger, RaftMember self, RaftCluster cluster, ServerStateMachine stateMachine,
                           MemberStateManager memberStateManager, EventExecutor eventExecutor) {
         this.client = client;
         this.raftConfig = raftConfig;
         this.snapshotManager = snapshotManager;
-        this.log = log;
+        this.raftLogger = raftLogger;
         this.self = self;
         this.cluster = cluster;
         this.stateMachine = stateMachine;
@@ -60,21 +60,17 @@ public class ServerContext extends LoggerSupport {
         return cluster;
     }
 
-
     public SnapshotManager getSnapshotManager() {
         return snapshotManager;
     }
 
-
-    public RaftLogger getLog() {
-        return log;
+    public RaftLogger getRaftLogger() {
+        return raftLogger;
     }
-
 
     public RaftMember getSelf() {
         return self;
     }
-
 
     public ServerStateMachine getStateMachine() {
         return stateMachine;
@@ -189,7 +185,7 @@ public class ServerContext extends LoggerSupport {
             return this;
         }
 
-        public Builder setLog(RaftLogger log) {
+        public Builder setRaftLogger(RaftLogger log) {
             this.log = log;
             return this;
         }

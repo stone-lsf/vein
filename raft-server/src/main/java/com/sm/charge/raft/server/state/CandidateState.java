@@ -64,8 +64,8 @@ public class CandidateState extends AbstractState {
 
     private void requestVotes(VoteQuorum voteQuorum) {
         List<RaftMember> members = context.getCluster().members();
-        RaftLogger log = context.getLog();
-        LogEntry entry = log.lastEntry();
+        RaftLogger raftLogger = context.getRaftLogger();
+        LogEntry entry = raftLogger.lastEntry();
         long lastIndex = entry == null ? 0 : entry.getIndex();
         long lastTerm = entry == null ? 0 : entry.getTerm();
         long term = self.getTerm();

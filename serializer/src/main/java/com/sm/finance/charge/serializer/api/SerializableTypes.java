@@ -6,14 +6,14 @@ package com.sm.finance.charge.serializer.api;
  * @author shifeng.luo
  * @version created on 2017/9/11 下午3:21
  */
-public interface DataStructure {
+public interface SerializableTypes {
     /**
      * 根据对象类型获取对应的编码
      *
      * @param clazz 对象类型
      * @return 编码
      */
-    byte getStructType(Class<?> clazz);
+    byte getType(Class<? extends Serializable> clazz);
 
     /**
      * 根据编码获取对应的对象类型
@@ -21,5 +21,5 @@ public interface DataStructure {
      * @param type 编码
      * @return 对象类型
      */
-    Class<?> getStruct(byte type);
+    Class<? extends Serializable> getSerializable(byte type);
 }
