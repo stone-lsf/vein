@@ -17,6 +17,7 @@ import com.sm.charge.memory.pushpull.PushPullTask;
 import com.sm.finance.charge.common.AbstractService;
 import com.sm.finance.charge.common.Address;
 import com.sm.finance.charge.common.utils.AddressUtil;
+import com.sm.finance.charge.common.utils.ThreadUtil;
 import com.sm.finance.charge.transport.api.ConnectionManager;
 import com.sm.finance.charge.transport.api.Transport;
 import com.sm.finance.charge.transport.api.TransportClient;
@@ -80,17 +81,28 @@ public class DiscoveryServiceImpl extends AbstractService implements DiscoverySe
 
         String members = config.getMembers();
         List<Address> addresses = AddressUtil.parseList(members);
+
+        int retryTimes = 3;
         int success = 0;
-        for (Address address : addresses) {
-            try {
-                pushPullService.pushPull(address);
-                success++;
-            } catch (Exception e) {
-                logger.error("push and pull message from node[{}] failed,cased by ", address, e);
+        while (retryTimes > 0) {
+            for (Address address : addresses) {
+                try {
+                    pushPullService.pushPull(address);
+                    success++;
+                } catch (Exception e) {
+                    logger.error("push and pull message from node[{}] failed,cased by ", address, e);
+                }
+            }
+
+            if (success == 0) {
+                ThreadUtil.sleepUnInterrupted(2000);
+                retryTimes--;
+            } else {
+                return true;
             }
         }
 
-        return success > 0;
+        return false;
     }
 
     @Override

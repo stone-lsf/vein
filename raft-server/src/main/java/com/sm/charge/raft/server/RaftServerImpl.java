@@ -37,6 +37,7 @@ import com.sm.finance.charge.common.AbstractService;
 import com.sm.finance.charge.common.Address;
 import com.sm.finance.charge.common.NamedThreadFactory;
 import com.sm.finance.charge.common.utils.AddressUtil;
+import com.sm.finance.charge.common.utils.FileUtil;
 import com.sm.finance.charge.common.utils.RandomUtil;
 import com.sm.finance.charge.common.utils.ThreadUtil;
 import com.sm.finance.charge.serializer.api.Serializer;
@@ -50,6 +51,7 @@ import com.sm.finance.charge.transport.api.TransportServer;
 import com.sm.finance.charge.transport.api.support.RequestContext;
 
 import java.io.File;
+import java.nio.file.NotDirectoryException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -110,7 +112,13 @@ public class RaftServerImpl extends AbstractService implements RaftServer, Maste
 
     private RaftLogger initLogger() {
         String name = raftConfig.getLogName();
-        File directory = new File(raftConfig.getLogDirectory());
+        File directory;
+        try {
+            directory = FileUtil.mkDirIfAbsent(raftConfig.getLogDirectory());
+        } catch (NotDirectoryException e) {
+            logger.error("path:{} is not a directory", raftConfig.getLogDirectory());
+            throw new IllegalStateException(e);
+        }
 
         Serializer serializer = SerializerFactory.create(raftConfig.getSerializeType(), new CommandTypes());
         int logFileMaxSize = raftConfig.getLogFileMaxSize();

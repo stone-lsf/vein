@@ -13,7 +13,6 @@ import com.sm.finance.charge.transport.api.TransportFactory;
 import com.sm.finance.charge.transport.api.TransportServer;
 import com.sm.finance.charge.transport.api.exceptions.BindException;
 
-import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -23,8 +22,8 @@ import java.io.File;
  * @author shifeng.luo
  * @version created on 2017/10/22 上午11:11
  */
-//@Component
-public class ChargeServer extends LoggerSupport implements InitializingBean {
+@Component
+public class ChargeServer extends LoggerSupport {
 
     private ClusterService clusterService;
 
@@ -39,6 +38,11 @@ public class ChargeServer extends LoggerSupport implements InitializingBean {
 
     public void start() {
         listenPort();
+
+        String profile = SystemConstants.PROFILE == null ? "dev" : SystemConstants.PROFILE;
+        Configure configure = ConfigureLoader.loader(profile + File.separator + "cluster.properties");
+        clusterService = new ClusterServiceImpl(new ClusterConfig(configure), new PrintLogStateMachine());
+
         try {
             clusterService.start();
         } catch (Exception e) {
@@ -47,7 +51,7 @@ public class ChargeServer extends LoggerSupport implements InitializingBean {
         }
     }
 
-    public void listenPort() {
+    private void listenPort() {
         Transport transport = TransportFactory.create(transportType);
         this.transportServer = transport.server();
         try {
@@ -65,15 +69,5 @@ public class ChargeServer extends LoggerSupport implements InitializingBean {
             logger.error("close charge server caught exception", e);
             throw new RuntimeException(e);
         }
-    }
-
-    @Override
-    public void afterPropertiesSet() throws Exception {
-        String profile = SystemConstants.PROFILE == null ? "dev" : SystemConstants.PROFILE;
-
-        Configure configure = ConfigureLoader.loader(profile + File.separator + "cluster.properties");
-        clusterService = new ClusterServiceImpl(new ClusterConfig(configure), new PrintLogStateMachine());
-
-        start();
     }
 }

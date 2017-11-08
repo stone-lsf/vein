@@ -13,6 +13,7 @@ import java.net.InetSocketAddress;
 import java.util.concurrent.CompletableFuture;
 
 import io.netty.bootstrap.Bootstrap;
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
@@ -31,9 +32,11 @@ public class NettyClient extends AbstractClient {
     private final ConnectionManager connectionManager = new DefaultConnectionManager();
     private final Bootstrap bootstrap;
     private final NettyHandler handler;
+    private final int defaultTimeout;
 
     NettyClient(EventLoopGroup workerGroup, int defaultTimeout) {
-        this.handler = new NettyHandler(connectionManager, new ClientConnectionListener(), defaultTimeout);
+        this.handler = new NettyHandler(connectionManager, defaultTimeout);
+        this.defaultTimeout = defaultTimeout;
 
         bootstrap = new Bootstrap();
         bootstrap.group(workerGroup)
@@ -59,9 +62,17 @@ public class NettyClient extends AbstractClient {
         bootstrap.connect(socketAddress).addListener(future -> {
             ChannelFuture channelFuture = (ChannelFuture) future;
             if (channelFuture.isSuccess()) {
-                logger.info("connect to:{}", address);
-                String channelId = ChannelHelper.getChannelId(channelFuture.channel());
-                Connection connection = connectionManager.getConnection(channelId);
+                logger.info("connect to:{} success", address);
+
+                Channel channel = channelFuture.channel();
+                InetSocketAddress remote = (InetSocketAddress) channel.remoteAddress();
+                Address remoteAddress = new Address(remote);
+
+                InetSocketAddress local = (InetSocketAddress) channel.localAddress();
+                Address localAddress = new Address(local);
+
+                NettyConnection connection = new NettyConnection(remoteAddress, localAddress, defaultTimeout, channel);
+                connectionManager.addConnection(connection);
                 result.complete(connection);
             } else {
                 Throwable cause = channelFuture.cause();
@@ -96,12 +107,5 @@ public class NettyClient extends AbstractClient {
     @Override
     public boolean isClosed() {
         return closed.get();
-    }
-
-    private class ClientConnectionListener implements ConnectionListener {
-
-        @Override
-        public void onConnect(Connection connection) {
-        }
     }
 }

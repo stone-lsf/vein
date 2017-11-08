@@ -60,8 +60,10 @@ public class ClusterServiceImpl extends AbstractService implements ClusterServic
     protected void doStart() throws Exception {
         String profile = SystemConstants.PROFILE == null ? "dev" : SystemConstants.PROFILE;
 
-        Configure configure = ConfigureLoader.loader(profile + File.pathSeparator + "discovery.properties");
+        Configure configure = ConfigureLoader.loader(profile + File.separator+ "discovery.properties");
         discoveryService = new DiscoveryServiceImpl(new DiscoveryConfig(configure));
+        discoveryService.start();
+
         boolean success = discoveryService.join();
         if (!success) {
             throw new RuntimeException("discovery service join failed");
@@ -73,9 +75,10 @@ public class ClusterServiceImpl extends AbstractService implements ClusterServic
         }
         Preconditions.checkState(stateMachine != null);
 
-        configure = ConfigureLoader.loader(profile + File.pathSeparator + "raft.properties");
+        configure = ConfigureLoader.loader(profile + File.separator + "raft.properties");
         RaftConfig raftConfig = new RaftConfig(configure);
         raftServer = new RaftServerImpl(raftConfig, stateMachine);
+        raftServer.start();
         raftServer.join();
 
         listenPort(config.getBindPort());

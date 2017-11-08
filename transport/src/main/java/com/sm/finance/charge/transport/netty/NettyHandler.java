@@ -22,19 +22,20 @@ import io.netty.channel.ChannelPromise;
  */
 @Sharable
 public class NettyHandler extends ChannelHandlerAdapter {
-    private static final Logger LOGGER = LoggerFactory.getLogger(NettyHandler.class);
+    private static final Logger logger = LoggerFactory.getLogger(NettyHandler.class);
     private final ConnectionManager connectionManager;
-    private final ConnectionListener listener;
-    private int defaultTimeout;
+    private ConnectionListener listener;
+    private final int defaultTimeout;
 
-//    /**
-//     * NettyHandler 构造函数，创建Client时调用
-//     *
-//     * @param connectionManager 连接管理器
-//     */
-//    public NettyHandler(ConnectionManager connectionManager) {
-//        this.connectionManager = connectionManager;
-//    }
+    /**
+     * NettyHandler 构造函数，创建Client时调用
+     *
+     * @param connectionManager 连接管理器
+     */
+    public NettyHandler(ConnectionManager connectionManager, int defaultTimeout) {
+        this.connectionManager = connectionManager;
+        this.defaultTimeout = defaultTimeout;
+    }
 
     /**
      * NettyHandler 构造函数，
@@ -52,8 +53,10 @@ public class NettyHandler extends ChannelHandlerAdapter {
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
         Channel channel = ctx.channel();
-        LOGGER.info("receive channel:{}", channel);
-        receiveChannel(channel);
+        logger.info("receive channel:{}", channel);
+        if (listener != null) {
+            receiveChannel(channel);
+        }
         super.channelActive(ctx);
     }
 
@@ -70,6 +73,7 @@ public class NettyHandler extends ChannelHandlerAdapter {
         Address localAddress = new Address(local);
 
         NettyConnection connection = new NettyConnection(remoteAddress, localAddress, defaultTimeout, channel);
+        logger.info("connection id:{}", connection.getConnectionId());
         connectionManager.addConnection(connection);
         listener.onConnect(connection);
     }
@@ -78,7 +82,7 @@ public class NettyHandler extends ChannelHandlerAdapter {
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         Connection connection = connectionManager.getConnection(ChannelHelper.getChannelId(ctx.channel()));
         if (connection != null) {
-            LOGGER.debug("connection:", connection);
+            logger.debug("connection:", connection);
             connection.onMessage(msg);
         }
         super.channelRead(ctx, msg);
@@ -100,7 +104,7 @@ public class NettyHandler extends ChannelHandlerAdapter {
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-        LOGGER.error("caught exception:", cause);
+        logger.error("caught exception:", cause);
         super.exceptionCaught(ctx, cause);
     }
 }
