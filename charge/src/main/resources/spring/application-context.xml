@@ -19,7 +19,11 @@
     <task:annotation-driven/>
 
     <bean id="propertyConfigurer" class="com.sm.finance.charge.server.common.MultiModeConfigurer">
-        <property name="location" value="classpath:${profile}/*.properties"/>
+        <property name="locations">
+            <list>
+                <value>classpath:${profile}/*.properties</value>
+            </list>
+        </property>
     </bean>
 
 </beans>

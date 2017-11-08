@@ -28,6 +28,10 @@ public class ClusterConfig {
         return configure.getInt(ClusterSetting.port, ClusterSetting.defaultPort);
     }
 
+    public String getTransportType(){
+        return configure.getString(ClusterSetting.transportType, ClusterSetting.defaultTransportType);
+    }
+
     public int getElectTimeout() {
         return configure.getInt(ClusterSetting.electTimeout, ClusterSetting.defaultElectTimeout);
     }

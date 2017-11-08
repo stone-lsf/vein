@@ -86,10 +86,9 @@
         </dependency>
         <!--json end -->
 
-
         <dependency>
             <groupId>com.sm.finance</groupId>
-            <artifactId>charge-raft-server</artifactId>
+            <artifactId>charge-cluster</artifactId>
             <version>1.0.0-SNAPSHOT</version>
         </dependency>
 

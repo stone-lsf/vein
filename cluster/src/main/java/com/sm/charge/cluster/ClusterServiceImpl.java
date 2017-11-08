@@ -19,6 +19,11 @@ import com.sm.finance.charge.common.SystemConstants;
 import com.sm.finance.charge.common.base.Configure;
 import com.sm.finance.charge.common.base.ConfigureLoader;
 import com.sm.finance.charge.common.utils.AddressUtil;
+import com.sm.finance.charge.transport.api.Connection;
+import com.sm.finance.charge.transport.api.Transport;
+import com.sm.finance.charge.transport.api.TransportFactory;
+import com.sm.finance.charge.transport.api.TransportServer;
+import com.sm.finance.charge.transport.api.exceptions.BindException;
 
 import java.io.File;
 import java.util.List;
@@ -35,6 +40,7 @@ public class ClusterServiceImpl extends AbstractService implements ClusterServic
     private final Server self;
     private final ClusterConfig config;
     private final LogStateMachine stateMachine;
+    private TransportServer transportServer;
     private DiscoveryService discoveryService;
     private RaftServer raftServer;
     private Store store;
@@ -71,6 +77,20 @@ public class ClusterServiceImpl extends AbstractService implements ClusterServic
         RaftConfig raftConfig = new RaftConfig(configure);
         raftServer = new RaftServerImpl(raftConfig, stateMachine);
         raftServer.join();
+
+        listenPort(config.getBindPort());
+    }
+
+
+    private void listenPort(int port) {
+        Transport transport = TransportFactory.create(config.getTransportType());
+        this.transportServer = transport.server();
+        try {
+            transportServer.listen(port, (Connection connection) -> logger.info("accept connection:{}", connection.getConnectionId()));
+        } catch (BindException e) {
+            logger.error("bind port:{} caught exception", port, e);
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
@@ -79,6 +99,8 @@ public class ClusterServiceImpl extends AbstractService implements ClusterServic
             raftServer.close();
         }
         discoveryService.close();
+
+        transportServer.close();
     }
 
     @Override
