@@ -13,6 +13,7 @@ import com.sm.finance.charge.transport.api.TransportFactory;
 import com.sm.finance.charge.transport.api.TransportServer;
 import com.sm.finance.charge.transport.api.exceptions.BindException;
 
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -23,7 +24,7 @@ import java.io.File;
  * @version created on 2017/10/22 上午11:11
  */
 @Service
-public class ChargeServer extends LoggerSupport {
+public class ChargeServer extends LoggerSupport implements InitializingBean{
 
     private ClusterService clusterService;
 
@@ -38,10 +39,6 @@ public class ChargeServer extends LoggerSupport {
 
     public void start() {
         listenPort();
-
-        String profile = SystemConstants.PROFILE == null ? "dev" : SystemConstants.PROFILE;
-        Configure configure = ConfigureLoader.loader(profile + File.separator + "cluster.properties");
-        clusterService = new ClusterServiceImpl(new ClusterConfig(configure), new PrintLogStateMachine());
 
         try {
             clusterService.start();
@@ -73,4 +70,10 @@ public class ChargeServer extends LoggerSupport {
     }
 
 
+    @Override
+    public void afterPropertiesSet() throws Exception {
+        String profile = SystemConstants.PROFILE == null ? "dev" : SystemConstants.PROFILE;
+        Configure configure = ConfigureLoader.loader(profile + File.separator + "cluster.properties");
+        clusterService = new ClusterServiceImpl(new ClusterConfig(configure), new PrintLogStateMachine());
+    }
 }

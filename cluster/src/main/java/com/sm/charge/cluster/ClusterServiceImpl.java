@@ -1,7 +1,5 @@
 package com.sm.charge.cluster;
 
-import com.google.common.base.Preconditions;
-
 import com.sm.charge.cluster.exceptions.NoGroupException;
 import com.sm.charge.cluster.group.GroupService;
 import com.sm.charge.cluster.group.GroupServiceImpl;
@@ -10,9 +8,7 @@ import com.sm.charge.memory.DiscoveryConfig;
 import com.sm.charge.memory.DiscoveryService;
 import com.sm.charge.memory.DiscoveryServiceImpl;
 import com.sm.charge.raft.server.LogStateMachine;
-import com.sm.charge.raft.server.RaftConfig;
 import com.sm.charge.raft.server.RaftServer;
-import com.sm.charge.raft.server.RaftServerImpl;
 import com.sm.finance.charge.common.AbstractService;
 import com.sm.finance.charge.common.Address;
 import com.sm.finance.charge.common.SystemConstants;
@@ -60,7 +56,7 @@ public class ClusterServiceImpl extends AbstractService implements ClusterServic
     protected void doStart() throws Exception {
         String profile = SystemConstants.PROFILE == null ? "dev" : SystemConstants.PROFILE;
 
-        Configure configure = ConfigureLoader.loader(profile + File.separator+ "discovery.properties");
+        Configure configure = ConfigureLoader.loader(profile + File.separator + "discovery.properties");
         discoveryService = new DiscoveryServiceImpl(new DiscoveryConfig(configure));
         discoveryService.start();
 
@@ -69,17 +65,19 @@ public class ClusterServiceImpl extends AbstractService implements ClusterServic
             throw new RuntimeException("discovery service join failed");
         }
 
-        ServerType type = self.getType();
-        if (type != ServerType.core) {
-            return;
-        }
-        Preconditions.checkState(stateMachine != null);
+        logger.info("server:{} join discovery success", self.getNodeId());
 
-        configure = ConfigureLoader.loader(profile + File.separator + "raft.properties");
-        RaftConfig raftConfig = new RaftConfig(configure);
-        raftServer = new RaftServerImpl(raftConfig, stateMachine);
-        raftServer.start();
-        raftServer.join();
+//        ServerType type = self.getType();
+//        if (type != ServerType.core) {
+//            return;
+//        }
+//        Preconditions.checkState(stateMachine != null);
+//
+//        configure = ConfigureLoader.loader(profile + File.separator + "raft.properties");
+//        RaftConfig raftConfig = new RaftConfig(configure);
+//        raftServer = new RaftServerImpl(raftConfig, stateMachine);
+//        raftServer.start();
+//        raftServer.join();
 
         listenPort(config.getBindPort());
     }

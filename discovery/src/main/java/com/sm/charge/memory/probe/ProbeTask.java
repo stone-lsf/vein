@@ -37,22 +37,32 @@ public class ProbeTask extends LoggerSupport implements Runnable {
         try {
             while (true) {
                 int size = nodes.size();
-                if (numCheck >= size) {
-                    logger.info("node:{} can't find suitable node to probe，checked:{},total:{}", nodes.getSelf(), numCheck, size);
-                    return;
-                }
-
                 if (probeIndex >= size) {
                     probeIndex = 0;
                     nodes.removeDeadNodes();
                     continue;
                 }
 
+                if (numCheck >= size) {
+                    logger.info("node:{} can't find suitable node to probe，checked:{},total:{}", nodes.getSelf(), numCheck, size);
+                    return;
+                }
+
                 Node node = nodes.get(probeIndex);
                 numCheck++;
                 probeIndex++;
+                if (node == null) {
+                    logger.warn("probe index:{} don't contain node", probeIndex - 1);
+                    continue;
+                }
 
-                if (node == null || node.getStatus() == DEAD || nodes.isLocalNode(node.getNodeId())) {
+                if (node.getStatus() == DEAD) {
+                    logger.warn("probe node:{} has dead", node.getNodeId(), node.getStatus());
+                    continue;
+                }
+
+                if (nodes.isLocalNode(node.getNodeId())) {
+                    logger.warn("probe node:{} is local node", node.getNodeId(), node.getStatus());
                     continue;
                 }
 
@@ -71,11 +81,12 @@ public class ProbeTask extends LoggerSupport implements Runnable {
             return;
         }
 
+        logger.info("ping node:{} failed, starting to redirect ping", node.getNodeId());
         boolean success = probeService.redirectPing(node, redirectPingTimeout);
         if (success) {
             return;
         }
-        logger.warn("node:{} can't success probe node:{} ", nodes.getLocalNode().getNodeId(), node.getNodeId());
+        logger.warn("redirect probe node:{} failed! ", node.getNodeId());
 
         long incarnation = node.getIncarnation();
         SuspectMessage message = new SuspectMessage(node.getNodeId(), node.getAddress(), incarnation, nodes.getSelf());

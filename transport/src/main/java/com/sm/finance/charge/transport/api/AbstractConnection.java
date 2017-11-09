@@ -38,7 +38,7 @@ public abstract class AbstractConnection extends AbstractService implements Conn
 
     private final ConcurrentMap<Class, RequestHandler> requestHandlers = new ConcurrentHashMap<>();
     private final ConcurrentMap<Integer, CompletableFuture> responseFutures = new ConcurrentHashMap<>();
-    private final ConcurrentMap<Integer, Request> requestMap = new ConcurrentHashMap<>();
+    private final ConcurrentMap<Integer, RequestInfo> requestMap = new ConcurrentHashMap<>();
 
     public AbstractConnection(Address remoteAddress, Address localAddress, int defaultTimeout) {
         this.remoteAddress = remoteAddress;
@@ -100,7 +100,7 @@ public abstract class AbstractConnection extends AbstractService implements Conn
         int id = idGenerator.nextId();
         Request request = new Request(id, message);
         responseFutures.put(id, result);
-        requestMap.put(id, request);
+        requestMap.put(id, new RequestInfo(request, System.currentTimeMillis()));
         try {
             sendRequest(request, timeout);
         } catch (Exception e) {
@@ -221,11 +221,11 @@ public abstract class AbstractConnection extends AbstractService implements Conn
             return;
         }
 
-        Request request = requestMap.remove(response.getId());
+        RequestInfo info = requestMap.remove(response.getId());
         StringBuilder logBuilder = new StringBuilder();
-        logBuilder.append("###")
-            .append(request.getId()).append("###")
-            .append(request.getMessage()).append("###");
+        logBuilder.append("###").append(System.currentTimeMillis() - info.startTime).append("###")
+            .append(info.request.getId()).append("###")
+            .append(info.request.getMessage()).append("###");
 
         timeoutScheduler.cancel(response.getId());
         if (!response.hasException()) {
@@ -273,5 +273,15 @@ public abstract class AbstractConnection extends AbstractService implements Conn
 
     private String buildConnectionId() {
         return localAddress.getIp() + ":" + localAddress.getPort() + "/" + remoteAddress.getIp() + ":" + remoteAddress.getPort();
+    }
+
+    private class RequestInfo {
+        private Request request;
+        private long startTime;
+
+        RequestInfo(Request request, long startTime) {
+            this.request = request;
+            this.startTime = startTime;
+        }
     }
 }
