@@ -127,6 +127,7 @@ public class LeaderState extends AbstractState {
             response.setIndex(context.getRaftLogger().lastIndex());
             response.setTerm(self.getTerm());
             response.setMembers(members);
+            member.getState().startReplicate();
             return response;
         }
 

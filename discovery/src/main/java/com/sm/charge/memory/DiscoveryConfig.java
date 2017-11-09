@@ -1,5 +1,6 @@
 package com.sm.charge.memory;
 
+import com.sm.finance.charge.common.Address;
 import com.sm.finance.charge.common.base.Configure;
 
 import java.util.UUID;
@@ -117,8 +118,8 @@ public class DiscoveryConfig {
         this.configure = configure;
     }
 
-    public String getNodeId() {
-        return configure.getString(NODE_ID, DEFAULT_NODE_ID);
+    public String getNodeId(Address address) {
+        return configure.getString(NODE_ID, address.getAddressStr());
     }
 
 
@@ -196,7 +197,7 @@ public class DiscoveryConfig {
         return configure.getInt(INDIRECT_NODE_NUM, DEFAULT_INDIRECT_NODE_NUM);
     }
 
-    public int getMaxGossipTimes(){
+    public int getMaxGossipTimes() {
         return configure.getInt(MESSAGE_MAX_GOSSIP_TIMES, DEFAULT_MESSAGE_MAX_GOSSIP_TIMES);
     }
 

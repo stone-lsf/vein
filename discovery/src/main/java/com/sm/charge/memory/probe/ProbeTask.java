@@ -34,29 +34,33 @@ public class ProbeTask extends LoggerSupport implements Runnable {
     public void run() {
         int numCheck = 0;
 
-        while (true) {
-            int size = nodes.size();
-            if (numCheck >= size) {
-                logger.info("node:{} can't find suitable node to probe，checked:{},total:{}", nodes.getSelf(), numCheck, size);
+        try {
+            while (true) {
+                int size = nodes.size();
+                if (numCheck >= size) {
+                    logger.info("node:{} can't find suitable node to probe，checked:{},total:{}", nodes.getSelf(), numCheck, size);
+                    return;
+                }
+
+                if (probeIndex >= size) {
+                    probeIndex = 0;
+                    nodes.removeDeadNodes();
+                    continue;
+                }
+
+                Node node = nodes.get(probeIndex);
+                numCheck++;
+                probeIndex++;
+
+                if (node == null || node.getStatus() == DEAD || nodes.isLocalNode(node.getNodeId())) {
+                    continue;
+                }
+
+                probe(node);
                 return;
             }
-
-            if (probeIndex >= size) {
-                probeIndex = 0;
-                nodes.removeDeadNodes();
-                continue;
-            }
-
-            Node node = nodes.get(probeIndex);
-            numCheck++;
-            probeIndex++;
-
-            if (node == null || node.getStatus() == DEAD || nodes.isLocalNode(node.getNodeId())) {
-                continue;
-            }
-
-            probe(node);
-            return;
+        } catch (Throwable e) {
+            logger.error("execute throwable task caught exception", e);
         }
     }
 

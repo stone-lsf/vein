@@ -43,6 +43,7 @@ public class Replicator extends LoggerSupport {
         Connection connection = member.getState().getConnection();
         if (connection == null) {
             logger.error("member:{} don't have connection", member.getNodeId());
+            member.getState().stopReplicate();
             return CompletableFuture.completedFuture(null);
         }
 

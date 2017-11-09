@@ -59,7 +59,8 @@ public class DiscoveryServiceImpl extends AbstractService implements DiscoverySe
         Address address = AddressUtil.getLocalAddress(config.getBindPort());
 
         NodeType type = NodeType.valueOf(config.getNodeType());
-        localNode = new Node(config.getNodeId(), address, type, 0, new Date(), ALIVE);
+        String nodeId = config.getNodeId(address);
+        localNode = new Node(nodeId, address, type, 0, new Date(), ALIVE);
 
         Transport transport = TransportFactory.create(config.getTransportType());
         TransportClient client = transport.client();
@@ -67,7 +68,7 @@ public class DiscoveryServiceImpl extends AbstractService implements DiscoverySe
 
         this.serverContext = new ServerContext(localNode.getNodeId(), client, server);
 
-        nodes = new Nodes(config.getNodeId());
+        nodes = new Nodes(nodeId);
         messageQueue = new MessageGossiper(nodes, config, serverContext.getExecutorService());
     }
 

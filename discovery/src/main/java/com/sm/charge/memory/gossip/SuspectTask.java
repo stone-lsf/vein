@@ -41,17 +41,21 @@ public class SuspectTask extends LoggerSupport implements Runnable {
     @Override
     public void run() {
         logger.info("handle node[{}] suspect time out", nodeId);
-        Node node = nodes.get(nodeId);
-        if (node == null) {
-            logger.warn("handle node:{} suspect timeout,but it's not in nodes", nodeId);
-            return;
-        }
+        try {
+            Node node = nodes.get(nodeId);
+            if (node == null) {
+                logger.warn("handle node:{} suspect timeout,but it's not in nodes", nodeId);
+                return;
+            }
 
-        NodeStatus status = node.getStatus();
-        if (status == SUSPECT && node.getStatusChangeTime().equals(createTime)) {
-            logger.info("marking node [{}] as failed by suspect timeout happened", nodeId);
-            DeadMessage message = new DeadMessage(nodeId, node.getIncarnation(), nodes.getSelf());
-            messageService.deadNode(message);
+            NodeStatus status = node.getStatus();
+            if (status == SUSPECT && node.getStatusChangeTime().equals(createTime)) {
+                logger.info("marking node [{}] as failed by suspect timeout happened", nodeId);
+                DeadMessage message = new DeadMessage(nodeId, node.getIncarnation(), nodes.getSelf());
+                messageService.deadNode(message);
+            }
+        } catch (Throwable e) {
+            logger.error("execute suspect task caught exception", e);
         }
     }
 
