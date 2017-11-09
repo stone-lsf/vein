@@ -13,9 +13,8 @@ import com.sm.finance.charge.transport.api.TransportFactory;
 import com.sm.finance.charge.transport.api.TransportServer;
 import com.sm.finance.charge.transport.api.exceptions.BindException;
 
-import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 import java.io.File;
 
@@ -23,8 +22,8 @@ import java.io.File;
  * @author shifeng.luo
  * @version created on 2017/10/22 上午11:11
  */
-@Component
-public class ChargeServer extends LoggerSupport implements InitializingBean{
+@Service
+public class ChargeServer extends LoggerSupport {
 
     private ClusterService clusterService;
 
@@ -65,6 +64,7 @@ public class ChargeServer extends LoggerSupport implements InitializingBean{
 
     public void close() {
         try {
+            clusterService.close();
             transportServer.close();
         } catch (Exception e) {
             logger.error("close charge server caught exception", e);
@@ -72,8 +72,5 @@ public class ChargeServer extends LoggerSupport implements InitializingBean{
         }
     }
 
-    @Override
-    public void afterPropertiesSet() throws Exception {
-        start();
-    }
+
 }

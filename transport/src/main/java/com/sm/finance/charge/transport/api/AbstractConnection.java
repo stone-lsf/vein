@@ -38,6 +38,7 @@ public abstract class AbstractConnection extends AbstractService implements Conn
 
     private final ConcurrentMap<Class, RequestHandler> requestHandlers = new ConcurrentHashMap<>();
     private final ConcurrentMap<Integer, CompletableFuture> responseFutures = new ConcurrentHashMap<>();
+    private final ConcurrentMap<Integer, Request> requestMap = new ConcurrentHashMap<>();
 
     public AbstractConnection(Address remoteAddress, Address localAddress, int defaultTimeout) {
         this.remoteAddress = remoteAddress;
@@ -99,6 +100,7 @@ public abstract class AbstractConnection extends AbstractService implements Conn
         int id = idGenerator.nextId();
         Request request = new Request(id, message);
         responseFutures.put(id, result);
+        requestMap.put(id, request);
         try {
             sendRequest(request, timeout);
         } catch (Exception e) {
@@ -160,37 +162,22 @@ public abstract class AbstractConnection extends AbstractService implements Conn
             return;
         }
 
-        StringBuilder logBuilder = new StringBuilder();
         int requestId = request.getId();
-        logBuilder.append("###").append(requestId).append("###");
         try {
-            logBuilder.append(requestMessage.toString()).append("###");
             RequestContext context = new RequestContext(requestId, this, remoteAddress);
             CompletableFuture<Object> responseFuture = handler.handle(requestMessage, context);
             if (responseFuture == null) {
-                logBuilder.append("").append("###").append(connectionId);
-                logger.info(logBuilder.toString());
                 return;
             }
 
-
             responseFuture.whenComplete((response, error) -> {
                 if (error != null) {
-                    logBuilder.append(error.getMessage()).append("###").append(connectionId);
-                    logger.info(logBuilder.toString());
                     handleRequestFailure(requestId, error, handler.getAllListeners());
                 } else {
-                    if (response != null){
-                        logBuilder.append(response.toString());
-                    }
-                    logBuilder.append("###").append(connectionId);
-                    logger.info(logBuilder.toString());
                     handleRequestSuccess(requestId, response, handler.getAllListeners());
                 }
             });
         } catch (Throwable e) {
-            logBuilder.append(e.getMessage()).append("###").append(connectionId);
-            logger.info(logBuilder.toString());
             handleRequestFailure(requestId, e, handler.getAllListeners());
         }
     }
@@ -234,12 +221,21 @@ public abstract class AbstractConnection extends AbstractService implements Conn
             return;
         }
 
+        Request request = requestMap.remove(response.getId());
+        StringBuilder logBuilder = new StringBuilder();
+        logBuilder.append("###")
+            .append(request.getId()).append("###")
+            .append(request.getMessage()).append("###");
+
         timeoutScheduler.cancel(response.getId());
         if (!response.hasException()) {
+            logBuilder.append(response.getMessage()).append("###").append(connectionId);
             future.complete(response.getMessage());
         } else {
+            logBuilder.append(response.getException()).append("###").append(connectionId);
             future.completeExceptionally(response.getException());
         }
+        logger.info(logBuilder.toString());
     }
 
     @Override

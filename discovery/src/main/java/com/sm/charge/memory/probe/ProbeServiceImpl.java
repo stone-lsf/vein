@@ -1,7 +1,6 @@
 package com.sm.charge.memory.probe;
 
 import com.sm.charge.memory.Node;
-import com.sm.charge.memory.NodeFilter;
 import com.sm.charge.memory.Nodes;
 import com.sm.finance.charge.common.Merger;
 import com.sm.finance.charge.common.base.LoggerSupport;
@@ -52,7 +51,7 @@ public class ProbeServiceImpl extends LoggerSupport implements ProbeService {
     @Override
     public boolean redirectPing(Node node, int timeout) {
         String target = node.getNodeId();
-        List<Node> randomNodes = nodes.randomNodes(indirectNodeNum, new Filter(node));
+        List<Node> randomNodes = nodes.randomNodes(indirectNodeNum, (nd -> nd.getNodeId().equals(node.getNodeId()) || nd.getStatus() == DEAD || nodes.isLocalNode(nd.getNodeId())));
         if (CollectionUtils.isEmpty(randomNodes)) {
             logger.info("can't find node to redirect node:{}", target);
             return false;
@@ -138,22 +137,5 @@ public class ProbeServiceImpl extends LoggerSupport implements ProbeService {
                 throw new RuntimeException(e);
             }
         });
-    }
-
-
-    private class Filter implements NodeFilter {
-
-        private final Node target;
-
-        private Filter(Node target) {
-            this.target = target;
-        }
-
-        @Override
-        public boolean apply(Node node) {
-            String nodeId = node.getNodeId();
-            return nodes.isLocalNode(nodeId) || target.getNodeId().equals(nodeId) || node.getStatus() == DEAD;
-
-        }
     }
 }
