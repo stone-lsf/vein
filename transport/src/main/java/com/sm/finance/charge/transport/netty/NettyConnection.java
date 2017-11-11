@@ -4,8 +4,10 @@ import com.sm.finance.charge.common.Address;
 import com.sm.finance.charge.transport.api.AbstractConnection;
 import com.sm.finance.charge.transport.api.Request;
 import com.sm.finance.charge.transport.api.Response;
+import com.sm.finance.charge.transport.api.exceptions.RemoteException;
 
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
 
 /**
  * @author shifeng.luo
@@ -21,18 +23,32 @@ public class NettyConnection extends AbstractConnection {
 
     @Override
     protected void sendRequest(Request request, int timeout) {
-        channel.writeAndFlush(request);
+        doSend(request);
         timeoutScheduler.schedule(request.getId(), timeout);
     }
 
     @Override
     protected void sendRequest(Request request) throws Exception {
-        channel.writeAndFlush(request);
+        doSend(request);
     }
 
     @Override
     protected void sendResponse(Response response) {
-        channel.writeAndFlush(response);
+        doSend(response);
+    }
+
+    private void doSend(Object obj) {
+        boolean success;
+        try {
+            ChannelFuture future = channel.writeAndFlush(obj);
+            success = future.await(defaultTimeout);
+        } catch (Throwable e) {
+            throw new RemoteException(e);
+        }
+
+        if (!success) {
+            throw new RemoteException("send message timeout:" + defaultTimeout + "ms");
+        }
     }
 
     @Override

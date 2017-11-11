@@ -1,5 +1,7 @@
 package com.sm.charge.memory.gossip;
 
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Lists;
 
 import com.sm.charge.memory.DiscoveryConfig;
@@ -17,8 +19,6 @@ import org.apache.commons.collections.CollectionUtils;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -29,7 +29,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class MessageGossiper extends LoggerSupport {
 
-    private ConcurrentMap<String, MemberMessage> nodeMessages = new ConcurrentHashMap<>();
+    private ListMultimap<String, MemberMessage> nodeMessages = ArrayListMultimap.create();
 
     private BlockingQueue<GossipMessage> messages;
 
@@ -54,9 +54,13 @@ public class MessageGossiper extends LoggerSupport {
 
     public boolean gossip(MemberMessage message) {
         try {
-            MemberMessage oldMessage = nodeMessages.replace(message.getContent().getNodeId(), message);
-            if (oldMessage != null) {
-                message.invalidate(oldMessage);
+            synchronized (this) {
+                List<MemberMessage> memberMessages = nodeMessages.get(message.getContent().getNodeId());
+                if (CollectionUtils.isNotEmpty(memberMessages)) {
+                    for (MemberMessage oldMessage : memberMessages) {
+                        message.invalidate(oldMessage);
+                    }
+                }
             }
             messages.put(message);
             wakeUp();
@@ -97,6 +101,7 @@ public class MessageGossiper extends LoggerSupport {
 
                 try {
                     GossipRequest request = new GossipRequest(contents);
+                    logger.info("gossip message:{} to node:{}", request, node.getNodeId());
                     connection.send(request);
                 } catch (Exception e) {
                     logger.error("gossip message to node:{} caught exception:{}", node.getNodeId(), e);

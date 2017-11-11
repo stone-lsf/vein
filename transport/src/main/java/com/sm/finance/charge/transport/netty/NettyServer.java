@@ -42,9 +42,8 @@ public class NettyServer extends AbstractService implements TransportServer {
     public void listen(int port, ConnectionListener listener) throws BindException {
         bootstrap.group(new NioEventLoopGroup(1), workerGroup)
             .channel(NioServerSocketChannel.class)
-            .option(ChannelOption.SO_BACKLOG, 100)
+            .option(ChannelOption.TCP_NODELAY, true)
             .childOption(ChannelOption.SO_KEEPALIVE, true)
-            .childOption(ChannelOption.TCP_NODELAY, true)
             .childHandler(new ChannelInitializer<SocketChannel>() {
                 @Override
                 protected void initChannel(SocketChannel ch) throws Exception {
@@ -52,7 +51,7 @@ public class NettyServer extends AbstractService implements TransportServer {
                     ch.pipeline().addLast("encoder", new LengthFieldPrepender(4, false));
                     ProtoStuffSerializer serialize = new ProtoStuffSerializer(new MessageTypes());
                     ch.pipeline().addLast("serializer", new SerializerHandler(serialize));
-                    ch.pipeline().addLast("com.sm.charge.memory.handler", new NettyHandler(connectionManager, listener, defaultTimeout));
+                    ch.pipeline().addLast("handler", new NettyHandler(connectionManager, listener, defaultTimeout));
                 }
             });
         try {

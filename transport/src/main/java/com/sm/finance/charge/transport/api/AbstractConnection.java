@@ -14,6 +14,8 @@ import com.sm.finance.charge.transport.api.support.RequestContext;
 import com.sm.finance.charge.transport.api.support.ResponseContext;
 import com.sm.finance.charge.transport.api.support.TimeoutScheduler;
 
+import org.joda.time.DateTime;
+
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -32,7 +34,7 @@ public abstract class AbstractConnection extends AbstractService implements Conn
     private final Address remoteAddress;
     private final Address localAddress;
     private final String connectionId;
-    private final int defaultTimeout;
+    protected final int defaultTimeout;
     protected final TimeoutScheduler timeoutScheduler;
 
     private final IntegerIdGenerator idGenerator = new IntegerIdGenerator();
@@ -161,31 +163,63 @@ public abstract class AbstractConnection extends AbstractService implements Conn
 
     @SuppressWarnings("unchecked")
     private void handRequest(Request request) {
-        Object requestMessage = request.getMessage();
-        RequestHandler handler = requestHandlers.get(requestMessage.getClass());
+        Object message = request.getMessage();
+        RequestHandler handler = requestHandlers.get(message.getClass());
         if (handler == null) {
-            logger.error("[{}] don't have matched com.sm.charge.memory.handler ", requestMessage.getClass());
+            logger.error("[{}] don't have matched com.sm.charge.memory.handler ", message.getClass());
             return;
         }
 
         int requestId = request.getId();
+        StringBuilder logBuilder = new StringBuilder();
+        DateTime now = DateTime.now();
+        String startTime = now.toString("yyyy-MM-dd HH:mm:ss.sss");
+        logHandleRequest(logBuilder, startTime, requestId, message);
         try {
             RequestContext context = new RequestContext(requestId, this, remoteAddress);
-            CompletableFuture<Object> responseFuture = handler.handle(requestMessage, context);
+            CompletableFuture<Object> responseFuture = handler.handle(message, context);
             if (responseFuture == null) {
+                logHandleResponse(logBuilder, now, null);
                 return;
             }
 
             responseFuture.whenComplete((response, error) -> {
                 if (error != null) {
+                    logHandleException(logBuilder, now, error);
                     handleRequestFailure(requestId, error, handler.getAllListeners());
                 } else {
+                    logHandleResponse(logBuilder, now, response);
                     handleRequestSuccess(requestId, response, handler.getAllListeners());
                 }
             });
         } catch (Throwable e) {
+            logHandleException(logBuilder, now, e);
             handleRequestFailure(requestId, e, handler.getAllListeners());
         }
+    }
+
+    private void logHandleRequest(StringBuilder logBuilder, String startTime, int requestId, Object message) {
+        logBuilder.append("###").append("handleRequest")
+            .append("###").append(startTime)
+            .append("###").append(requestId)
+            .append("###").append(message);
+    }
+
+    private void logHandleResponse(StringBuilder logBuilder, DateTime start, Object response) {
+        long useTime = System.currentTimeMillis() - start.getMillis();
+        logBuilder.append("###").append(response == null ? "" : response)
+            .append("###").append(connectionId)
+            .append("###").append(useTime);
+        logger.info(logBuilder.toString());
+    }
+
+    private void logHandleException(StringBuilder logBuilder, DateTime start, Throwable throwable) {
+        long useTime = System.currentTimeMillis() - start.getMillis();
+        StringBuffer message = getThrowableMessage(throwable);
+        logBuilder.append("###").append(message)
+            .append("###").append(connectionId)
+            .append("###").append(useTime);
+        logger.error(logBuilder.toString());
     }
 
     private void handleRequestSuccess(int requestId, Object responseMessage, List<HandleListener> listeners) {
@@ -223,7 +257,6 @@ public abstract class AbstractConnection extends AbstractService implements Conn
     private void handResponse(Response response) {
         CompletableFuture future = responseFutures.remove(response.getId());
         if (future == null) {
-            logger.info("received timeout response:[{}],connection:{}", response, getConnectionId());
             return;
         }
 
@@ -255,13 +288,18 @@ public abstract class AbstractConnection extends AbstractService implements Conn
     }
 
     private void logException(StringBuilder logBuilder, Throwable throwable) {
+        StringBuffer message = getThrowableMessage(throwable);
+
+        logBuilder.append("###").append(message)
+            .append("###").append(connectionId);
+        logger.error(logBuilder.toString());
+    }
+
+    private StringBuffer getThrowableMessage(Throwable throwable) {
         StringWriter writer = new StringWriter();
         PrintWriter printWriter = new PrintWriter(writer);
         throwable.printStackTrace(printWriter);
-
-        logBuilder.append("###").append(writer.getBuffer())
-            .append("###").append(connectionId);
-        logger.error(logBuilder.toString());
+        return writer.getBuffer();
     }
 
     @Override

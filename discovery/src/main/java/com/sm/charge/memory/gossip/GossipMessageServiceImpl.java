@@ -130,6 +130,7 @@ public class GossipMessageServiceImpl extends LoggerSupport implements GossipMes
     }
 
     private void refute(long incarnation) {
+        logger.info("refute state, remote incarnation:{}", incarnation);
         Node localNode = nodes.getLocalNode();
 
         long newIncarnation = incarnation + 1;

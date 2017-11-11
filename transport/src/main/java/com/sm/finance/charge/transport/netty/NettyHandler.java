@@ -53,7 +53,6 @@ public class NettyHandler extends ChannelHandlerAdapter {
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
         Channel channel = ctx.channel();
-        logger.info("receive channel:{}", channel);
         if (listener != null) {
             receiveChannel(channel);
         }
@@ -73,7 +72,7 @@ public class NettyHandler extends ChannelHandlerAdapter {
         Address localAddress = new Address(local);
 
         NettyConnection connection = new NettyConnection(remoteAddress, localAddress, defaultTimeout, channel);
-        logger.info("connection id:{}", connection.getConnectionId());
+        logger.info("receive connection id:{}", connection.getConnectionId());
         connectionManager.addConnection(connection);
         listener.onConnect(connection);
     }
@@ -82,7 +81,6 @@ public class NettyHandler extends ChannelHandlerAdapter {
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         Connection connection = connectionManager.getConnection(ChannelHelper.getChannelId(ctx.channel()));
         if (connection != null) {
-            logger.debug("connection:", connection);
             connection.onMessage(msg);
         }
         super.channelRead(ctx, msg);
@@ -92,6 +90,7 @@ public class NettyHandler extends ChannelHandlerAdapter {
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
         Connection connection = connectionManager.removeConnection(ChannelHelper.getChannelId(ctx.channel()));
         if (connection != null) {
+            logger.info("close connection:{}", connection.getConnectionId());
             connection.close();
         }
         super.channelInactive(ctx);

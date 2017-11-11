@@ -59,6 +59,7 @@ public class ProbeServiceImpl extends LoggerSupport implements ProbeService {
 
         RedirectPing ping = new RedirectPing(nodes.getSelf(), target);
         Merger merge = new Merger(randomNodes.size());
+        CompletableFuture<Boolean> future = merge.anyOf();
 
         for (Node randomNode : randomNodes) {
             Connection connection = randomNode.getConnection();
@@ -94,7 +95,7 @@ public class ProbeServiceImpl extends LoggerSupport implements ProbeService {
         }
 
         try {
-            return merge.anyOf().get();
+            return future.get();
         } catch (Exception e) {
             logger.error("redirect ping to node:{} caught exception:{}", target, e);
             return false;
