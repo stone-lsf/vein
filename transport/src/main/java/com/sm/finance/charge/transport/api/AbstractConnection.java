@@ -15,6 +15,8 @@ import com.sm.finance.charge.transport.api.support.ResponseContext;
 import com.sm.finance.charge.transport.api.support.TimeoutScheduler;
 
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
@@ -59,15 +61,19 @@ public abstract class AbstractConnection extends AbstractService implements Conn
 
     @Override
     public void send(Object message) throws IOException {
+        StringBuilder logBuilder = new StringBuilder();
         try {
             if (message instanceof Response) {
                 sendResponse((Response) message);
             } else {
                 int id = idGenerator.nextId();
                 Request request = new Request(id, message);
+                logRequest(logBuilder, 0, id, message);
                 sendRequest(request);
+                logResponse(logBuilder, null);
             }
         } catch (Exception e) {
+            logException(logBuilder, e);
             throw new IOException(e);
         }
     }
@@ -223,19 +229,39 @@ public abstract class AbstractConnection extends AbstractService implements Conn
 
         RequestInfo info = requestMap.remove(response.getId());
         StringBuilder logBuilder = new StringBuilder();
-        logBuilder.append("###").append(System.currentTimeMillis() - info.startTime).append("###")
-            .append(info.request.getId()).append("###")
-            .append(info.request.getMessage()).append("###");
+        long useTime = System.currentTimeMillis() - info.startTime;
+        logRequest(logBuilder, useTime, info.request.getId(), info.request.getMessage());
 
         timeoutScheduler.cancel(response.getId());
         if (!response.hasException()) {
-            logBuilder.append(response.getMessage()).append("###").append(connectionId);
+            logResponse(logBuilder, response.getMessage());
             future.complete(response.getMessage());
         } else {
-            logBuilder.append(response.getException()).append("###").append(connectionId);
+            logException(logBuilder, response.getException());
             future.completeExceptionally(response.getException());
         }
+    }
+
+    private void logRequest(StringBuilder logBuilder, long useTime, int requestId, Object request) {
+        logBuilder.append("###").append(useTime)
+            .append("###").append(requestId)
+            .append("###").append(request);
+    }
+
+    private void logResponse(StringBuilder logBuilder, Object response) {
+        logBuilder.append("###").append(response == null ? "" : response)
+            .append("###").append(connectionId);
         logger.info(logBuilder.toString());
+    }
+
+    private void logException(StringBuilder logBuilder, Throwable throwable) {
+        StringWriter writer = new StringWriter();
+        PrintWriter printWriter = new PrintWriter(writer);
+        throwable.printStackTrace(printWriter);
+
+        logBuilder.append("###").append(writer.getBuffer())
+            .append("###").append(connectionId);
+        logger.error(logBuilder.toString());
     }
 
     @Override
