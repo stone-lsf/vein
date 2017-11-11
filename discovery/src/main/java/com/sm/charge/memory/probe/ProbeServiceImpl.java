@@ -36,7 +36,7 @@ public class ProbeServiceImpl extends LoggerSupport implements ProbeService {
         String target = node.getNodeId();
         if (connection == null) {
             logger.error("node:{} hasn't connection", target);
-            throw new IllegalStateException("node:" + target + " hasn't connection");
+            return null;
         }
 
         Ping ping = new Ping(nodes.getSelf(), target);

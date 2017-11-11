@@ -37,6 +37,7 @@ public class ProbeTask extends LoggerSupport implements Runnable {
         try {
             while (true) {
                 int size = nodes.size();
+                logger.info("nodes size:{},probeIndex:{}", size, probeIndex);
                 if (probeIndex >= size) {
                     probeIndex = 0;
                     nodes.removeDeadNodes();
@@ -66,6 +67,7 @@ public class ProbeTask extends LoggerSupport implements Runnable {
                     continue;
                 }
 
+                logger.info("starting to probe node:{}", node.getNodeId());
                 probe(node);
                 return;
             }

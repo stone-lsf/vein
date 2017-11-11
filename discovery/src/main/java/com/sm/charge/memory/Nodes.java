@@ -145,6 +145,7 @@ public class Nodes extends LoggerSupport {
         try {
             for (String nodeId : deadNodes.keySet()) {
                 nodeMap.remove(nodeId);
+                nodeIds.remove(nodeId);
             }
 
             deadNodes.clear();

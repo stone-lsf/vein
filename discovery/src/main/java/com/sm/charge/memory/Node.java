@@ -3,8 +3,7 @@ package com.sm.charge.memory;
 import com.sm.charge.memory.gossip.messages.AliveMessage;
 import com.sm.charge.memory.pushpull.PushNodeState;
 import com.sm.finance.charge.common.Address;
-import com.sm.finance.charge.common.base.BaseNode;
-import com.sm.finance.charge.transport.api.Connection;
+import com.sm.finance.charge.transport.api.support.AbstractConnectionHolder;
 
 import java.util.Date;
 import java.util.concurrent.locks.ReentrantLock;
@@ -13,17 +12,17 @@ import java.util.concurrent.locks.ReentrantLock;
  * @author shifeng.luo
  * @version created on 2017/9/11 下午8:35
  */
-public class Node extends BaseNode<String> {
+public class Node extends AbstractConnectionHolder {
+
+    /**
+     * 节点唯一标识符
+     */
+    protected final String nodeId;
 
     /**
      * 节点类型
      */
     private final NodeType type;
-
-    /**
-     * 节点连接
-     */
-    private volatile Connection connection;
 
     /**
      * 自增的版本号
@@ -43,14 +42,16 @@ public class Node extends BaseNode<String> {
     private final ReentrantLock lock = new ReentrantLock();
 
     public Node(AliveMessage message, NodeStatus status, Date statusChangeTime) {
-        super(message.getNodeId(), message.getAddress());
+        super(message.getAddress());
+        this.nodeId = message.getNodeId();
         this.type = message.getNodeType();
         this.status = status;
         this.statusChangeTime = statusChangeTime;
     }
 
     public Node(String nodeId, Address address, NodeType type, long incarnation, Date statusChangeTime, NodeStatus status) {
-        super(nodeId, address);
+        super(address);
+        this.nodeId = nodeId;
         this.type = type;
         this.incarnation = incarnation;
         this.statusChangeTime = statusChangeTime;
@@ -69,6 +70,10 @@ public class Node extends BaseNode<String> {
         return state;
     }
 
+    public String getNodeId() {
+        return nodeId;
+    }
+
     public void lock() {
         lock.lock();
     }
@@ -79,14 +84,6 @@ public class Node extends BaseNode<String> {
 
     public NodeType getType() {
         return type;
-    }
-
-    public Connection getConnection() {
-        return connection;
-    }
-
-    public void setConnection(Connection connection) {
-        this.connection = connection;
     }
 
     public long nextIncarnation() {
