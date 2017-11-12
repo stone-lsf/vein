@@ -74,9 +74,9 @@ public class DiscoveryServiceImpl extends AbstractService implements DiscoverySe
 
 
     @Override
-    public synchronized boolean join() {
+    public synchronized void join() {
         if (joined) {
-            return true;
+            return;
         }
         logger.info("start join discovery cluster");
 
@@ -94,16 +94,15 @@ public class DiscoveryServiceImpl extends AbstractService implements DiscoverySe
                     logger.error("push and pull message from node[{}] failed,cased by ", address, e);
                 }
             }
+            retryTimes--;
+            if (retryTimes == 0) {
+                break;
+            }
 
             if (success == 0) {
-                ThreadUtil.sleepUnInterrupted(2000);
-                retryTimes--;
-            } else {
-                return true;
+                ThreadUtil.sleepUnInterrupted(4000);
             }
         }
-
-        return false;
     }
 
     @Override

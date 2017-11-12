@@ -11,10 +11,8 @@ public interface DiscoveryService extends Startable, Closable {
 
     /**
      * 加入集群
-     *
-     * @return 成功则返回true，否则返回false
      */
-    boolean join();
+    void join();
 
 
     Nodes getNodes();

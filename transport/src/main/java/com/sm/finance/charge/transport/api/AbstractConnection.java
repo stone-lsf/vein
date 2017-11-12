@@ -171,29 +171,29 @@ public abstract class AbstractConnection extends AbstractService implements Conn
         }
 
         int requestId = request.getId();
-        StringBuilder logBuilder = new StringBuilder();
-        DateTime now = DateTime.now();
-        String startTime = now.toString("yyyy-MM-dd HH:mm:ss.sss");
-        logHandleRequest(logBuilder, startTime, requestId, message);
+//        StringBuilder logBuilder = new StringBuilder();
+//        DateTime now = DateTime.now();
+//        String startTime = now.toString("yyyy-MM-dd HH:mm:ss.sss");
+//        logHandleRequest(logBuilder, startTime, requestId, message);
         try {
             RequestContext context = new RequestContext(requestId, this, remoteAddress);
             CompletableFuture<Object> responseFuture = handler.handle(message, context);
             if (responseFuture == null) {
-                logHandleResponse(logBuilder, now, null);
+//                logHandleResponse(logBuilder, now, null);
                 return;
             }
 
             responseFuture.whenComplete((response, error) -> {
                 if (error != null) {
-                    logHandleException(logBuilder, now, error);
+//                    logHandleException(logBuilder, now, error);
                     handleRequestFailure(requestId, error, handler.getAllListeners());
                 } else {
-                    logHandleResponse(logBuilder, now, response);
+//                    logHandleResponse(logBuilder, now, response);
                     handleRequestSuccess(requestId, response, handler.getAllListeners());
                 }
             });
         } catch (Throwable e) {
-            logHandleException(logBuilder, now, e);
+//            logHandleException(logBuilder, now, e);
             handleRequestFailure(requestId, e, handler.getAllListeners());
         }
     }

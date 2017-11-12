@@ -50,18 +50,12 @@ public class DiscoveryServiceTest {
 //        service4.start();
 //        service5.start();
 
-        boolean success = service1.join();
-        if (success) {
-            System.out.println("node1 join success");
-        }
-        success = service2.join();
-        if (success) {
-            System.out.println("node2 join success");
-        }
-        success = service3.join();
-        if (success) {
-            System.out.println("node3 join success");
-        }
+        service1.join();
+        System.out.println("node1 join success");
+        service2.join();
+        System.out.println("node2 join success");
+        service3.join();
+        System.out.println("node3 join success");
 //        success = service4.join("test");
 //        if (success) {
 //            System.out.println("node4 join success");

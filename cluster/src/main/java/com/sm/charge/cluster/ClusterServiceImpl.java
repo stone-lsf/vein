@@ -59,13 +59,7 @@ public class ClusterServiceImpl extends AbstractService implements ClusterServic
         Configure configure = ConfigureLoader.loader(profile + File.separator + "discovery.properties");
         discoveryService = new DiscoveryServiceImpl(new DiscoveryConfig(configure));
         discoveryService.start();
-
-        boolean success = discoveryService.join();
-        if (!success) {
-            throw new RuntimeException("discovery service join failed");
-        }
-
-        logger.info("server:{} join discovery success", self.getNodeId());
+        discoveryService.join();
 
 //        ServerType type = self.getType();
 //        if (type != ServerType.core) {

@@ -52,22 +52,10 @@ public class ProbeTask extends LoggerSupport implements Runnable {
                 Node node = nodes.get(probeIndex);
                 numCheck++;
                 probeIndex++;
-                if (node == null) {
-                    logger.warn("probe index:{} don't contain node", probeIndex - 1);
+                if (node == null || node.getStatus() == DEAD || nodes.isLocalNode(node.getNodeId())) {
                     continue;
                 }
 
-                if (node.getStatus() == DEAD) {
-                    logger.warn("probe node:{} has dead", node.getNodeId(), node.getStatus());
-                    continue;
-                }
-
-                if (nodes.isLocalNode(node.getNodeId())) {
-                    logger.warn("probe node:{} is local node", node.getNodeId(), node.getStatus());
-                    continue;
-                }
-
-                logger.info("starting to probe node:{}", node.getNodeId());
                 probe(node);
                 return;
             }
