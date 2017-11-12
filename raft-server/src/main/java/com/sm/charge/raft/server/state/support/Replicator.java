@@ -17,6 +17,8 @@ import com.sm.finance.charge.transport.api.Connection;
 import com.sm.finance.charge.transport.api.handler.AbstractResponseHandler;
 import com.sm.finance.charge.transport.api.support.ResponseContext;
 
+import org.apache.commons.collections.CollectionUtils;
+
 import java.util.ArrayList;
 import java.util.concurrent.CompletableFuture;
 
@@ -52,17 +54,25 @@ public class Replicator extends LoggerSupport {
 
         RaftMemberState state = member.getState();
         if (state.getInstallContext() != null) {
+            logger.info("continue send snapshot to member:{}", member.getNodeId());
             return sendSnapshot(member);
         }
 
         if (snapshot != null && nextLogIndex < snapshot.index()) {
             SnapshotInstallContext installContext = new SnapshotInstallContext(snapshot);
             state.setInstallContext(installContext);
+            logger.info("init send snapshot to member:{}", member.getNodeId());
             return sendSnapshot(member);
         }
 
         CompletableFuture<Void> future = new CompletableFuture<>();
         AppendRequest request = buildAppendRequest(member);
+        if (CollectionUtils.isEmpty(request.getEntries())) {
+            logger.info("append entry is empty,sleep {}ms", appendInterval);
+            ThreadUtil.sleepUnInterrupted(appendInterval);
+            request = buildAppendRequest(member);
+        }
+
         connection.send(request, new AbstractResponseHandler<AppendResponse>() {
             @Override
             public void handle(AppendResponse response, Connection connection) {
@@ -106,24 +116,16 @@ public class Replicator extends LoggerSupport {
         request.setLeaderCommit(self.getCommitIndex());
 
         ArrayList<LogEntry> entries = new ArrayList<>();
-        long start = System.currentTimeMillis();
-        long now = start;
         long lastIndex = raftLogger.lastIndex();
-        while (now - start < appendInterval) {
-            if (entries.size() == 0 && nextLogIndex > lastIndex) { //此时follower与master同步，没有消息需要发送，sleep
-                long waitTime = appendInterval - (now - start);
-                ThreadUtil.sleepInterrupted(waitTime);
-            }
-
+        while (nextLogIndex <= lastIndex) {
             LogEntry logEntry = raftLogger.get(nextLogIndex);
             if (logEntry != null) {
                 entries.add(logEntry);
             }
 
-            if (entries.size() >= maxAppendSize || nextLogIndex > lastIndex) {
+            if (entries.size() >= maxAppendSize) {
                 break;
             }
-            now = System.currentTimeMillis();
             nextLogIndex++;
         }
         request.setEntries(entries);

@@ -122,21 +122,25 @@ public class ServerContext extends LoggerSupport {
 
 
     public void onHeartbeatTimeout() {
+        logger.info("member:{} onHeartbeatTimeout",self.getNodeId());
         state = state.onHeartbeatTimeout(this);
     }
 
 
     public void onElectTimeout() {
+        logger.info("member:{} onElectTimeout",self.getNodeId());
         state = state.onElectTimeout(this);
     }
 
 
     public void onElectAsMaster() {
+        logger.info("member:{} onElectAsMaster",self.getNodeId());
         state = state.onElectAsMaster(this);
     }
 
 
     public void onNewLeader() {
+        logger.info("member:{} onNewLeader",self.getNodeId());
         state = state.onNewLeader(this);
     }
 

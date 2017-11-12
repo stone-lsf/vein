@@ -21,10 +21,10 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutionException;
 
 /**
  * @author shifeng.luo
@@ -132,8 +132,8 @@ public abstract class AbstractConnection extends AbstractService implements Conn
     public <T> T syncRequest(Object message, int timeout) throws IOException {
         CompletableFuture<T> future = request(message, timeout);
         try {
-            return future.join();
-        } catch (CompletionException e) {
+            return future.get();
+        } catch (ExecutionException e) {
             Throwable cause = e.getCause();
             if (cause instanceof RemoteException) {
                 throw (RemoteException) cause;
@@ -144,6 +144,8 @@ public abstract class AbstractConnection extends AbstractService implements Conn
             }
 
             throw new IOException(cause);
+        } catch (InterruptedException e) {
+            throw new RemoteException(e);
         }
     }
 
@@ -187,7 +189,7 @@ public abstract class AbstractConnection extends AbstractService implements Conn
                 if (error != null) {
 //                    logHandleException(logBuilder, now, error);
                     handleRequestFailure(requestId, error, handler.getAllListeners());
-                } else {
+                } else if (response != null) {
 //                    logHandleResponse(logBuilder, now, response);
                     handleRequestSuccess(requestId, response, handler.getAllListeners());
                 }
@@ -257,6 +259,7 @@ public abstract class AbstractConnection extends AbstractService implements Conn
     private void handResponse(Response response) {
         CompletableFuture future = responseFutures.remove(response.getId());
         if (future == null) {
+            logger.info("receive timeout response:{}", response);
             return;
         }
 

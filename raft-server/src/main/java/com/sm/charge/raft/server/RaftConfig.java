@@ -49,6 +49,9 @@ public class RaftConfig {
 
     private static final String MEMBERS = "raft.server.members";
 
+    private static final String JOIN_TIMEOUT = "raft.server.join.timeout";
+    private static final int DEFAULT_JOIN_TIMEOUT = 20000;
+
     private static final String JOIN_RETRY_TIMES = "raft.server.join.retry.times";
     private static final int DEFAULT_JOIN_RETRY_TIMES = 6;
 
@@ -129,6 +132,10 @@ public class RaftConfig {
 
     public int getJoinRetryTimes() {
         return configure.getInt(JOIN_RETRY_TIMES, DEFAULT_JOIN_RETRY_TIMES);
+    }
+
+    public int getJoinTimeout() {
+        return configure.getInt(JOIN_TIMEOUT, DEFAULT_JOIN_TIMEOUT);
     }
 
 

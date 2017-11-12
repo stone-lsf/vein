@@ -12,6 +12,7 @@ import com.sm.charge.raft.server.events.JoinRequest;
 import com.sm.charge.raft.server.events.JoinResponse;
 import com.sm.charge.raft.server.events.LeaveRequest;
 import com.sm.charge.raft.server.events.LeaveResponse;
+import com.sm.charge.raft.server.events.MemberInfo;
 import com.sm.charge.raft.server.events.VoteRequest;
 import com.sm.charge.raft.server.events.VoteResponse;
 import com.sm.charge.raft.server.storage.logs.RaftLogger;
@@ -236,16 +237,19 @@ public abstract class AbstractState extends LoggerSupport implements ServerState
 
     @Override
     public JoinResponse handle(JoinRequest request, RequestContext requestContext) {
+        logger.info("handle join request:{}", request);
         RaftMember master = context.getCluster().master();
         JoinResponse response = new JoinResponse();
         response.setTerm(self.getTerm());
         if (master == null) {
+            logger.info("cluster don't have leader,join member:{}", request.getMemberId());
             response.setStatus(NO_LEADER);
             return response;
         }
 
+        logger.info("redirect to leader:{},join member:{}", master.getNodeId(), request.getMemberId());
         response.setStatus(REDIRECT);
-        response.setMaster(master);
+        response.setMaster(new MemberInfo(master));
         return response;
     }
 

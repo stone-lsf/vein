@@ -31,9 +31,9 @@ public class JoinResponse implements Event {
     /**
      * 集群服务器列表
      */
-    private List<RaftMember> members;
+    private List<MemberInfo> members;
 
-    private RaftMember master;
+    private MemberInfo master;
 
     public boolean isSuccess() {
         return status == SUCCESS;
@@ -84,19 +84,19 @@ public class JoinResponse implements Event {
         this.timestamp = timestamp;
     }
 
-    public List<RaftMember> getMembers() {
+    public List<MemberInfo> getMembers() {
         return members;
     }
 
-    public void setMembers(List<RaftMember> members) {
+    public void setMembers(List<MemberInfo> members) {
         this.members = members;
     }
 
-    public RaftMember getMaster() {
+    public MemberInfo getMaster() {
         return master;
     }
 
-    public void setMaster(RaftMember master) {
+    public void setMaster(MemberInfo master) {
         this.master = master;
     }
 

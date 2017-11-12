@@ -246,7 +246,7 @@ public class RaftServerImpl extends AbstractService implements RaftServer, Maste
     private boolean doJoin(Connection connection) {
         JoinRequest request = new JoinRequest(self.getNodeId(), self.getAddress());
         try {
-            JoinResponse response = connection.syncRequest(request);
+            JoinResponse response = connection.syncRequest(request, raftConfig.getJoinTimeout());
             context.getServerState().handle(response);
             if (response.getTerm() < self.getTerm()) {
                 return false;
@@ -398,5 +398,23 @@ public class RaftServerImpl extends AbstractService implements RaftServer, Maste
             logger.error("stop replicate service failure", e);
             throw new RuntimeException(e);
         }
+    }
+
+    public static void main(String[] args) {
+        CompletableFuture<Integer> futureCount = CompletableFuture.supplyAsync(
+            () -> {
+                try {
+                    // Simulate long running task  模拟长时间运行任务
+                    Thread.sleep(5000);
+                } catch (InterruptedException e) {
+                }
+                return 10;
+            });
+
+        futureCount.whenComplete((result,error)->{
+            System.out.println(result);
+        });
+
+        ThreadUtil.sleepUnInterrupted(200000);
     }
 }

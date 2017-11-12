@@ -1,5 +1,7 @@
 package com.sm.charge.raft.server.state;
 
+import com.google.common.collect.Lists;
+
 import com.sm.charge.raft.client.Configure;
 import com.sm.charge.raft.server.RaftCluster;
 import com.sm.charge.raft.server.RaftMember;
@@ -13,6 +15,7 @@ import com.sm.charge.raft.server.events.JoinRequest;
 import com.sm.charge.raft.server.events.JoinResponse;
 import com.sm.charge.raft.server.events.LeaveRequest;
 import com.sm.charge.raft.server.events.LeaveResponse;
+import com.sm.charge.raft.server.events.MemberInfo;
 import com.sm.charge.raft.server.state.support.Replicator;
 import com.sm.charge.raft.server.state.support.SnapshotInstallContext;
 import com.sm.charge.raft.server.storage.logs.RaftLogger;
@@ -110,10 +113,12 @@ public class LeaderState extends AbstractState {
 
     @Override
     public JoinResponse handle(JoinRequest request, RequestContext requestContext) {
+        logger.info("handle join request:{}", request);
         JoinResponse response = new JoinResponse();
         response.setTerm(self.getTerm());
 
         if (self.getState().getConfiguring() > 0) {
+            logger.info("cluster is reconfiguring");
             response.setStatus(RECONFIGURING);
             return response;
         }
@@ -123,14 +128,16 @@ public class LeaderState extends AbstractState {
         String memberId = request.getMemberId();
         RaftMember member = cluster.member(memberId);
         if (member != null) {
+            logger.info("handle join request:{} success", request);
             response.setStatus(SUCCESS);
             response.setIndex(context.getRaftLogger().lastIndex());
             response.setTerm(self.getTerm());
-            response.setMembers(members);
+            response.setMembers(Lists.transform(members, MemberInfo::new));
             member.getState().startReplicate();
             return response;
         }
 
+        logger.info("cluster add new member:{}", memberId);
         member = new RaftMember(context.getClient(), memberId, request.getAddress(), replicator);
         members.add(member);
 
@@ -144,7 +151,7 @@ public class LeaderState extends AbstractState {
                     response.setStatus(SUCCESS);
                     response.setIndex(index);
                     response.setTerm(self.getTerm());
-                    response.setMembers(members);
+                    response.setMembers(Lists.transform(members, MemberInfo::new));
                     requestContext.sendResponse(response);
                 }
             } catch (Exception e) {

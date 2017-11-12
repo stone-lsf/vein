@@ -27,7 +27,7 @@ public abstract class AbstractRaftTimer extends LoggerSupport implements RaftTim
 
 
     @Override
-    public void reset() {
+    public synchronized void reset() {
         if (!started.get()) {
             throw new IllegalStateException("定时器并未启动!");
         }
@@ -39,7 +39,7 @@ public abstract class AbstractRaftTimer extends LoggerSupport implements RaftTim
     }
 
     @Override
-    public void start() {
+    public synchronized void start() {
         if (started.compareAndSet(false, true)) {
             future = executor.schedule(this, interval(), TimeUnit.MILLISECONDS);
             stopped.set(false);
@@ -47,7 +47,7 @@ public abstract class AbstractRaftTimer extends LoggerSupport implements RaftTim
     }
 
     @Override
-    public void stop() {
+    public synchronized void stop() {
         if (stopped.compareAndSet(false, true)) {
             future.cancel(false);
             future = null;

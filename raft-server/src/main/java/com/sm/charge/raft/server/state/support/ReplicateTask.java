@@ -7,6 +7,7 @@ import com.sm.finance.charge.common.base.LoggerSupport;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 /**
  * @author shifeng.luo
@@ -15,6 +16,7 @@ import java.util.concurrent.Executors;
 public class ReplicateTask extends LoggerSupport {
     private static final ExecutorService EXECUTOR = Executors.newFixedThreadPool(SystemConstants.PROCESSORS, new NamedThreadFactory("AppendPoll"));
     private volatile boolean started = false;
+    private Future<?> future;
     private final RaftMember target;
     private final Replicator replicator;
 
@@ -23,9 +25,11 @@ public class ReplicateTask extends LoggerSupport {
         this.replicator = replicator;
     }
 
-    public void start() {
-        started = true;
-        EXECUTOR.execute(this::execute);
+    public synchronized void start() {
+        if (!started) {
+            future = EXECUTOR.submit(this::execute);
+            started = true;
+        }
     }
 
     private void execute() {
@@ -35,13 +39,18 @@ public class ReplicateTask extends LoggerSupport {
             }
 
             if (started) {
-                EXECUTOR.execute(this::execute);
+                future = EXECUTOR.submit(this::execute);
             }
         });
     }
 
 
-    public void stop() {
-        started = false;
+    public synchronized void stop() {
+        if (started) {
+            if (future != null) {
+                future.cancel(false);
+            }
+            started = false;
+        }
     }
 }
