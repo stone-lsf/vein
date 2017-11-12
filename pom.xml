@@ -190,38 +190,6 @@
             </dependency>
             <!--database end-->
 
-            <!--hetu start-->
-            <dependency>
-                <groupId>com.sm.hetu</groupId>
-                <artifactId>hetu-common</artifactId>
-                <version>${hetu.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>com.sm.hetu</groupId>
-                <artifactId>hetu-service</artifactId>
-                <version>${hetu.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.slf4j</groupId>
-                        <artifactId>jcl-over-slf4j</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-
-            <dependency>
-                <groupId>com.sm.hetu</groupId>
-                <artifactId>hetu-rpc</artifactId>
-                <version>${hetu.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>com.google.protobuf</groupId>
-                <artifactId>protobuf-java</artifactId>
-                <version>2.6.1</version>
-            </dependency>
-            <!--hetu end-->
-
             <dependency>
                 <groupId>io.protostuff</groupId>
                 <artifactId>protostuff-core</artifactId>
@@ -351,12 +319,6 @@
             </dependency>
 
             <dependency>
-                <groupId>com.sm.conf</groupId>
-                <artifactId>conf-client</artifactId>
-                <version>0.0.1-SNAPSHOT</version>
-            </dependency>
-
-            <dependency>
                 <groupId>io.netty</groupId>
                 <artifactId>netty-all</artifactId>
                 <version>5.0.0.Alpha1</version>
@@ -399,11 +361,6 @@
 
             <!-- rabbit mq begin -->
             <dependency>
-                <groupId>com.sm.wolong</groupId>
-                <artifactId>mq-client</artifactId>
-                <version>1.0.3-SNAPSHOT</version>
-            </dependency>
-            <dependency>
                 <groupId>com.rabbitmq</groupId>
                 <artifactId>amqp-client</artifactId>
                 <version>3.6.5</version>
@@ -425,6 +382,20 @@
                 <version>4.3.6</version>
             </dependency>
             <!-- rabbit mq end -->
+
+
+            <dependency>
+                <groupId>org.powermock</groupId>
+                <artifactId>powermock-module-junit4</artifactId>
+                <version>${power.mockito.verion}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.powermock</groupId>
+                <artifactId>powermock-api-mockito</artifactId>
+                <version>${power.mockito.verion}</version>
+            </dependency>
+
 
         </dependencies>
     </dependencyManagement>

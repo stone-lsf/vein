@@ -47,7 +47,10 @@ public class NettyConnection extends AbstractConnection {
         }
 
         if (!success) {
-            throw new RemoteException("send message timeout:" + defaultTimeout + "ms");
+            if (!channel.isOpen()){
+                logger.info("connectionId:{} not open",getConnectionId());
+            }
+            throw new RemoteException("send message timeout:" + defaultTimeout + "ms,connectionId:" + getConnectionId());
         }
     }
 

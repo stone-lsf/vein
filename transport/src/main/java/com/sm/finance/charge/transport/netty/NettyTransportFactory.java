@@ -10,6 +10,6 @@ import com.sm.finance.charge.transport.api.TransportFactory;
 public class NettyTransportFactory extends TransportFactory {
     @Override
     public Transport doCreate() {
-        return new NettyTransport(4, 3000);
+        return new NettyTransport(0, 3000);
     }
 }

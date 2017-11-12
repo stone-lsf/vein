@@ -269,6 +269,9 @@ public class GossipMessageServiceImpl extends LoggerSupport implements GossipMes
     @Override
     public void handle(GossipRequest request) {
         List<GossipContent> contents = request.getContents();
+        if (contents ==null){
+            return;
+        }
         for (GossipContent content : contents) {
             switch (content.getType()) {
                 case GossipContent.ALIVE:

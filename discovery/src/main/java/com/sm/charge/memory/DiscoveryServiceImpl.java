@@ -69,7 +69,7 @@ public class DiscoveryServiceImpl extends AbstractService implements DiscoverySe
         this.serverContext = new ServerContext(localNode.getNodeId(), client, server);
 
         nodes = new Nodes(nodeId);
-        messageQueue = new MessageGossiper(nodes, config, serverContext.getExecutorService());
+        messageQueue = new MessageGossiper(nodes, config);
     }
 
 

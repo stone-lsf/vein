@@ -28,17 +28,20 @@ public class PushPullTask extends LoggerSupport implements Runnable {
 
     @Override
     public void run() {
-        List<Node> randomNodes = nodes.randomNodes(1, filter);
-        if (CollectionUtils.isEmpty(randomNodes)) {
-            return;
-        }
-
-        Node node = randomNodes.get(0);
-        logger.info("start push pull from node:{}", node.getNodeId());
+        String nodeId = null;
         try {
+            List<Node> randomNodes = nodes.randomNodes(1, filter);
+            if (CollectionUtils.isEmpty(randomNodes)) {
+                return;
+            }
+
+            Node node = randomNodes.get(0);
+            nodeId = node.getNodeId();
+            logger.info("start push pull from node:{}", nodeId);
+
             pushPullService.pushPull(node.getAddress());
-        } catch (Exception e) {
-            logger.error("push pull from node:{} caught exception:{}", node.getNodeId(), e);
+        } catch (Throwable e) {
+            logger.error("push pull from node:{} caught exception:{}", nodeId, e);
         }
     }
 

@@ -104,6 +104,24 @@ public class NettyHandler extends ChannelHandlerAdapter {
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
         logger.error("caught exception:", cause);
-        super.exceptionCaught(ctx, cause);
+        Channel channel = ctx.channel();
+        if (channel != null && !channel.isActive()) {
+            InetSocketAddress remote = (InetSocketAddress) channel.remoteAddress();
+            Address remoteAddress = new Address(remote);
+
+            InetSocketAddress local = (InetSocketAddress) channel.localAddress();
+            Address localAddress = new Address(local);
+            String connectionId = buildConnectionId(remoteAddress, localAddress);
+
+            Connection connection = connectionManager.getConnection(connectionId);
+            if (connection != null) {
+                logger.info("close connection:{} by exception", connectionId);
+                connection.close();
+            }
+        }
+    }
+
+    private String buildConnectionId(Address localAddress, Address remoteAddress) {
+        return localAddress.getIp() + ":" + localAddress.getPort() + "/" + remoteAddress.getIp() + ":" + remoteAddress.getPort();
     }
 }

@@ -45,7 +45,7 @@ public class NettyClient extends AbstractClient {
             .handler(new ChannelInitializer<SocketChannel>() {
                 @Override
                 protected void initChannel(SocketChannel ch) throws Exception {
-                    ch.pipeline().addLast("decoder", new LengthFieldBasedFrameDecoder(1024 * 1024, 0, 4, 0, 4));
+                    ch.pipeline().addLast("decoder", new LengthFieldBasedFrameDecoder(Integer.MAX_VALUE, 0, 4, 0, 4));
                     ch.pipeline().addLast("encoder", new LengthFieldPrepender(4, false));
                     ProtoStuffSerializer serialize = new ProtoStuffSerializer(new MessageTypes());
                     ch.pipeline().addLast("serializer", new SerializerHandler(serialize));

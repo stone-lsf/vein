@@ -1,5 +1,6 @@
 package com.sm.finance.charge.transport.netty;
 
+import com.sm.finance.charge.common.NamedThreadFactory;
 import com.sm.finance.charge.transport.api.Transport;
 import com.sm.finance.charge.transport.api.TransportClient;
 import com.sm.finance.charge.transport.api.TransportServer;
@@ -16,9 +17,9 @@ public class NettyTransport implements Transport {
 
     public NettyTransport(int workerCount, int defaultTimeout) {
         if (workerCount == 0) {
-            workerGroup = new NioEventLoopGroup();
+            workerGroup = new NioEventLoopGroup(0, new NamedThreadFactory("NettyPool"));
         } else {
-            workerGroup = new NioEventLoopGroup(workerCount);
+            workerGroup = new NioEventLoopGroup(workerCount, new NamedThreadFactory("NettyPool"));
         }
 
         this.defaultTimeout = defaultTimeout;

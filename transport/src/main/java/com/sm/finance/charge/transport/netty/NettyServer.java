@@ -11,6 +11,8 @@ import com.sm.finance.charge.transport.api.exceptions.BindException;
 import com.sm.finance.charge.transport.api.support.DefaultConnectionManager;
 
 import io.netty.bootstrap.ServerBootstrap;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
@@ -47,7 +49,7 @@ public class NettyServer extends AbstractService implements TransportServer {
             .childHandler(new ChannelInitializer<SocketChannel>() {
                 @Override
                 protected void initChannel(SocketChannel ch) throws Exception {
-                    ch.pipeline().addLast("decoder", new LengthFieldBasedFrameDecoder(1024 * 1024, 0, 4, 0, 4));
+                    ch.pipeline().addLast("decoder", new LengthFieldBasedFrameDecoder(Integer.MAX_VALUE, 0, 4, 0, 4));
                     ch.pipeline().addLast("encoder", new LengthFieldPrepender(4, false));
                     ProtoStuffSerializer serialize = new ProtoStuffSerializer(new MessageTypes());
                     ch.pipeline().addLast("serializer", new SerializerHandler(serialize));
@@ -56,7 +58,15 @@ public class NettyServer extends AbstractService implements TransportServer {
             });
         try {
             this.bindAddress = AddressUtil.getLocalAddress(port);
-            bootstrap.bind(bindAddress.getIp(), bindAddress.getPort()).sync();
+            bootstrap.bind(bindAddress.getIp(), bindAddress.getPort()).addListener((ChannelFutureListener) future -> {
+                if (future.isSuccess()) {
+                    logger.info("Started hetu server on port: " + bindAddress.getPort());
+                } else {
+                    logger.error("Failed to bind hetu server on port: " + bindAddress.getPort(), future.cause());
+                    throw new Exception("Failed to start hetu server on port: " + bindAddress.getPort());
+                }
+            }).sync();
+
             logger.info("bind port:[{}] success!", port);
         } catch (InterruptedException e) {
             throw new BindException("bind port " + port + " failed", e);
