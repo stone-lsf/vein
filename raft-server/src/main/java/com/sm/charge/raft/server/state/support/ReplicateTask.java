@@ -8,6 +8,7 @@ import com.sm.finance.charge.common.base.LoggerSupport;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * @author shifeng.luo
@@ -15,7 +16,8 @@ import java.util.concurrent.Future;
  */
 public class ReplicateTask extends LoggerSupport {
     private static final ExecutorService EXECUTOR = Executors.newFixedThreadPool(SystemConstants.PROCESSORS, new NamedThreadFactory("AppendPoll"));
-    private volatile boolean started = false;
+    private AtomicBoolean started = new AtomicBoolean(false);
+    private AtomicBoolean stopped = new AtomicBoolean(true);
     private Future<?> future;
     private final RaftMember target;
     private final Replicator replicator;
@@ -25,32 +27,31 @@ public class ReplicateTask extends LoggerSupport {
         this.replicator = replicator;
     }
 
-    public synchronized void start() {
-        if (!started) {
+    public void start() {
+        if (started.compareAndSet(false, true)) {
             future = EXECUTOR.submit(this::execute);
-            started = true;
+            stopped.set(false);
         }
     }
 
     private void execute() {
-        replicator.replicateTo(target).whenComplete((result, error) -> {
-            if (error != null) {
-                logger.error("replicate entry to {} caught exception", target.getNodeId(), error);
-            }
-
-            if (started) {
+        if (!stopped.get()) {
+            replicator.replicateTo(target).whenComplete((result, error) -> {
+                if (error != null) {
+                    logger.error("replicate entry to {} caught exception", target.getNodeId(), error);
+                }
                 future = EXECUTOR.submit(this::execute);
-            }
-        });
+            });
+        }
     }
 
 
-    public synchronized void stop() {
-        if (started) {
+    public void stop() {
+        if (stopped.compareAndSet(false, true)) {
             if (future != null) {
                 future.cancel(false);
             }
-            started = false;
+            started.set(false);
         }
     }
 }

@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="Mosaddek">
+    <meta name="keyword"
+          content="FlatLab, Dashboard, Bootstrap, Admin, Template, Theme, Responsive, Fluid, Retina">
+    <link rel="shortcut icon" href="img/favicon.jpg">
+
+    <title>测试</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <link href="css/bootstrap-reset.css" rel="stylesheet">
+    <!--external css-->
+    <link href="assets/font-awesome/css/font-awesome.css" rel="stylesheet"/>
+    <link href="assets/jquery-easy-pie-chart/jquery.easy-pie-chart.css" rel="stylesheet"
+          type="text/css" media="screen"/>
+    <link rel="stylesheet" href="css/owl.carousel.css" type="text/css">
+    <!-- Custom styles for this template -->
+    <link href="css/style.css" rel="stylesheet">
+    <link href="css/style-responsive.css" rel="stylesheet"/>
+
+    <!-- HTML5 shim and Respond.js IE8 support of HTML5 tooltipss and media queries -->
+    <!--[if lt IE 9]-->
+    <script src="js/jquery.js"></script>
+    <script src="js/jquery-1.8.3.min.js"></script>
+    <script src="js/html5shiv.js"></script>
+    <script src="js/respond.min.js"></script>
+    <!--[endif]-->
+</head>
+
+<script type="text/javascript" charset="utf-8">
+
+    //owl carousel
+
+    $(document).ready(function(){
+        $("#owl-demo").owlCarousel({
+            navigation: true,
+            slideSpeed: 300,
+            paginationSpeed: 400,
+            singleItem: true,
+            autoPlay: true
+        });
+        $.ajax({
+                   url: 'dashboard',
+                   type: 'get',
+                   async: false,
+                   data:'business=1',
+                   success: function (data) {
+                       var json = data;
+                       var status = json.status;
+                       if (0 != status) {
+                           alert(json.message);
+                       } else {
+                           showBrief(json.data);
+                       }
+                   },
+                   error: function (data) {
+                       alert("服务内部错误");
+                   }
+               });
+    });
+
+    //custom select box
+
+    function showBrief(brief) {
+        var wlUsers = brief.wlUsers;
+        var wlTotalBudget = brief.wlTotalBudget;
+        var hcUsers = brief.hcUsers;
+        var hcTotalBudget = brief.hcTotalBudget;
+
+        $("#wlTotalBudget").html(wlTotalBudget);
+        $("#wlUsers").html(wlUsers);
+        $("#hcTotalBudget").html(hcTotalBudget);
+        $("#hcUsers").html(hcUsers);
+    }
+
+    $(function () {
+        $('select.styled').customSelect();
+    });
+
+</script>
+
+<body>
+
+<section id="container">
+    <!--header start-->
+    <header class="header white-bg">
+        <div class="sidebar-toggle-box">
+            <div data-original-title="Toggle Navigation" data-placement="right"
+                 class="icon-reorder tooltips">
+
+            </div>
+        </div>
+        <!--logo start-->
+        <a href="index.html" class="logo">测试<span>平台</span></a>
+        <!--logo end-->
+    </header>
+    <!--header end-->
+    <!--sidebar start-->
+    <aside>
+        <div id="sidebar" class="nav-collapse ">
+            <!-- sidebar menu start-->
+            <ul class="sidebar-menu" id="nav-accordion">
+                <li>
+                    <a class="active" href="index.html">
+                        <i class="icon-dashboard"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+
+                <li class="sub-menu">
+                    <a href="javascript:;">
+                        <i class="icon-laptop"></i>
+                        <span>Raft</span>
+                    </a>
+                    <ul class="sub">
+                        <li><a href="wl_exceed_users.html">超预算用户</a></li>
+                        <li><a href="wl_exceed_logs.html">不计费日志</a></li>
+                        <li><a href="wl_global_consume.html">整体收入曲线</a></li>
+                        <li><a href="wl_users_consume.html">用户收入曲线</a></li>
+                        <li><a href="wl_userids_consume.html">用户(id)收入曲线</a></li>
+                        <li><a href="wl_user_temp_consume.html">临时用户收入曲线</a></li>
+                    </ul>
+                </li>
+
+                <li class="sub-menu">
+                    <a href="javascript:;">
+                        <i class="icon-laptop"></i>
+                        <span>Discovery</span>
+                    </a>
+                    <ul class="sub">
+                        <li><a href="hc_exceed_users.html">超预算用户</a></li>
+                        <li><a href="hc_exceed_click_logs.html">不计费点击日志</a></li>
+                        <li><a href="hc_global_consume.html">整体收入曲线</a></li>
+                        <li><a href="hc_users_consume.html">用户收入曲线</a></li>
+                        <li><a href="hc_userids_consume.html">用户(id)收入曲线</a></li>
+                        <li><a href="hc_user_temp_consume.html">临时用户收入曲线</a></li>
+                    </ul>
+                </li>
+
+            </ul>
+            <!-- sidebar menu end-->
+        </div>
+    </aside>
+    <!--sidebar end-->
+    <!--main content start-->
+    <section id="main-content">
+        <section class="wrapper">
+            <div class="row">
+                <div class="col-sm-12">
+                <section class="panel">
+                    <header class="panel-heading ">
+                        <h4>今日超预算信息</h4>
+                    </header>
+                </section>
+                </div>
+            </div>
+            <!--state overview start-->
+            <div class="row state-overview">
+                <div class="col-lg-3 col-sm-6">
+                    <section class="panel">
+                        <div class="symbol terques">
+                            <i class="icon-user"></i>
+                        </div>
+                        <div class="value">
+                            <h3 id="wlUsers">
+
+                            </h3>
+                            <p>卧龙超预算用户数</p>
+                        </div>
+                    </section>
+                </div>
+                <div class="col-lg-3 col-sm-6">
+                    <section class="panel">
+                        <div class="symbol red">
+                            <i class="icon-money"></i>
+                        </div>
+                        <div class="value">
+                            <h3 id="wlTotalBudget">
+
+                            </h3>
+                            <p>卧龙超预算总额</p>
+                        </div>
+                    </section>
+                </div>
+                <div class="col-lg-3 col-sm-6">
+                    <section class="panel">
+                        <div class="symbol yellow">
+                            <i class="icon-user"></i>
+                        </div>
+                        <div class="value">
+                            <h3 id="hcUsers">
+
+                            </h3>
+                            <p>汇川超预算用户数</p>
+                        </div>
+                    </section>
+                </div>
+                <div class="col-lg-3 col-sm-6">
+                    <section class="panel">
+                        <div class="symbol blue">
+                            <i class="icon-money"></i>
+                        </div>
+                        <div class="value">
+                            <!--<h1 class=" count4">-->
+                            <h3 id="hcTotalBudget">
+
+                            </h3>
+                            <p>汇川超预算总额</p>
+                        </div>
+                    </section>
+                </div>
+            </div>
+            <!--state overview end-->
+        </section>
+
+        <!--footer start-->
+        <!--<footer class="site-footer">-->
+            <!--<div class="text-center">-->
+                <!--2017 &copy; 神马商搜-->
+                <!--<a href="#" class="go-top">-->
+                    <!--<i class="icon-angle-up"></i>-->
+                <!--</a>-->
+            <!--</div>-->
+        <!--</footer>-->
+        <!--footer end-->
+    </section>
+    <!--main content end-->
+
+</section>
+
+<!-- js placed at the end of the document so the pages load faster -->
+
+<script src="js/bootstrap.min.js"></script>
+<script class="include" type="text/javascript" src="js/jquery.dcjqaccordion.2.7.js"></script>
+<script src="js/jquery.scrollTo.min.js"></script>
+<script src="js/jquery.nicescroll.js" type="text/javascript"></script>
+<script src="js/jquery.sparkline.js" type="text/javascript"></script>
+<script src="assets/jquery-easy-pie-chart/jquery.easy-pie-chart.js"></script>
+<script src="js/owl.carousel.js"></script>
+<script src="js/jquery.customSelect.min.js"></script>
+<script src="js/respond.min.js"></script>
+
+<script class="include" type="text/javascript" src="js/jquery.dcjqaccordion.2.7.js"></script>
+
+<!--common script for all pages-->
+<script src="js/common-scripts.js"></script>
+
+<!--script for this page-->
+<script src="js/sparkline-chart.js"></script>
+<script src="js/easy-pie-chart.js"></script>
+<script src="js/count.js"></script>
+
+</body>
+</html>

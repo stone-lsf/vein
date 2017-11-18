@@ -197,6 +197,7 @@ public class RaftServerImpl extends AbstractService implements RaftServer, Maste
         return self.getNodeId();
     }
 
+    @Override
     public boolean join() {
         String membersStr = raftConfig.getMembers();
         List<Address> members = AddressUtil.parseList(membersStr);

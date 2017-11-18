@@ -12,5 +12,9 @@ public interface SnapshotReader extends BufferInputStream<SnapshotReader> {
 
     File getFile();
 
+    /**
+     * close reader
+     */
+    @Override
     void close();
 }

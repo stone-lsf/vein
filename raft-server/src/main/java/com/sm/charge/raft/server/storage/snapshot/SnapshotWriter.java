@@ -21,5 +21,9 @@ public interface SnapshotWriter extends BufferOutputStream<SnapshotWriter> {
 
     SnapshotWriter trimToValidSize();
 
+    /**
+     * close writer
+     */
+    @Override
     void close();
 }

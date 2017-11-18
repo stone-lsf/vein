@@ -19,6 +19,7 @@
         <module>cluster</module>
         <module>raft-server</module>
         <module>raft-client</module>
+        <module>test</module>
     </modules>
 
 
@@ -350,6 +351,7 @@
                 <groupId>junit</groupId>
                 <artifactId>junit</artifactId>
                 <version>4.12</version>
+                <scope>test</scope>
             </dependency>
 
             <dependency>

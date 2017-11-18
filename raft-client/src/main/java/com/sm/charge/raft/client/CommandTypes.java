@@ -1,13 +1,13 @@
 package com.sm.charge.raft.client;
 
 import com.sm.finance.charge.serializer.api.Serializable;
-import com.sm.finance.charge.serializer.api.SerializableManager;
+import com.sm.finance.charge.serializer.api.AbstractSerializableManager;
 
 /**
  * @author shifeng.luo
  * @version created on 2017/11/5 下午6:11
  */
-public class CommandTypes extends SerializableManager {
+public class CommandTypes extends AbstractSerializableManager {
 
     public CommandTypes() {
         SerializableType[] types = SerializableType.values();

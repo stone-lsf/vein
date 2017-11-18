@@ -38,10 +38,11 @@ public class AliveMessage implements GossipContent {
         return ALIVE;
     }
 
+    @Override
     public String getNodeId() {
         return nodeId;
     }
-
+    @Override
     public void setNodeId(String nodeId) {
         this.nodeId = nodeId;
     }
@@ -54,10 +55,12 @@ public class AliveMessage implements GossipContent {
         this.address = address;
     }
 
+    @Override
     public long getIncarnation() {
         return incarnation;
     }
 
+    @Override
     public void setIncarnation(long incarnation) {
         this.incarnation = incarnation;
     }

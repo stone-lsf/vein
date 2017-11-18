@@ -34,18 +34,22 @@ public class DeadMessage implements GossipContent {
         return DEAD;
     }
 
+    @Override
     public String getNodeId() {
         return nodeId;
     }
 
+    @Override
     public void setNodeId(String nodeId) {
         this.nodeId = nodeId;
     }
 
+    @Override
     public long getIncarnation() {
         return incarnation;
     }
 
+    @Override
     public void setIncarnation(long incarnation) {
         this.incarnation = incarnation;
     }

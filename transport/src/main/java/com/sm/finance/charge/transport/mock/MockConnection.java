@@ -24,7 +24,7 @@ public class MockConnection extends AbstractConnection {
     }
 
     @Override
-    protected void sendRequest(Request request, int timeout) throws Exception {
+    protected void sendAndReceive(Request request, int timeout) throws Exception {
         network.sendRequest(this, request);
         timeoutScheduler.schedule(request.getId(), timeout);
     }

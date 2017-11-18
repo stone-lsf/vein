@@ -45,10 +45,12 @@ public class SuspectMessage implements GossipContent {
         return SUSPECT;
     }
 
+    @Override
     public String getNodeId() {
         return nodeId;
     }
 
+    @Override
     public void setNodeId(String nodeId) {
         this.nodeId = nodeId;
     }
@@ -61,10 +63,12 @@ public class SuspectMessage implements GossipContent {
         this.address = address;
     }
 
+    @Override
     public long getIncarnation() {
         return incarnation;
     }
 
+    @Override
     public void setIncarnation(long incarnation) {
         this.incarnation = incarnation;
     }

@@ -26,10 +26,12 @@ public class NettyTransport implements Transport {
     }
 
 
+    @Override
     public TransportClient client() {
         return new NettyClient(workerGroup, defaultTimeout);
     }
 
+    @Override
     public TransportServer server() {
         return new NettyServer(workerGroup, defaultTimeout);
     }

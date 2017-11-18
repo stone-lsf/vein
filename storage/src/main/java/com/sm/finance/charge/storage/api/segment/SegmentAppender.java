@@ -46,5 +46,9 @@ public interface SegmentAppender extends AutoCloseable {
      */
     SegmentAppender flush() throws IOException;
 
+    /**
+     * close appender
+     */
+    @Override
     void close();
 }

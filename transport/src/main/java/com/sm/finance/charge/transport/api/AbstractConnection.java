@@ -110,14 +110,14 @@ public abstract class AbstractConnection extends AbstractService implements Conn
         responseFutures.put(id, result);
         requestMap.put(id, new RequestInfo(request, System.currentTimeMillis()));
         try {
-            sendRequest(request, timeout);
+            sendAndReceive(request, timeout);
         } catch (Exception e) {
             result.completeExceptionally(e);
         }
         return result;
     }
 
-    protected abstract void sendRequest(Request request, int timeout) throws Exception;
+    protected abstract void sendAndReceive(Request request, int timeout) throws Exception;
 
     protected abstract void sendRequest(Request request) throws Exception;
 

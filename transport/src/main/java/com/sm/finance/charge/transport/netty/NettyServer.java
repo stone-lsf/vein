@@ -45,6 +45,7 @@ public class NettyServer extends AbstractService implements TransportServer {
         bootstrap.group(new NioEventLoopGroup(1), workerGroup)
             .channel(NioServerSocketChannel.class)
             .option(ChannelOption.TCP_NODELAY, true)
+            .option(ChannelOption.SO_BACKLOG, 1024)
             .childOption(ChannelOption.SO_KEEPALIVE, true)
             .childHandler(new ChannelInitializer<SocketChannel>() {
                 @Override

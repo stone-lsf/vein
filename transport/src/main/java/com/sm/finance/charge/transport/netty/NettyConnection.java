@@ -22,7 +22,7 @@ public class NettyConnection extends AbstractConnection {
     }
 
     @Override
-    protected void sendRequest(Request request, int timeout) {
+    protected void sendAndReceive(Request request, int timeout) {
         doSend(request);
         timeoutScheduler.schedule(request.getId(), timeout);
     }

@@ -34,7 +34,7 @@ public class LocalConnection extends AbstractConnection {
     }
 
     @Override
-    protected void sendRequest(Request request, int timeout) {
+    protected void sendAndReceive(Request request, int timeout) {
         channel.writeAndFlush(request);
         timeoutScheduler.schedule(request.getId(), timeout);
     }

@@ -14,6 +14,10 @@ public interface ConnectionHolder extends CloseListener {
 
     void clearConnection();
 
+    /**
+     * close
+     */
+    @Override
     default void onClose() {
         clearConnection();
     }

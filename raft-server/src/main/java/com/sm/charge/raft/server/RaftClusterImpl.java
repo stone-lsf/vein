@@ -31,6 +31,7 @@ public class RaftClusterImpl extends AbstractService implements RaftCluster {
         return name;
     }
 
+    @Override
     public RaftMember master() {
         return master;
     }
@@ -40,6 +41,7 @@ public class RaftClusterImpl extends AbstractService implements RaftCluster {
         this.master = master;
     }
 
+    @Override
     public RaftMember member(String memberId) {
         return members.get(memberId);
     }
@@ -49,15 +51,18 @@ public class RaftClusterImpl extends AbstractService implements RaftCluster {
         return false;
     }
 
+    @Override
     public RaftMember local() {
         return self;
     }
 
+    @Override
     public int getQuorum() {
         int size = members.size();
         return (size + 1) / 2;
     }
 
+    @Override
     public long version() {
         return version;
     }
@@ -67,6 +72,7 @@ public class RaftClusterImpl extends AbstractService implements RaftCluster {
         this.version = version;
     }
 
+    @Override
     public List<RaftMember> members() {
         return Lists.newArrayList(members.values());
     }
