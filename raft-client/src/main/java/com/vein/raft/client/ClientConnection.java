@@ -123,9 +123,7 @@ public class ClientConnection extends LoggerSupport {
     }
 
     private void connectCluster(Connection connection, CompletableFuture<Connection> future) {
-        connection.addCloseListener(() -> {
-            this.connection = null;
-        });
+        connection.addCloseListener(() -> this.connection = null);
 
         ConnectRequest request = new ConnectRequest();
         connection.<RaftResponse<ConnectResponse>>request(request).whenComplete((response, error) -> {

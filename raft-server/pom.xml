@@ -3,48 +3,48 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
-        <artifactId>charge-memory</artifactId>
-        <groupId>com.sm.finance</groupId>
+        <groupId>com.vein</groupId>
+        <artifactId>vein-parent</artifactId>
         <version>1.0.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>charge-raft-server</artifactId>
+    <artifactId>vein-raft-server</artifactId>
 
     <dependencies>
         <dependency>
-            <groupId>com.sm.finance</groupId>
-            <artifactId>charge-common</artifactId>
+            <groupId>com.vein</groupId>
+            <artifactId>vein-common</artifactId>
             <version>1.0.0-SNAPSHOT</version>
         </dependency>
 
         <dependency>
-            <groupId>com.sm.finance</groupId>
-            <artifactId>charge-raft-client</artifactId>
+            <groupId>com.vein</groupId>
+            <artifactId>vein-raft-client</artifactId>
             <version>1.0.0-SNAPSHOT</version>
         </dependency>
 
         <dependency>
-            <groupId>com.sm.finance</groupId>
-            <artifactId>charge-transport</artifactId>
+            <groupId>com.vein</groupId>
+            <artifactId>vein-transport</artifactId>
             <version>1.0.0-SNAPSHOT</version>
         </dependency>
 
         <dependency>
-            <groupId>com.sm.finance</groupId>
-            <artifactId>charge-discovery</artifactId>
+            <groupId>com.vein</groupId>
+            <artifactId>vein-discovery</artifactId>
             <version>1.0.0-SNAPSHOT</version>
         </dependency>
 
         <dependency>
-            <groupId>com.sm.finance</groupId>
-            <artifactId>charge-buffer</artifactId>
+            <groupId>com.vein</groupId>
+            <artifactId>vein-buffer</artifactId>
             <version>1.0.0-SNAPSHOT</version>
         </dependency>
 
         <dependency>
-            <groupId>com.sm.finance</groupId>
-            <artifactId>charge-storage</artifactId>
+            <groupId>com.vein</groupId>
+            <artifactId>vein-storage</artifactId>
             <version>1.0.0-SNAPSHOT</version>
         </dependency>
 
