@@ -5,26 +5,26 @@
        http://www.springframework.org/schema/beans/spring-beans.xsd">
 
 
-    <bean id="raftClient" class="com.sm.charge.raft.client.RaftClientImpl">
+    <bean id="raftClient" class="com.vein.raft.client.RaftClientImpl">
         <property name="clusters">
             <list>
-                <bean class="com.sm.finance.charge.common.Address">
+                <bean class="com.vein.common.Address">
                     <property name="ip" value="11.251.208.51"/>
                     <property name="port" value="55557"/>
                 </bean>
-                <bean class="com.sm.finance.charge.common.Address">
+                <bean class="com.vein.common.Address">
                     <property name="ip" value="11.251.208.52"/>
                     <property name="port" value="55557"/>
                 </bean>
-                <bean class="com.sm.finance.charge.common.Address">
+                <bean class="com.vein.common.Address">
                     <property name="ip" value="11.251.208.53"/>
                     <property name="port" value="55557"/>
                 </bean>
-                <bean class="com.sm.finance.charge.common.Address">
+                <bean class="com.vein.common.Address">
                     <property name="ip" value="11.251.208.54"/>
                     <property name="port" value="55557"/>
                 </bean>
-                <bean class="com.sm.finance.charge.common.Address">
+                <bean class="com.vein.common.Address">
                     <property name="ip" value="11.251.208.177"/>
                     <property name="port" value="55557"/>
                 </bean>

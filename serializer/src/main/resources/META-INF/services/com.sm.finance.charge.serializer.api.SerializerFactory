@@ -1,2 +1,0 @@
-json=com.sm.finance.charge.serializer.json.JsonSerializerFactory
-proto=com.sm.finance.charge.serializer.protostuff.ProtoSerializerFactory

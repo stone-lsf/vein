@@ -18,7 +18,7 @@
 
     <task:annotation-driven/>
 
-    <bean id="propertyConfigurer" class="com.sm.charge.test.common.MultiModeConfigurer">
+    <bean id="propertyConfigurer" class="com.vein.test.common.MultiModeConfigurer">
         <property name="locations">
             <list>
                 <value>classpath:${profile}/*.properties</value>

@@ -1,0 +1,2 @@
+json=com.vein.serializer.json.JsonSerializerFactory
+proto=com.vein.serializer.protostuff.ProtoSerializerFactory
