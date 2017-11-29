@@ -12,6 +12,9 @@ public class Address {
     private String ip;
     private int port;
 
+    public Address() {
+    }
+
     public Address(InetSocketAddress socketAddress) {
         Preconditions.checkNotNull(socketAddress);
         this.ip = socketAddress.getAddress().getHostAddress();

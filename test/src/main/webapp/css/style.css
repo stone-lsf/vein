@@ -2394,7 +2394,12 @@ ul.inbox-pagination li {
 }
 
 .bio-desk {
-    width: 60%;
+    width: 100%;
+}
+
+.bio-desk p span {
+    width: 100px;
+    display: inline-block;
 }
 
 .bio-desk h4 {

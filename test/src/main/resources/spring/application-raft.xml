@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+       http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+
+    <bean id="raftClient" class="com.sm.charge.raft.client.RaftClientImpl">
+        <property name="clusters">
+            <list>
+                <bean class="com.sm.finance.charge.common.Address">
+                    <property name="ip" value="11.251.208.51"/>
+                    <property name="port" value="55557"/>
+                </bean>
+                <bean class="com.sm.finance.charge.common.Address">
+                    <property name="ip" value="11.251.208.52"/>
+                    <property name="port" value="55557"/>
+                </bean>
+                <bean class="com.sm.finance.charge.common.Address">
+                    <property name="ip" value="11.251.208.53"/>
+                    <property name="port" value="55557"/>
+                </bean>
+                <bean class="com.sm.finance.charge.common.Address">
+                    <property name="ip" value="11.251.208.54"/>
+                    <property name="port" value="55557"/>
+                </bean>
+                <bean class="com.sm.finance.charge.common.Address">
+                    <property name="ip" value="11.251.208.177"/>
+                    <property name="port" value="55557"/>
+                </bean>
+            </list>
+        </property>
+    </bean>
+</beans>

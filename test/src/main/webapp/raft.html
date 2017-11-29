@@ -9,7 +9,7 @@
           content="FlatLab, Dashboard, Bootstrap, Admin, Template, Theme, Responsive, Fluid, Retina">
     <link rel="shortcut icon" href="img/favicon.jpg">
 
-    <title>Butler</title>
+    <title>raft</title>
 
     <!-- Bootstrap core CSS -->
     <link href="css/bootstrap.min.css" rel="stylesheet">
@@ -19,6 +19,8 @@
     <link href="assets/jquery-easy-pie-chart/jquery.easy-pie-chart.css" rel="stylesheet"
           type="text/css" media="screen"/>
     <link rel="stylesheet" href="css/owl.carousel.css" type="text/css">
+    <link href="assets/morris.js-0.4.3/morris.css" rel="stylesheet"/>
+
     <!-- Custom styles for this template -->
     <link href="css/style.css" rel="stylesheet">
     <link href="css/style-responsive.css" rel="stylesheet"/>
@@ -33,36 +35,29 @@
 </head>
 
 <script type="text/javascript" charset="utf-8">
-
-    //owl carousel
-
-    $(document).ready(function(){
+    $(document).ready(function () {
         $("#owl-demo").owlCarousel({
-            navigation: true,
-            slideSpeed: 300,
-            paginationSpeed: 400,
-            singleItem: true,
-            autoPlay: true
-        });
+                                       navigation: true,
+                                       slideSpeed: 300,
+                                       paginationSpeed: 400,
+                                       singleItem: true,
+                                       autoPlay: true
+                                   });
+
     });
-
-
-    function showBrief(brief) {
-        var wlUsers = brief.wlUsers;
-        var wlTotalBudget = brief.wlTotalBudget;
-        var hcUsers = brief.hcUsers;
-        var hcTotalBudget = brief.hcTotalBudget;
-
-        $("#wlTotalBudget").html(wlTotalBudget);
-        $("#wlUsers").html(wlUsers);
-        $("#hcTotalBudget").html(hcTotalBudget);
-        $("#hcUsers").html(hcUsers);
-    }
 
     $(function () {
         $('select.styled').customSelect();
     });
 
+    function getQueryString(name) {
+        var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)", "i");
+        var r = window.location.search.substr(1).match(reg);
+        if (r != null) {
+            return unescape(r[2]);
+        }
+        return null;
+    }
 </script>
 
 <body>
@@ -87,19 +82,19 @@
             <!-- sidebar menu start-->
             <ul class="sidebar-menu" id="nav-accordion">
                 <li>
-                    <a class="active" href="index.html">
+                    <a href="index.html">
                         <i class="icon-dashboard"></i>
                         <span>Dashboard</span>
                     </a>
                 </li>
 
                 <li class="sub-menu">
-                    <a href="javascript:;">
+                    <a href="javascript:;" class="active">
                         <i class="icon-laptop"></i>
                         <span>Raft</span>
                     </a>
                     <ul class="sub">
-                        <li><a href="raft.html">raft</a></li>
+                        <li class="active"><a href="raft.html">raft</a></li>
                     </ul>
                 </li>
 
@@ -112,7 +107,6 @@
                         <li><a href="discovery.html">discovery</a></li>
                     </ul>
                 </li>
-
             </ul>
             <!-- sidebar menu end-->
         </div>
@@ -122,82 +116,72 @@
     <section id="main-content">
         <section class="wrapper">
             <div class="row">
-                <div class="col-sm-12">
-                <section class="panel">
-                    <header class="panel-heading ">
-                        <h4>今日超预算信息</h4>
-                    </header>
-                </section>
+                <div class="col-lg-3">
+                    <div class="panel">
+                        <div class="panel-body">
+
+                            <div class="bio-desk">
+                                <h4 class="green">Node:11.251.208/55558</h4>
+                                <p><span>term</span>: Jonathan</p>
+                                <p><span>nextLogIndex</span>: Smith</p>
+                                <p><span>commitIndex</span>: Australia</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3">
+                    <div class="panel">
+                        <div class="panel-body">
+
+                            <div class="bio-desk">
+                                <h4 class="green">Node:11.251.208/55558</h4>
+                                <p><span>term</span>: Jonathan</p>
+                                <p><span>nextLogIndex</span>: Smith</p>
+                                <p><span>commitIndex</span>: Australia</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3">
+                    <div class="panel">
+                        <div class="panel-body">
+
+                            <div class="bio-desk">
+                                <h4 class="green">Node:11.251.208/55558</h4>
+                                <p><span>term</span>: Jonathan</p>
+                                <p><span>nextLogIndex</span>: Smith</p>
+                                <p><span>commitIndex</span>: Australia</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3">
+                    <div class="panel">
+                        <div class="panel-body">
+
+                            <div class="bio-desk">
+                                <h4 class="green">Node:11.251.208/55558</h4>
+                                <p><span>term</span>: Jonathan</p>
+                                <p><span>nextLogIndex</span>: Smith</p>
+                                <p><span>commitIndex</span>: Australia</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
-            <!--state overview start-->
-            <div class="row state-overview">
-                <div class="col-lg-3 col-sm-6">
-                    <section class="panel">
-                        <div class="symbol terques">
-                            <i class="icon-user"></i>
-                        </div>
-                        <div class="value">
-                            <h3 id="wlUsers">
 
-                            </h3>
-                            <p>卧龙超预算用户数</p>
-                        </div>
-                    </section>
-                </div>
-                <div class="col-lg-3 col-sm-6">
-                    <section class="panel">
-                        <div class="symbol red">
-                            <i class="icon-money"></i>
-                        </div>
-                        <div class="value">
-                            <h3 id="wlTotalBudget">
 
-                            </h3>
-                            <p>卧龙超预算总额</p>
-                        </div>
-                    </section>
-                </div>
-                <div class="col-lg-3 col-sm-6">
-                    <section class="panel">
-                        <div class="symbol yellow">
-                            <i class="icon-user"></i>
-                        </div>
-                        <div class="value">
-                            <h3 id="hcUsers">
-
-                            </h3>
-                            <p>汇川超预算用户数</p>
-                        </div>
-                    </section>
-                </div>
-                <div class="col-lg-3 col-sm-6">
-                    <section class="panel">
-                        <div class="symbol blue">
-                            <i class="icon-money"></i>
-                        </div>
-                        <div class="value">
-                            <!--<h1 class=" count4">-->
-                            <h3 id="hcTotalBudget">
-
-                            </h3>
-                            <p>汇川超预算总额</p>
-                        </div>
-                    </section>
-                </div>
-            </div>
-            <!--state overview end-->
         </section>
 
         <!--footer start-->
-        <!--<footer class="site-footer">-->
-            <!--<div class="text-center">-->
-                <!--2017 &copy; 神马商搜-->
-                <!--<a href="#" class="go-top">-->
-                    <!--<i class="icon-angle-up"></i>-->
-                <!--</a>-->
-            <!--</div>-->
-        <!--</footer>-->
+        <footer class="site-footer">
+            <div class="text-center">
+                2017 &copy; 神马商搜
+                <a href="#" class="go-top">
+                    <i class="icon-angle-up"></i>
+                </a>
+            </div>
+        </footer>
         <!--footer end-->
     </section>
     <!--main content end-->
@@ -215,6 +199,8 @@
 <script src="js/owl.carousel.js"></script>
 <script src="js/jquery.customSelect.min.js"></script>
 <script src="js/respond.min.js"></script>
+<script src="assets/morris.js-0.4.3/morris.min.js" type="text/javascript"></script>
+<script src="assets/morris.js-0.4.3/raphael-min.js" type="text/javascript"></script>
 
 <script class="include" type="text/javascript" src="js/jquery.dcjqaccordion.2.7.js"></script>
 
@@ -225,6 +211,7 @@
 <script src="js/sparkline-chart.js"></script>
 <script src="js/easy-pie-chart.js"></script>
 <script src="js/count.js"></script>
+<script src="js/morris-script.js"></script>
 
 </body>
 </html>

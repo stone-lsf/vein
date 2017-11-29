@@ -30,6 +30,10 @@ public class ClientConnection extends LoggerSupport {
     private volatile List<Address> clusters;
     private volatile int index;
 
+    public ClientConnection(TransportClient client) {
+        this.client = client;
+    }
+
     public ClientConnection(TransportClient client, List<Address> clusters) {
         this.client = client;
         this.clusters = clusters;
@@ -37,6 +41,10 @@ public class ClientConnection extends LoggerSupport {
 
     public Address getLeader() {
         return leader;
+    }
+
+    public void setClusters(List<Address> clusters) {
+        this.clusters = clusters;
     }
 
     public <T> CompletableFuture<T> request(Object request) {
@@ -97,8 +105,9 @@ public class ClientConnection extends LoggerSupport {
     }
 
     private void connect(CompletableFuture<Connection> future) {
-        if (index > clusters.size()) {
+        if (index >= clusters.size()) {
             logger.error("fail to connect to cluster");
+            index = 0;
             future.completeExceptionally(new RuntimeException("fail to connect to cluster"));
         } else {
             Address address = clusters.get(index);

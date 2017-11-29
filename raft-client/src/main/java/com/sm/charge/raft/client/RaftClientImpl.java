@@ -20,6 +20,11 @@ public class RaftClientImpl extends LoggerSupport implements RaftClient {
     private Transport transport;
     private ClientConnection connection;
 
+    public RaftClientImpl() {
+        this.transport = TransportFactory.create("netty");
+        this.connection = new ClientConnection(transport.client());
+    }
+
     public RaftClientImpl(List<Address> clusters) {
         this.clusters = clusters;
         this.transport = TransportFactory.create("netty");
@@ -28,6 +33,7 @@ public class RaftClientImpl extends LoggerSupport implements RaftClient {
 
     @Override
     public void start() {
+        connection.setClusters(clusters);
         Connection conn = connection.connect().handle((connection, error) -> {
             if (error == null) {
                 return connection;
@@ -59,5 +65,9 @@ public class RaftClientImpl extends LoggerSupport implements RaftClient {
     @Override
     public void close() {
 
+    }
+
+    public void setClusters(List<Address> clusters) {
+        this.clusters = clusters;
     }
 }

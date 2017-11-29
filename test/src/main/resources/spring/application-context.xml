@@ -26,4 +26,5 @@
         </property>
     </bean>
 
+    <import resource="application-raft.xml"/>
 </beans>
