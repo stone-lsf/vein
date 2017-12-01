@@ -12,7 +12,7 @@ import javax.annotation.Resource;
  * @author shifeng.luo
  * @version created on 2017/11/9 下午3:34
  */
-@Service
+//@Service
 public class StartUpListener extends LoggerSupport implements ApplicationListener<ContextRefreshedEvent> {
 
     @Resource

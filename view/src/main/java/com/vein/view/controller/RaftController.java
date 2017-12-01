@@ -19,7 +19,7 @@ import javax.annotation.Resource;
 @RequestMapping("/raft")
 public class RaftController extends LoggerSupport implements InitializingBean {
 
-    @Resource
+//    @Resource
     private RaftClient raftClient;
 
 
@@ -31,11 +31,11 @@ public class RaftController extends LoggerSupport implements InitializingBean {
 
     @Override
     public void afterPropertiesSet() throws Exception {
-        logger.info("================================");
-        try {
-            raftClient.start();
-        } catch (Throwable e) {
-            logger.error("start error", e);
-        }
+//        logger.info("================================");
+//        try {
+//            raftClient.start();
+//        } catch (Throwable e) {
+//            logger.error("start error", e);
+//        }
     }
 }

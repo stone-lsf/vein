@@ -23,7 +23,7 @@ import java.io.File;
  * @author shifeng.luo
  * @version created on 2017/10/22 上午11:11
  */
-@Service
+//@Service
 public class ChargeServer extends LoggerSupport implements InitializingBean{
 
     private ClusterService clusterService;
