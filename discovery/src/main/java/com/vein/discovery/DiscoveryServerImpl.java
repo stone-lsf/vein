@@ -1,9 +1,15 @@
 package com.vein.discovery;
 
+import com.vein.common.AbstractService;
+import com.vein.common.Address;
+import com.vein.common.utils.AddressUtil;
+import com.vein.common.utils.ThreadUtil;
+import com.vein.discovery.gossip.GossipFinishNotifier;
 import com.vein.discovery.gossip.GossipMessageService;
 import com.vein.discovery.gossip.GossipMessageServiceImpl;
 import com.vein.discovery.gossip.MessageGossiper;
 import com.vein.discovery.gossip.messages.AliveMessage;
+import com.vein.discovery.gossip.messages.DeadMessage;
 import com.vein.discovery.handler.GossipRequestHandler;
 import com.vein.discovery.handler.PingMessageHandler;
 import com.vein.discovery.handler.PushPullRequestHandler;
@@ -14,10 +20,6 @@ import com.vein.discovery.probe.ProbeTask;
 import com.vein.discovery.pushpull.PushPullService;
 import com.vein.discovery.pushpull.PushPullServiceImpl;
 import com.vein.discovery.pushpull.PushPullTask;
-import com.vein.common.AbstractService;
-import com.vein.common.Address;
-import com.vein.common.utils.AddressUtil;
-import com.vein.common.utils.ThreadUtil;
 import com.vein.transport.api.ConnectionManager;
 import com.vein.transport.api.Transport;
 import com.vein.transport.api.TransportClient;
@@ -37,15 +39,14 @@ import static com.vein.discovery.NodeStatus.ALIVE;
  * @author shifeng.luo
  * @version created on 2017/9/11 下午9:00
  */
-public class DiscoveryServiceImpl extends AbstractService implements DiscoveryService {
+public class DiscoveryServerImpl extends AbstractService implements DiscoveryServer {
 
     private final Node localNode;
     private final ServerContext serverContext;
     private final DiscoveryConfig config;
     private final Nodes nodes;
 
-    private final MessageGossiper messageQueue;
-    private volatile boolean joined = false;
+    private final MessageGossiper gossiper;
     private GossipMessageService gossipMessageService;
     private PushPullService pushPullService;
     private ProbeService probeService;
@@ -54,7 +55,7 @@ public class DiscoveryServiceImpl extends AbstractService implements DiscoverySe
     private volatile ScheduledFuture probeFuture;
     private volatile ScheduledFuture pushPullFuture;
 
-    public DiscoveryServiceImpl(DiscoveryConfig config) {
+    public DiscoveryServerImpl(DiscoveryConfig config) {
         this.config = config;
         Address address = AddressUtil.getLocalAddress(config.getBindPort());
 
@@ -69,17 +70,13 @@ public class DiscoveryServiceImpl extends AbstractService implements DiscoverySe
         this.serverContext = new ServerContext(localNode.getNodeId(), client, server);
 
         nodes = new Nodes(nodeId);
-        messageQueue = new MessageGossiper(nodes, config);
+        gossiper = new MessageGossiper(nodes, config);
     }
 
 
     @Override
-    public synchronized void join() {
-        if (joined) {
-            return;
-        }
+    public void join() {
         logger.info("start join discovery cluster");
-
         String members = config.getMembers();
         List<Address> addresses = AddressUtil.parseList(members);
 
@@ -106,6 +103,22 @@ public class DiscoveryServiceImpl extends AbstractService implements DiscoverySe
     }
 
     @Override
+    public void left() {
+        long incarnation = localNode.nextIncarnation();
+        logger.info("node:{} trying to left, incarnation:{}", localNode, incarnation);
+        DeadMessage message = new DeadMessage(localNode.nodeId, incarnation, localNode.nodeId);
+
+        GossipFinishNotifier notifier = () -> {
+            try {
+                close();
+            } catch (Exception e) {
+                logger.error("node:{} left caught exception:{}", localNode, e);
+            }
+        };
+        gossipMessageService.deadNode(message, notifier);
+    }
+
+    @Override
     public Nodes getNodes() {
         return nodes;
     }
@@ -122,7 +135,7 @@ public class DiscoveryServiceImpl extends AbstractService implements DiscoverySe
             throw new RuntimeException("init node service fail", e);
         }
 
-        gossipMessageService = new GossipMessageServiceImpl(nodes, serverContext, messageQueue, config.getSuspectTimeout());
+        gossipMessageService = new GossipMessageServiceImpl(nodes, serverContext, gossiper, config.getSuspectTimeout());
         pushPullService = new PushPullServiceImpl(nodes, serverContext, gossipMessageService);
         probeService = new ProbeServiceImpl(nodes, config.getIndirectNodeNum());
 
@@ -133,7 +146,7 @@ public class DiscoveryServiceImpl extends AbstractService implements DiscoverySe
         manager.registerMessageHandler(new GossipRequestHandler(gossipMessageService));
 
         AliveMessage message = new AliveMessage(localNode.getNodeId(), localNode.getAddress(), localNode.nextIncarnation(), localNode.getType());
-        gossipMessageService.aliveNode(message, true);
+        gossipMessageService.aliveNode(message, () -> logger.info("bootstrap alive success!"), true);
 
         doSchedule();
     }
@@ -152,13 +165,10 @@ public class DiscoveryServiceImpl extends AbstractService implements DiscoverySe
 
     @Override
     protected void doClose() throws Exception {
-
         cancelFutures();
 
         serverContext.getClient().close();
         serverContext.getServer().close();
-
-        joined = false;
     }
 
 

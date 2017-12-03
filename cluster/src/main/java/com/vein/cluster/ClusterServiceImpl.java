@@ -7,8 +7,8 @@ import com.vein.cluster.group.GroupService;
 import com.vein.cluster.group.GroupServiceImpl;
 import com.vein.cluster.group.ServerGroup;
 import com.vein.discovery.DiscoveryConfig;
-import com.vein.discovery.DiscoveryService;
-import com.vein.discovery.DiscoveryServiceImpl;
+import com.vein.discovery.DiscoveryServer;
+import com.vein.discovery.DiscoveryServerImpl;
 import com.vein.raft.server.LogStateMachine;
 import com.vein.raft.server.RaftConfig;
 import com.vein.raft.server.RaftServer;
@@ -41,7 +41,7 @@ public class ClusterServiceImpl extends AbstractService implements ClusterServic
     private final ClusterConfig config;
     private final LogStateMachine stateMachine;
     private TransportServer transportServer;
-    private DiscoveryService discoveryService;
+    private DiscoveryServer discoveryService;
     private RaftServer raftServer;
     private Store store;
     private ConcurrentMap<String, GroupService> groupServices = new ConcurrentHashMap<>();
@@ -61,7 +61,7 @@ public class ClusterServiceImpl extends AbstractService implements ClusterServic
         String profile = SystemConstants.PROFILE == null ? "dev" : SystemConstants.PROFILE;
 
         Configure configure = ConfigureLoader.loader(profile + File.separator + "discovery.properties");
-        discoveryService = new DiscoveryServiceImpl(new DiscoveryConfig(configure));
+        discoveryService = new DiscoveryServerImpl(new DiscoveryConfig(configure));
         discoveryService.start();
         discoveryService.join();
 

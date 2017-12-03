@@ -13,25 +13,25 @@ import org.junit.Test;
  */
 public class DiscoveryServiceTest {
 
-    private DiscoveryService service1;
-    private DiscoveryService service2;
-    private DiscoveryService service3;
-    private DiscoveryService service4;
-    private DiscoveryService service5;
+    private DiscoveryServer service1;
+    private DiscoveryServer service2;
+    private DiscoveryServer service3;
+    private DiscoveryServer service4;
+    private DiscoveryServer service5;
 
     @Before
     public void setUp() throws Exception {
         Configure configure = ConfigureLoader.loader("test/discovery1.properties");
         DiscoveryConfig config1 = new DiscoveryConfig(configure);
-        service1 = new DiscoveryServiceImpl(config1);
+        service1 = new DiscoveryServerImpl(config1);
 
         Configure configure2 = ConfigureLoader.loader("test/discovery2.properties");
         DiscoveryConfig config2 = new DiscoveryConfig(configure2);
-        service2 = new DiscoveryServiceImpl(config2);
+        service2 = new DiscoveryServerImpl(config2);
 
         Configure configure3 = ConfigureLoader.loader("test/discovery3.properties");
         DiscoveryConfig config3 = new DiscoveryConfig(configure3);
-        service3 = new DiscoveryServiceImpl(config3);
+        service3 = new DiscoveryServerImpl(config3);
 //
 //        Configure configure4 = ConfigureLoader.loader("test/discovery4.properties");
 //        DiscoveryConfig config4 = new DiscoveryConfig(configure4);

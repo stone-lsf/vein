@@ -1,10 +1,10 @@
 package com.vein.raft.client;
 
+import com.vein.common.Address;
+import com.vein.common.base.LoggerSupport;
 import com.vein.raft.client.protocal.ConnectRequest;
 import com.vein.raft.client.protocal.ConnectResponse;
 import com.vein.raft.client.protocal.RaftResponse;
-import com.vein.common.Address;
-import com.vein.common.base.LoggerSupport;
 import com.vein.transport.api.Connection;
 import com.vein.transport.api.TransportClient;
 
@@ -30,11 +30,11 @@ public class ClientConnection extends LoggerSupport {
     private volatile List<Address> clusters;
     private volatile int index;
 
-    public ClientConnection(TransportClient client) {
+    ClientConnection(TransportClient client) {
         this.client = client;
     }
 
-    public ClientConnection(TransportClient client, List<Address> clusters) {
+    ClientConnection(TransportClient client, List<Address> clusters) {
         this.client = client;
         this.clusters = clusters;
     }
@@ -43,7 +43,7 @@ public class ClientConnection extends LoggerSupport {
         return leader;
     }
 
-    public void setClusters(List<Address> clusters) {
+    void setClusters(List<Address> clusters) {
         this.clusters = clusters;
     }
 

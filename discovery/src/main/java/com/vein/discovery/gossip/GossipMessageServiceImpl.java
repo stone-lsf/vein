@@ -1,5 +1,7 @@
 package com.vein.discovery.gossip;
 
+import com.vein.common.Address;
+import com.vein.common.base.LoggerSupport;
 import com.vein.discovery.Node;
 import com.vein.discovery.NodeListener;
 import com.vein.discovery.NodeStatus;
@@ -10,8 +12,6 @@ import com.vein.discovery.gossip.messages.DeadMessage;
 import com.vein.discovery.gossip.messages.GossipContent;
 import com.vein.discovery.gossip.messages.MemberMessage;
 import com.vein.discovery.gossip.messages.SuspectMessage;
-import com.vein.common.Address;
-import com.vein.common.base.LoggerSupport;
 import com.vein.transport.api.Connection;
 
 import java.util.Date;
@@ -50,7 +50,7 @@ public class GossipMessageServiceImpl extends LoggerSupport implements GossipMes
     }
 
     @Override
-    public void aliveNode(AliveMessage message, boolean bootstrap) {
+    public void aliveNode(AliveMessage message, GossipFinishNotifier notifier, boolean bootstrap) {
         String toAliveNode = message.getNodeId();
         logger.info("node:{} receive alive message to node:{} ,bootstrap:{}", nodes.getSelf(), toAliveNode, bootstrap);
 
@@ -104,7 +104,7 @@ public class GossipMessageServiceImpl extends LoggerSupport implements GossipMes
             }
 
             nodes.aliveNode(existNode);
-            gossip(message);
+            gossip(message,notifier);
 
             for (NodeListener listener : listeners) {
                 if (oldStatus == NodeStatus.DEAD) {
@@ -133,7 +133,7 @@ public class GossipMessageServiceImpl extends LoggerSupport implements GossipMes
         localNode.setIncarnation(newIncarnation);
 
         AliveMessage message = new AliveMessage(localNode.getNodeId(), localNode.getAddress(), newIncarnation, localNode.getType());
-        gossip(message);
+        gossip(message,null);
     }
 
     private Connection createConnection(Address address) {
@@ -145,7 +145,7 @@ public class GossipMessageServiceImpl extends LoggerSupport implements GossipMes
     }
 
     @Override
-    public void suspectNode(SuspectMessage message) {
+    public void suspectNode(SuspectMessage message, GossipFinishNotifier notifier) {
         String toSuspectNode = message.getNodeId();
         logger.info("node:{} receive suspect message to node:{}", nodes.getSelf(), toSuspectNode);
 
@@ -177,7 +177,7 @@ public class GossipMessageServiceImpl extends LoggerSupport implements GossipMes
                 return;
             }
 
-            gossip(message);
+            gossip(message,notifier);
 
             node.setIncarnation(suspectIncarnation);
             node.setStatus(NodeStatus.SUSPECT);
@@ -200,7 +200,7 @@ public class GossipMessageServiceImpl extends LoggerSupport implements GossipMes
     }
 
     @Override
-    public void deadNode(DeadMessage message) {
+    public void deadNode(DeadMessage message, GossipFinishNotifier notifier) {
         String toDeadNode = message.getNodeId();
         logger.info("node:{} receive dead message to node:{}", nodes.getSelf(), toDeadNode);
 
@@ -232,8 +232,8 @@ public class GossipMessageServiceImpl extends LoggerSupport implements GossipMes
                 return;
             }
 
-            logger.info("equeue dead message:{}", message);
-            gossip(message);
+            logger.info("enqueue dead message:{}", message);
+            gossip(message,notifier);
             node.setStatus(NodeStatus.DEAD);
             node.setIncarnation(deadIncarnation);
             node.setStatusChangeTime(new Date());
@@ -247,8 +247,9 @@ public class GossipMessageServiceImpl extends LoggerSupport implements GossipMes
         }
     }
 
-    private void gossip(GossipContent content) {
+    private void gossip(GossipContent content, GossipFinishNotifier notifier) {
         MemberMessage message = new MemberMessage(content);
+        message.setNotifier(notifier);
         messageGossiper.gossip(message);
     }
 
@@ -265,19 +266,19 @@ public class GossipMessageServiceImpl extends LoggerSupport implements GossipMes
     @Override
     public void handle(GossipRequest request) {
         List<GossipContent> contents = request.getContents();
-        if (contents ==null){
+        if (contents == null) {
             return;
         }
         for (GossipContent content : contents) {
             switch (content.getType()) {
                 case GossipContent.ALIVE:
-                    aliveNode((AliveMessage) content, false);
+                    aliveNode((AliveMessage) content, null, false);
                     break;
                 case GossipContent.SUSPECT:
-                    suspectNode((SuspectMessage) content);
+                    suspectNode((SuspectMessage) content, null);
                     break;
                 case GossipContent.DEAD:
-                    deadNode((DeadMessage) content);
+                    deadNode((DeadMessage) content, null);
                     break;
                 case GossipContent.USER:
                     messageNotifier.notify(content);
