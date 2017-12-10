@@ -2,6 +2,7 @@ package com.vein.raft.client;
 
 import com.vein.common.Address;
 import com.vein.common.base.LoggerSupport;
+import com.vein.common.utils.AddressUtil;
 import com.vein.serializer.api.Serializer;
 import com.vein.transport.api.Connection;
 import com.vein.transport.api.Transport;
@@ -27,6 +28,12 @@ public class RaftClientImpl extends LoggerSupport implements RaftClient {
 
     public RaftClientImpl(List<Address> clusters) {
         this.clusters = clusters;
+        this.transport = TransportFactory.create("netty");
+        this.connection = new ClientConnection(transport.client(), clusters);
+    }
+
+    public RaftClientImpl(String clustersStr){
+        this.clusters = AddressUtil.parseList(clustersStr);
         this.transport = TransportFactory.create("netty");
         this.connection = new ClientConnection(transport.client(), clusters);
     }

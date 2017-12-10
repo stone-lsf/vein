@@ -1,4 +1,4 @@
-package com.vein.view;
+package com.vein.spring;
 
 import com.vein.cluster.ClusterConfig;
 import com.vein.cluster.ClusterService;
@@ -75,7 +75,6 @@ public class ChargeServer extends LoggerSupport implements InitializingBean{
         String profile = SystemConstants.PROFILE == null ? "dev" : SystemConstants.PROFILE;
         Configure configure = ConfigureLoader.loader(profile + File.separator + "cluster.properties");
         clusterService = new ClusterServiceImpl(new ClusterConfig(configure), new PrintLogStateMachine());
-        start();
     }
 
     public ClusterService getClusterService() {

@@ -2,6 +2,7 @@ package com.vein.cluster;
 
 import com.vein.common.base.Closable;
 import com.vein.common.base.Startable;
+import com.vein.discovery.DiscoveryServer;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -16,4 +17,7 @@ public interface ClusterService extends Startable, Closable {
 
 
     CompletableFuture<Boolean> receive(ClusterMessage message);
+
+
+    DiscoveryServer getDiscoveryServer();
 }

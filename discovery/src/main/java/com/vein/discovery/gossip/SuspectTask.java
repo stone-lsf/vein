@@ -1,10 +1,10 @@
 package com.vein.discovery.gossip;
 
+import com.vein.common.base.LoggerSupport;
 import com.vein.discovery.Node;
 import com.vein.discovery.NodeStatus;
 import com.vein.discovery.Nodes;
 import com.vein.discovery.gossip.messages.DeadMessage;
-import com.vein.common.base.LoggerSupport;
 
 import java.util.Date;
 import java.util.concurrent.ScheduledFuture;
@@ -50,7 +50,7 @@ public class SuspectTask extends LoggerSupport implements Runnable {
             if (status == NodeStatus.SUSPECT && node.getStatusChangeTime().equals(createTime)) {
                 logger.info("marking node [{}] as failed by suspect timeout happened", nodeId);
                 DeadMessage message = new DeadMessage(nodeId, node.getIncarnation(), nodes.getSelf());
-                messageService.deadNode(message);
+                messageService.deadNode(message, () -> logger.info("node:{} dead message has gossiped", nodeId));
             }
         } catch (Throwable e) {
             logger.error("execute suspect task caught exception", e);

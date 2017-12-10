@@ -23,6 +23,10 @@ public class AjaxResponse<T> {
         this.status = status;
     }
 
+    public static <R> AjaxResponse<R> success() {
+        return new AjaxResponse<>(SUCCESS);
+    }
+
     public static <R> AjaxResponse<R> success(R data) {
         return new AjaxResponse<>(SUCCESS, data);
     }

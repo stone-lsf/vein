@@ -41,7 +41,7 @@ public class ClusterServiceImpl extends AbstractService implements ClusterServic
     private final ClusterConfig config;
     private final LogStateMachine stateMachine;
     private TransportServer transportServer;
-    private DiscoveryServer discoveryService;
+    private DiscoveryServer discoveryServer;
     private RaftServer raftServer;
     private Store store;
     private ConcurrentMap<String, GroupService> groupServices = new ConcurrentHashMap<>();
@@ -61,9 +61,9 @@ public class ClusterServiceImpl extends AbstractService implements ClusterServic
         String profile = SystemConstants.PROFILE == null ? "dev" : SystemConstants.PROFILE;
 
         Configure configure = ConfigureLoader.loader(profile + File.separator + "discovery.properties");
-        discoveryService = new DiscoveryServerImpl(new DiscoveryConfig(configure));
-        discoveryService.start();
-        discoveryService.join();
+        discoveryServer = new DiscoveryServerImpl(new DiscoveryConfig(configure));
+        discoveryServer.start();
+        discoveryServer.join();
 
         ServerType type = self.getType();
         if (type != ServerType.core) {
@@ -97,7 +97,7 @@ public class ClusterServiceImpl extends AbstractService implements ClusterServic
         if (raftServer != null) {
             raftServer.close();
         }
-        discoveryService.close();
+        discoveryServer.close();
 
         transportServer.close();
     }
@@ -127,5 +127,10 @@ public class ClusterServiceImpl extends AbstractService implements ClusterServic
         }
 
         return groupService.receive(message);
+    }
+
+    @Override
+    public DiscoveryServer getDiscoveryServer() {
+        return discoveryServer;
     }
 }

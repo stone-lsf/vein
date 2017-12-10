@@ -1,12 +1,12 @@
 package com.vein.discovery.pushpull;
 
+import com.vein.common.Address;
+import com.vein.common.base.LoggerSupport;
 import com.vein.discovery.Nodes;
 import com.vein.discovery.ServerContext;
 import com.vein.discovery.gossip.GossipMessageService;
 import com.vein.discovery.gossip.messages.AliveMessage;
 import com.vein.discovery.gossip.messages.SuspectMessage;
-import com.vein.common.Address;
-import com.vein.common.base.LoggerSupport;
 import com.vein.transport.api.Connection;
 
 import java.util.List;
@@ -56,12 +56,12 @@ public class PushPullServiceImpl extends LoggerSupport implements PushPullServic
             switch (state.getStatus()) {
                 case ALIVE:
                     AliveMessage aliveMessage = new AliveMessage(state);
-                    gossipMessageService.aliveNode(aliveMessage, false);
+                    gossipMessageService.aliveNode(aliveMessage, null, false);
                     break;
                 case SUSPECT:
                 case DEAD:
                     SuspectMessage suspectMessage = new SuspectMessage(state, nodes.getSelf());
-                    gossipMessageService.suspectNode(suspectMessage);
+                    gossipMessageService.suspectNode(suspectMessage, null);
                     break;
             }
         }

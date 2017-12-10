@@ -19,6 +19,7 @@
         <module>raft-server</module>
         <module>raft-client</module>
         <module>view</module>
+        <module>vein-spring</module>
     </modules>
 
 

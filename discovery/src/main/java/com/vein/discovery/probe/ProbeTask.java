@@ -79,6 +79,6 @@ public class ProbeTask extends LoggerSupport implements Runnable {
 
         long incarnation = node.getIncarnation();
         SuspectMessage message = new SuspectMessage(node.getNodeId(), node.getAddress(), incarnation, nodes.getSelf());
-        messageService.suspectNode(message);
+        messageService.suspectNode(message,()->logger.info("suspect node:{} message gossiped", node.getNodeId()));
     }
 }

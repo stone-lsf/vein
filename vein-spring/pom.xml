@@ -2,14 +2,14 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <parent>
-        <groupId>com.vein</groupId>
         <artifactId>vein-parent</artifactId>
+        <groupId>com.vein</groupId>
         <version>1.0.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
-    <artifactId>vein-view</artifactId>
+    <artifactId>vein-spring</artifactId>
     <packaging>war</packaging>
-    <name>vein-view</name>
+    <name>vein-spring</name>
 
     <dependencies>
         <!--spring start-->
@@ -138,8 +138,7 @@
         </dependency>
     </dependencies>
 
-
     <build>
-        <finalName>vein-view</finalName>
+        <finalName>vein-server</finalName>
     </build>
 </project>
